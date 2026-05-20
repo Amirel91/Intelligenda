@@ -21,3 +21,25 @@ Stage Summary:
 - Files modified: `src/app/admin/impostazioni/page.tsx`, `package.json`, `package-lock.json`
 - Library added: `qrcode.react@4.2.0`
 - The QR code section appears below the shop info form in the Negozio tab
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Enterprise polish — 4 rifiniture strategiche (WhatsApp, Clienti, etc.)
+
+Work Log:
+- Analyzed existing codebase: found features 1 (Google Calendar), 2 (Rate Limiting), 3a (Cancel route), 4b (Print CSS) already implemented
+- Added WhatsApp button in admin booking detail modal (calendario/page.tsx)
+- Added MessageCircle icon import from lucide-react
+- Added shopName state + fetch from /api/config for personalized WhatsApp messages
+- Created openWhatsApp() function with pre-filled message including cancel link
+- Created /api/clients/route.ts — Prisma groupBy aggregation endpoint (admin-only)
+- Created /admin/clienti/page.tsx — Client archive with search, sort, CSV export, responsive design
+- Added 'Clienti' nav item in admin layout sidebar with Users icon
+- Verified: zero TypeScript errors, clean build, push to GitHub
+
+Stage Summary:
+- Commit: 29581cf — "feat: enterprise polish — WhatsApp button, Clienti archive page"
+- Files created: src/app/admin/clienti/page.tsx, src/app/api/clients/route.ts
+- Files modified: src/app/admin/calendario/page.tsx, src/app/admin/layout.tsx
+- All 4 requested features verified complete (2 were already implemented)
