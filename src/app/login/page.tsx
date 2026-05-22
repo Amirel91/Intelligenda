@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogIn, ArrowLeft, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 
 /**
  * Global Login Page — /login
@@ -66,8 +67,8 @@ export default function GlobalLoginPage() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-stone-900 flex items-center justify-center">
-            <LogIn className="w-7 h-7 text-white" />
+          <div className="flex justify-center mb-4">
+            <IntelliGendaLogo size="xl" showText={false} className="text-stone-900" />
           </div>
           <h1 className="text-2xl font-bold text-stone-900">Accedi</h1>
           <p className="text-sm text-stone-500 mt-1">

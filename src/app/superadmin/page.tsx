@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Shield,
   Building2,
   CreditCard,
   CalendarCheck,
@@ -23,6 +22,7 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import Link from 'next/link'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 
 // ==================== AUTH HELPER ====================
 
@@ -291,9 +291,7 @@ export default function SuperAdminDashboard() {
       <header className="bg-white border-b border-stone-200 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-stone-900 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
+            <IntelliGendaLogo size="lg" showText={false} className="text-stone-900" />
             <div>
               <h1 className="text-lg font-bold text-stone-900 leading-tight">SuperAdmin</h1>
               <p className="text-xs text-stone-400">IntelliGenda Platform</p>

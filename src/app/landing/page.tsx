@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import {
-  CalendarDays,
   ArrowRight,
   Brain,
   Smartphone,
@@ -23,6 +22,7 @@ import {
   Menu,
   ChevronDown,
 } from 'lucide-react'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 import { ACTIVITY_TYPES } from '@/lib/activity-types'
 
 // ==================== FORM STATE ====================
@@ -205,11 +205,8 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           {/* Logo */}
-          <a href="/landing" className="flex items-center gap-2.5 text-stone-900 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 rounded-lg bg-stone-900 flex items-center justify-center">
-              <CalendarDays className="w-4.5 h-4.5 text-white" />
-            </div>
-            <span className="text-base font-bold tracking-tight">IntelliGenda</span>
+          <a href="/landing" className="text-stone-900 hover:opacity-80 transition-opacity">
+            <IntelliGendaLogo size="md" />
           </a>
 
           {/* Desktop links */}

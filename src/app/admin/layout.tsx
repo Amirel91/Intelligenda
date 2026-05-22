@@ -17,6 +17,7 @@ import {
   Users,
 } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 
 interface AuthContextType {
   username: string | null
@@ -117,8 +118,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           }`}
         >
           <div className="p-4 flex items-center justify-between border-b border-stone-100">
-            <Link href="/admin/dashboard" className="font-semibold text-stone-900">
-              Gestionale
+            <Link href="/admin/dashboard">
+              <IntelliGendaLogo size="md" showText={false} className="text-stone-900" textClassName="font-semibold" />
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}

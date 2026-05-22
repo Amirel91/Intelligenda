@@ -125,7 +125,7 @@ function AuthenticatedLayout() {
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">GestioPro</p>
+            <p className="font-semibold text-sm truncate">IntelliGenda</p>
           </div>
         </header>
 

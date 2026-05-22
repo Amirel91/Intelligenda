@@ -111,7 +111,7 @@ export default function LandingPage() {
           </button>
         </p>
         <p className="mt-3 text-xs text-muted-foreground/60">
-          © {new Date().getFullYear()} GestioPro — Tutti i diritti riservati
+          © {new Date().getFullYear()} IntelliGenda — Tutti i diritti riservati
         </p>
       </footer>
     </div>

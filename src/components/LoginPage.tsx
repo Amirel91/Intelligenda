@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, LogIn } from 'lucide-react'
+import { LogIn } from 'lucide-react'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -57,8 +58,8 @@ export function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4">
-            <Calendar className="h-8 w-8" />
+          <div className="flex justify-center mb-4">
+            <IntelliGendaLogo size="xl" showText={false} className="text-stone-900" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">IntelliGenda</h1>
           <p className="text-muted-foreground mt-1">Prenota il tuo appuntamento</p>

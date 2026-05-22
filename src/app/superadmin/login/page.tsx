@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Shield, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 
 const SA_TOKEN_KEY = 'superadmin_token'
 
@@ -54,8 +55,8 @@ export default function SuperAdminLoginPage() {
     <div className="min-h-screen bg-stone-50 flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-stone-900 flex items-center justify-center">
-            <Shield className="w-7 h-7 text-white" />
+          <div className="flex justify-center mb-4">
+            <IntelliGendaLogo size="xl" showText={false} className="text-stone-900" />
           </div>
           <h1 className="text-2xl font-bold text-stone-900">SuperAdmin</h1>
           <p className="text-sm text-stone-500 mt-1">IntelliGenda — Pannello di controllo piattaforma</p>

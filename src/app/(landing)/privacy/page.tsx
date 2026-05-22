@@ -1,4 +1,5 @@
-import { ArrowLeft, ShieldCheck } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -14,12 +15,9 @@ export default function PrivacyPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <a
             href="/landing"
-            className="flex items-center gap-2.5 text-stone-900 hover:opacity-80 transition-opacity"
+            className="text-stone-900 hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 rounded-lg bg-stone-900 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-base font-bold tracking-tight">IntelliGenda</span>
+            <IntelliGendaLogo size="md" />
           </a>
           <a
             href="/landing"

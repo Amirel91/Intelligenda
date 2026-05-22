@@ -3,6 +3,7 @@
 import { LayoutDashboard, Sparkles, CalendarDays, LogOut } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 
 const navItems = [
   { id: 'admin-dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
@@ -20,7 +21,10 @@ export function AdminNav() {
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
-          <h1 className="font-semibold text-lg">IntelliGenda</h1>
+          <div className="flex items-center gap-2.5">
+            <IntelliGendaLogo size="md" showText={false} className="text-stone-900" />
+            <h1 className="font-semibold text-lg tracking-tight">IntelliGenda</h1>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">
               Ciao, {currentUser?.name?.split(' ')[0]}
