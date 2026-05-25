@@ -13,6 +13,7 @@ function getResend(): Resend | null {
 }
 
 function getFromAddress(): string { return process.env.EMAIL_FROM || 'noreply@intelligenda.it' }
+function getFromName(): string { return 'IntelliGenda' }
 function formatDate(date: Date | string): string { const d = typeof date === 'string' ? parseISO(date) : date; return format(d, "d MMMM yyyy", { locale: it }) }
 function formatTime(date: Date | string): string { const d = typeof date === 'string' ? parseISO(date) : date; return format(d, "HH:mm") }
 function formatPrice(price: number): string { return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(price) }
@@ -58,23 +59,26 @@ function renderReminder(b: EmailBookingData, s: ShopData, cancelUrl: string): st
 
 export async function sendBookingConfirmationEmails(b: EmailBookingData, s: ShopData, slug: string): Promise<void> {
   const r = getResend(); if (!r) return
-  const cu = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://intelligenda.it'}/prenota/cancella/${b.bookingId}`
+  const fromAddr = `${getFromName()} <${getFromAddress()}>`
+  const cu = slug ? `https://${slug}.intelligenda.it/prenota/cancella/${b.bookingId}` : `${process.env.NEXT_PUBLIC_BASE_URL || 'https://intelligenda.it'}/prenota/cancella/${b.bookingId}`
   const p: Promise<unknown>[] = []
-  if (b.customerEmail) p.push(r.emails.send({ from: `${s.shopName} <${getFromAddress()}>`, to: b.customerEmail, subject: `Prenotazione confermata — ${s.shopName}`, html: renderBookingConfirmationCustomer(b, s, cu) }))
-  if (s.shopEmail) p.push(r.emails.send({ from: `IntelliGenda <${getFromAddress()}>`, to: s.shopEmail, subject: `Nuova prenotazione — ${b.customerName} ${b.customerSurname}`, html: renderBookingConfirmationAdmin(b, s) }))
+  if (b.customerEmail) p.push(r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Prenotazione confermata — ${s.shopName}`, html: renderBookingConfirmationCustomer(b, s, cu) }))
+  if (s.shopEmail) p.push(r.emails.send({ from: fromAddr, to: s.shopEmail, subject: `Nuova prenotazione — ${b.customerName} ${b.customerSurname}`, html: renderBookingConfirmationAdmin(b, s) }))
   await Promise.allSettled(p)
 }
 
 export async function sendCancellationEmails(b: EmailBookingData, s: ShopData): Promise<void> {
   const r = getResend(); if (!r) return
+  const fromAddr = `${getFromName()} <${getFromAddress()}>`
   const p: Promise<unknown>[] = []
-  if (b.customerEmail) p.push(r.emails.send({ from: `${s.shopName} <${getFromAddress()}>`, to: b.customerEmail, subject: `Prenotazione annullata — ${s.shopName}`, html: renderCancellationCustomer(b, s) }))
-  if (s.shopEmail) p.push(r.emails.send({ from: `IntelliGenda <${getFromAddress()}>`, to: s.shopEmail, subject: `Prenotazione annullata — ${b.customerName} ${b.customerSurname}`, html: renderCancellationAdmin(b, s) }))
+  if (b.customerEmail) p.push(r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Prenotazione annullata — ${s.shopName}`, html: renderCancellationCustomer(b, s) }))
+  if (s.shopEmail) p.push(r.emails.send({ from: fromAddr, to: s.shopEmail, subject: `Prenotazione annullata — ${b.customerName} ${b.customerSurname}`, html: renderCancellationAdmin(b, s) }))
   await Promise.allSettled(p)
 }
 
 export async function sendReminderEmail(b: EmailBookingData, s: ShopData, slug: string): Promise<void> {
   const r = getResend(); if (!r || !b.customerEmail) return
-  const cu = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://intelligenda.it'}/prenota/cancella/${b.bookingId}`
-  try { await r.emails.send({ from: `${s.shopName} <${getFromAddress()}>`, to: b.customerEmail, subject: `Promemoria — ${s.shopName}`, html: renderReminder(b, s, cu) }) } catch {}
+  const fromAddr = `${getFromName()} <${getFromAddress()}>`
+  const cu = slug ? `https://${slug}.intelligenda.it/prenota/cancella/${b.bookingId}` : `${process.env.NEXT_PUBLIC_BASE_URL || 'https://intelligenda.it'}/prenota/cancella/${b.bookingId}`
+  try { await r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Promemoria — ${s.shopName}`, html: renderReminder(b, s, cu) }) } catch {}
 }

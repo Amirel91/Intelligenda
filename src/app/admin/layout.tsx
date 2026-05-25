@@ -15,6 +15,7 @@ import {
   Plus,
   Download,
   Users,
+  LifeBuoy,
 } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
@@ -44,6 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showIOSHint, setShowIOSHint] = useState(false)
+  const [shopName, setShopName] = useState<string>('')
   const { canInstall: canInstallPWA, isIOS: isIOSSafari, promptInstall: promptPWAInstall, dismiss: dismissPWAInstall } = usePWAInstall()
 
   const isLoginPage = pathname === '/admin/login'
@@ -75,6 +77,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         router.replace('/admin/login')
         setLoading(false)
       })
+
+    // Fetch shop name for support link
+    fetch('/api/config')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.shopName) setShopName(data.shopName) })
+      .catch(() => {})
   }, [router, isLoginPage])
 
   const handleLogout = async () => {
@@ -194,6 +202,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Home className="w-5 h-5" />
               Vai al sito
             </Link>
+            <a
+              href={`mailto:support@intelligenda.it?subject=${encodeURIComponent(`Richiesta Assistenza - ${shopName || 'Attivita'}`)}`}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-500 hover:bg-stone-100 transition-colors"
+            >
+              <LifeBuoy className="w-5 h-5" />
+              Hai bisogno di aiuto?
+            </a>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors"

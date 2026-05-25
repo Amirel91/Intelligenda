@@ -674,7 +674,7 @@ export default function LandingPage() {
       {/* ==================== FOOTER ==================== */}
       <footer className="py-8 text-center border-t border-stone-100">
         <p className="text-xs text-stone-400">&copy; {new Date().getFullYear()} IntelliGenda</p>
-        <div className="flex items-center justify-center gap-3 mt-2">
+        <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
           <a
             href="/termini"
             className="text-xs text-stone-400 hover:text-stone-600 transition-colors underline-offset-2 hover:underline"
@@ -687,6 +687,13 @@ export default function LandingPage() {
             className="text-xs text-stone-400 hover:text-stone-600 transition-colors underline-offset-2 hover:underline"
           >
             Privacy Policy
+          </a>
+          <span className="text-stone-300">|</span>
+          <a
+            href="mailto:info@intelligenda.it"
+            className="text-xs text-stone-400 hover:text-stone-600 transition-colors underline-offset-2 hover:underline"
+          >
+            Contatti: info@intelligenda.it
           </a>
         </div>
       </footer>
