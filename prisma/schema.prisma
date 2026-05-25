@@ -51,6 +51,7 @@ model BusinessConfig {
   lunchBreakEnd     String       @default("14:00")  // "HH:MM"
   // Minimum notice hours: clients cannot book slots closer than X hours from now
   minNoticeHours     Int          @default(1)
+  features           String[]     @default([])
 
   workingHours    WorkingHours[]
   closedDates     ClosedDate[]
@@ -125,6 +126,8 @@ model Booking {
   // Nullable for backward compat: existing bookings have no resource
   resourceId      String?
   resource        Resource?       @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+
+  remindedAt      DateTime?
 
   services        BookingService[]
 

@@ -176,6 +176,9 @@ const MIGRATION_SQL = [
     END IF;
   END $$`,
   `CREATE INDEX IF NOT EXISTS "ClosedPeriod_configId_idx" ON "ClosedPeriod"("configId")`,
+  `ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "remindedAt" TIMESTAMP(3)`,
+  `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "shopDescription" TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "features" TEXT[] DEFAULT ARRAY[]::TEXT[]`,
 ]
 
 /**

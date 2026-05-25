@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema } from '@/lib/db'
+import { sendCancellationEmails } from '@/lib/email'
 
 /**
  * POST /api/bookings/cancel
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       where: { id: bookingId },
       include: {
         services: { include: { service: true } },
-        config: { select: { shopName: true } },
+        config: { select: { shopName: true, shopEmail: true, shopPhone: true, shopAddress: true } },
       },
     })
 
@@ -49,9 +50,11 @@ export async function POST(request: NextRequest) {
       data: { status: 'cancelled' },
       include: {
         services: { include: { service: true } },
-        config: { select: { shopName: true } },
+        config: { select: { shopName: true, shopEmail: true, shopPhone: true, shopAddress: true } },
       },
     })
+
+    sendCancellationEmails({ customerName: updated.customerName, customerSurname: updated.customerSurname, customerEmail: updated.customerEmail, customerPhone: updated.customerPhone, startTime: updated.startTime, endTime: updated.endTime, totalPrice: updated.totalPrice, services: updated.services, resourceName: null, bookingId: updated.id }, { shopName: updated.config?.shopName || 'Negozio', shopEmail: updated.config?.shopEmail, shopPhone: updated.config?.shopPhone, shopAddress: updated.config?.shopAddress }).catch(err => console.error('[email] skip:', err))
 
     return NextResponse.json({
       success: true,

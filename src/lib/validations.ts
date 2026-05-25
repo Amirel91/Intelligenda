@@ -44,6 +44,7 @@ export const configSchema = z.object({
   lunchBreakStart: z.string().regex(/^\d{2}:\d{2}$/).default('12:30'),
   lunchBreakEnd: z.string().regex(/^\d{2}:\d{2}$/).default('14:00'),
   minNoticeHours: z.coerce.number().int().min(0, 'Il preavviso minimo non puo essere negativo').max(48, 'Max 48 ore').default(1),
+  features: z.array(z.string()).default([]),
 })
 
 export const workingHoursSchema = z.object({

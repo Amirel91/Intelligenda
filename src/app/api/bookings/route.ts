@@ -5,6 +5,7 @@ import { bookingSchema } from '@/lib/validations'
 import { isSlotAvailable, findFreeResource } from '@/lib/slot-algorithm'
 import { getTenantConfig, requireTenantConfig } from '@/lib/tenant'
 import { createInRome } from '@/lib/timezone'
+import { sendBookingConfirmationEmails } from '@/lib/email'
 
 // ============ RATE LIMITING (In-Memory, Anti-Spam) ============
 // Max 2 bookings per IP per configId in a 2-hour window
@@ -179,9 +180,12 @@ export async function POST(request: NextRequest) {
       include: {
         services: { include: { service: true } },
         resource: { select: { id: true, name: true } },
-        config: { select: { shopName: true } },
+        config: { select: { shopName: true, shopEmail: true, shopPhone: true, shopAddress: true } },
       },
     })
+
+    const tenantSlug = request.cookies.get('tenant_slug')?.value || ''
+    sendBookingConfirmationEmails({ customerName: booking.customerName, customerSurname: booking.customerSurname, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone, startTime: booking.startTime, endTime: booking.endTime, totalPrice: booking.totalPrice, services: booking.services, resourceName: booking.resource?.name, bookingId: booking.id }, { shopName: booking.config?.shopName || config.shopName, shopEmail: booking.config?.shopEmail || config.shopEmail, shopPhone: booking.config?.shopPhone || config.shopPhone, shopAddress: booking.config?.shopAddress || config.shopAddress }, tenantSlug).catch(err => console.error('[email] skip:', err))
 
     return NextResponse.json({ ...booking, shopName: booking.config?.shopName || config.shopName }, { status: 201 })
   } catch (error: unknown) {

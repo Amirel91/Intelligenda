@@ -15,6 +15,7 @@ interface BusinessConfig {
   lunchBreakStart: string
   lunchBreakEnd: string
   minNoticeHours: number
+  features: string[]
 }
 
 interface ClosedPeriod {
@@ -61,6 +62,7 @@ const defaultConfig: BusinessConfig = {
   lunchBreakStart: '12:30',
   lunchBreakEnd: '14:00',
   minNoticeHours: 1,
+  features: [],
 }
 
 export default function AdminImpostazioni() {
@@ -111,6 +113,7 @@ export default function AdminImpostazioni() {
             lunchBreakStart: data.lunchBreakStart || '12:30',
             lunchBreakEnd: data.lunchBreakEnd || '14:00',
             minNoticeHours: data.minNoticeHours ?? 1,
+            features: data.features || [],
           })
         }
       })
@@ -178,7 +181,7 @@ export default function AdminImpostazioni() {
     } finally { setSaving(false) }
   }
 
-  const updateConfigField = (field: keyof BusinessConfig, value: string | boolean | number) => {
+  const updateConfigField = (field: keyof BusinessConfig, value: string | boolean | number | string[]) => {
     setConfig(prev => ({ ...prev, [field]: value }))
   }
 
@@ -411,6 +414,30 @@ export default function AdminImpostazioni() {
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Indirizzo</label>
               <input type="text" value={config.shopAddress || ''} onChange={e => updateConfigField('shopAddress', e.target.value)} placeholder="Via Roma 42, Milano" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+            </div>
+
+            {/* Punti di Forza */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                Punti di Forza
+              </label>
+              <p className="text-xs text-stone-400 mb-2">Fino a 3 punti che appariranno sulla homepage del cliente (es. Parcheggio, Wi-Fi, Aria condizionata)</p>
+              <div className="space-y-2">
+                {[0, 1, 2].map(i => (
+                  <input
+                    key={i}
+                    type="text"
+                    value={config.features?.[i] || ''}
+                    onChange={e => {
+                      const newFeatures = [...(config.features || ['', '', ''])]
+                      newFeatures[i] = e.target.value
+                      updateConfigField('features', newFeatures)
+                    }}
+                    placeholder={i === 0 ? 'Punto di forza 1' : i === 1 ? 'Punto di forza 2' : 'Punto di forza 3'}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors"
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ interface BusinessConfig {
   shopPhone?: string
   shopEmail?: string
   shopAddress?: string
+  features?: string[]
 }
 
 export default function HomePage() {
@@ -87,6 +88,25 @@ export default function HomePage() {
               Prenota un appuntamento
             </motion.div>
           </Link>
+
+          {/* Punti di Forza */}
+          {config?.features?.filter(Boolean).length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+              className="flex flex-wrap justify-center gap-2 mt-8"
+            >
+              {config.features.filter(Boolean).map((feature, i) => (
+                <span
+                  key={i}
+                  className="px-3.5 py-1.5 rounded-full bg-stone-100 text-stone-600 text-xs font-medium"
+                >
+                  {feature}
+                </span>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </main>
 

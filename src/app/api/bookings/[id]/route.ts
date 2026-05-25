@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
 import { requireTenantConfig } from '@/lib/tenant'
+import { sendCancellationEmails } from '@/lib/email'
 
 // GET /api/bookings/[id]
 export async function GET(
@@ -55,11 +56,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Prenotazione non trovata' }, { status: 404 })
     }
 
+    const previousStatus = existing.status
+
     const booking = await db.booking.update({
       where: { id },
       data: { status: body.status },
-      include: { services: { include: { service: true } } },
+      include: { services: { include: { service: true } }, config: { select: { shopName: true, shopEmail: true, shopPhone: true, shopAddress: true } }, resource: { select: { id: true, name: true } } },
     })
+
+    if (body.status === 'cancelled' && previousStatus !== 'cancelled' && booking.customerEmail) { sendCancellationEmails({ customerName: booking.customerName, customerSurname: booking.customerSurname, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone, startTime: booking.startTime, endTime: booking.endTime, totalPrice: booking.totalPrice, services: booking.services, resourceName: booking.resource?.name, bookingId: booking.id }, { shopName: booking.config?.shopName || 'Negozio', shopEmail: booking.config?.shopEmail, shopPhone: booking.config?.shopPhone, shopAddress: booking.config?.shopAddress }).catch(err => console.error('[email] skip:', err)) }
 
     return NextResponse.json(booking)
   } catch (error: unknown) {

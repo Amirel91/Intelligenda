@@ -23,7 +23,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
-import { ACTIVITY_TYPES } from '@/lib/activity-types'
+import { ACTIVITY_TYPES, ACTIVITY_GROUPS } from '@/lib/activity-types'
 
 // ==================== FORM STATE ====================
 
@@ -33,6 +33,7 @@ const initialForm = {
   slug: '',
   email: '',
   password: '',
+  confirmPassword: '',
   activityType: 'ALTRO',
 }
 
@@ -128,6 +129,11 @@ export default function LandingPage() {
       errs.password = 'Obbligatorio'
     } else if (form.password.length < 6) {
       errs.password = 'Minimo 6 caratteri'
+    }
+    if (!form.confirmPassword) {
+      errs.confirmPassword = 'Obbligatorio'
+    } else if (form.password !== form.confirmPassword) {
+      errs.confirmPassword = 'Le password non coincidono'
     }
 
     setErrors(errs)
@@ -484,8 +490,12 @@ export default function LandingPage() {
                   onChange={e => updateField('activityType', e.target.value)}
                   className="w-full appearance-none pl-4 pr-10 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors cursor-pointer"
                 >
-                  {ACTIVITY_TYPES.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
+                  {ACTIVITY_GROUPS.map(group => (
+                    <optgroup key={group.id} label={group.name}>
+                      {ACTIVITY_TYPES.filter(a => a.group === group.id || (group.id === 'ALTRO' && a.id === 'ALTRO')).map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
@@ -527,6 +537,26 @@ export default function LandingPage() {
               </div>
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+              )}
+            </div>
+
+            {/* Conferma Password */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">Conferma Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={e => updateField('confirmPassword', e.target.value)}
+                  placeholder="Ripeti la password"
+                  className={`w-full pl-11 pr-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
+                    errors.confirmPassword ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+                  }`}
+                />
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
               )}
             </div>
 

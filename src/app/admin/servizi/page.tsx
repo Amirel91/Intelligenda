@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, X, Clock, Euro, GripVertical, Timer, Zap } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Clock, Euro, GripVertical, Timer, Zap, XCircle } from 'lucide-react'
 import { getSuggestions } from '@/lib/service-suggestions'
 
 interface Service {
@@ -43,6 +43,15 @@ export default function AdminServizi() {
   const [error, setError] = useState('')
   const [activityType, setActivityType] = useState<string>('ALTRO')
   const [configLoading, setConfigLoading] = useState(true)
+  const [hiddenSuggestions, setHiddenSuggestions] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const slug = document.cookie.match(/(?:^|;\s*)tenant_slug=([^;]*)/)?.[1]
+      if (!slug) return []
+      const stored = localStorage.getItem(`ig_hidden_suggestions_${slug}`)
+      return stored ? JSON.parse(stored) : []
+    } catch { return [] }
+  })
 
   const fetchServices = () => {
     fetch('/api/services?all=true')
@@ -63,6 +72,24 @@ export default function AdminServizi() {
   }, [])
 
   const suggestions = getSuggestions(activityType)
+
+  const dismissSuggestion = (name: string) => {
+    if (typeof window === 'undefined') return
+    const slug = document.cookie.match(/(?:^|;\s*)tenant_slug=([^;]*)/)?.[1]
+    if (!slug) return
+    const updated = [...hiddenSuggestions, name]
+    setHiddenSuggestions(updated)
+    try { localStorage.setItem(`ig_hidden_suggestions_${slug}`, JSON.stringify(updated)) } catch {}
+  }
+
+  const dismissAllSuggestions = () => {
+    if (typeof window === 'undefined') return
+    const slug = document.cookie.match(/(?:^|;\s*)tenant_slug=([^;]*)/)?.[1]
+    if (!slug) return
+    const allNames = suggestions.map(s => s.name)
+    setHiddenSuggestions(allNames)
+    try { localStorage.setItem(`ig_hidden_suggestions_${slug}`, JSON.stringify(allNames)) } catch {}
+  }
 
   const openNew = () => {
     setForm({ ...emptyForm, sortOrder: services.length + 1 })
@@ -100,6 +127,13 @@ export default function AdminServizi() {
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Errore') }
       setShowForm(false); fetchServices()
+      // Auto-hide the suggestion if it was used
+      if (!editingId && form.name) {
+        const isSuggestion = suggestions.some(s => s.name === form.name)
+        if (isSuggestion && !hiddenSuggestions.includes(form.name)) {
+          dismissSuggestion(form.name)
+        }
+      }
     } catch (err) { setError(err instanceof Error ? err.message : 'Errore nel salvataggio') }
     finally { setSaving(false) }
   }
@@ -136,35 +170,49 @@ export default function AdminServizi() {
       {error && (<div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm">{error}</div>)}
 
       {/* Quick suggestion badges */}
-      {suggestions.length > 0 && !showForm && (
-        <div className="bg-stone-50 rounded-xl border border-stone-200 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap className="w-4 h-4 text-stone-500" />
-            <span className="text-sm font-medium text-stone-700">Suggerimenti rapidi</span>
-            <span className="text-xs text-stone-400">— clicca per precompilare il form</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map((s, i) => (
+      {(() => {
+        const visibleSuggestions = suggestions.filter(s => !hiddenSuggestions.includes(s.name))
+        if (visibleSuggestions.length === 0 || showForm) return null
+        return (
+          <div className="bg-stone-50 rounded-xl border border-stone-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-stone-500" />
+                <span className="text-sm font-medium text-stone-700">Suggerimenti rapidi</span>
+                <span className="text-xs text-stone-400">— clicca per precompilare</span>
+              </div>
               <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setForm({ ...emptyForm, name: s.name, durationMinutes: s.durationMinutes, sortOrder: services.length + 1 })
-                  setDurationStr(String(s.durationMinutes))
-                  setPriceStr('0'); setCleanupStr('0'); setBufferStr('0')
-                  setEditingId(null)
-                  setShowForm(true)
-                  setError('')
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-700 text-sm font-medium hover:bg-stone-900 hover:text-white hover:border-stone-900 transition-colors"
+                onClick={dismissAllSuggestions}
+                className="flex items-center gap-1 text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                title="Nascondi suggerimenti"
               >
-                <Plus className="w-3.5 h-3.5" />
-                {s.name} <span className="text-stone-400">({s.durationMinutes} min)</span>
+                <X className="w-3.5 h-3.5" />
+                Nascondi
               </button>
-            ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {visibleSuggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setForm({ ...emptyForm, name: s.name, durationMinutes: s.durationMinutes, sortOrder: services.length + 1 })
+                    setDurationStr(String(s.durationMinutes))
+                    setPriceStr('0'); setCleanupStr('0'); setBufferStr('0')
+                    setEditingId(null)
+                    setShowForm(true)
+                    setError('')
+                  }}
+                  className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-700 text-sm font-medium hover:bg-stone-900 hover:text-white hover:border-stone-900 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {s.name} <span className="text-stone-400 group-hover:text-stone-300">({s.durationMinutes} min)</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Services list */}
       <div className="space-y-2">

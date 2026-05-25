@@ -1,79 +1,119 @@
-/**
- * Static suggestion map for quick service creation.
- * Each entry maps an activity type ID to an array of suggested services
- * with a default name and duration in minutes.
- * The price is intentionally omitted — the admin fills it in.
- */
 export interface ServiceSuggestion {
   name: string
   durationMinutes: number
 }
 
 export const SERVICE_SUGGESTIONS: Record<string, ServiceSuggestion[]> = {
-  ESTETICA_BEAUTY: [
-    { name: 'Manicure', durationMinutes: 30 },
-    { name: 'Pulizia Viso', durationMinutes: 45 },
-    { name: 'Ceretta Totale', durationMinutes: 60 },
-    { name: 'Pedicure', durationMinutes: 45 },
+  // 🩺 MEDICI & SALUTE
+  ODONTOIATRA: [
+    { name: 'Visita di Controllo', durationMinutes: 30 },
+    { name: 'Igiene Dentale', durationMinutes: 45 },
+    { name: 'Otturazione', durationMinutes: 45 },
   ],
+  IGIENISTA_DENTALE: [
+    { name: 'Seduta di Igiene Standard', durationMinutes: 45 },
+    { name: 'Sbiancamento Dentale', durationMinutes: 60 },
+  ],
+  FISIOTERAPIA_OSTEOPATA: [
+    { name: 'Valutazione Iniziale', durationMinutes: 60 },
+    { name: 'Seduta di Fisioterapia', durationMinutes: 45 },
+    { name: 'Trattamento Osteopatico', durationMinutes: 50 },
+  ],
+  MEDICO_BASE: [
+    { name: 'Visita Ambulatoriale', durationMinutes: 20 },
+    { name: 'Certificato Medico', durationMinutes: 15 },
+  ],
+  DERMATOLOGO: [
+    { name: 'Visita Specialistica', durationMinutes: 45 },
+    { name: 'Controllo Nei', durationMinutes: 30 },
+  ],
+  PSICOLOGO: [
+    { name: 'Seduta di Consulenza', durationMinutes: 50 },
+    { name: 'Primo Colloquio', durationMinutes: 60 },
+  ],
+  NUTRIZIONISTA: [
+    { name: 'Prima Visita + Piano Alimentare', durationMinutes: 60 },
+    { name: 'Controllo Percorso', durationMinutes: 30 },
+  ],
+  // 💈 CURA DELLA PERSONA
   SALONI_CAPELLI: [
     { name: 'Taglio & Piega', durationMinutes: 45 },
     { name: 'Colore', durationMinutes: 90 },
-    { name: 'Trattamento Keratina', durationMinutes: 120 },
-    { name: 'Rasatura Barba', durationMinutes: 30 },
+    { name: 'Trattamento Rigenerante', durationMinutes: 60 },
   ],
-  BENESSERE_SPA: [
+  BARBERIA: [
+    { name: 'Taglio Capelli Uomo', durationMinutes: 30 },
+    { name: 'Rasatura Barba Rito', durationMinutes: 30 },
+    { name: 'Taglio + Barba', durationMinutes: 60 },
+  ],
+  CENTRO_ESTETICO: [
+    { name: 'Manicure Semipermanente', durationMinutes: 45 },
+    { name: 'Pedicure Curativo', durationMinutes: 50 },
+    { name: 'Ceretta Totale', durationMinutes: 60 },
+    { name: 'Pulizia Viso', durationMinutes: 60 },
+  ],
+  MASSAGGI_OLISTICO: [
     { name: 'Massaggio Rilassante', durationMinutes: 60 },
     { name: 'Massaggio Decontratturante', durationMinutes: 50 },
-    { name: 'Percorso SPA Coppia', durationMinutes: 90 },
-    { name: 'Trattamento Corpo', durationMinutes: 60 },
   ],
   TATUAGGI_PIERCING: [
-    { name: 'Consulenza Progetto', durationMinutes: 30 },
-    { name: 'Sessione Tatuaggio Piccola', durationMinutes: 60 },
-    { name: 'Sessione Tatuaggio Media', durationMinutes: 180 },
-    { name: 'Applicazione Piercing', durationMinutes: 30 },
+    { name: 'Consulenza Disegno', durationMinutes: 30 },
+    { name: 'Sessione Tattoo Piccola', durationMinutes: 60 },
+    { name: 'Applicazione Piercing', durationMinutes: 20 },
   ],
-  AUTO_MOTO: [
-    { name: 'Cambio Gomme Stagionale', durationMinutes: 30 },
+  ONICOTECNICA: [
+    { name: 'Ricostruzione Gel', durationMinutes: 90 },
+    { name: 'Refill Gel', durationMinutes: 60 },
+  ],
+  // 🚗 MOTORI & LOGISTICA
+  AUTOFFICINA: [
     { name: 'Tagliando Auto', durationMinutes: 90 },
     { name: 'Diagnosi Elettronica', durationMinutes: 45 },
-    { name: 'Lavaggio Completo', durationMinutes: 60 },
+    { name: 'Cambio Pastiglie Freni', durationMinutes: 60 },
   ],
-  FISIOTERAPIA_MEDICA: [
-    { name: 'Prima Visita Specialistica', durationMinutes: 60 },
-    { name: 'Seduta Fisioterapia', durationMinutes: 45 },
-    { name: 'Trattamento Osteopatico', durationMinutes: 50 },
-    { name: 'Terapia Riabilitativa', durationMinutes: 45 },
+  GOMMISTA: [
+    { name: 'Cambio Gomme Stagionale', durationMinutes: 30 },
+    { name: 'Convergenza ed Equilibratura', durationMinutes: 30 },
   ],
-  PERSONAL_TRAINER_SPORT: [
-    { name: 'Valutazione Iniziale', durationMinutes: 60 },
-    { name: 'Sessione Personal Coaching', durationMinutes: 60 },
-    { name: 'Consulenza Alimentare', durationMinutes: 45 },
-    { name: 'Lezione Privata', durationMinutes: 60 },
+  LAVAGGIO_AUTO: [
+    { name: 'Lavaggio Interno/Esterno', durationMinutes: 60 },
+    { name: 'Igienizzazione Abitacolo', durationMinutes: 45 },
   ],
-  STUDI_LEALI_CONSULENZA: [
-    { name: 'Consulenza Conoscitiva', durationMinutes: 45 },
-    { name: 'Esame Pratica / Documenti', durationMinutes: 60 },
-    { name: 'Sessione Strategica', durationMinutes: 90 },
+  // ⚖️ CONSULENZA & LEGALE
+  STUDIO_LEGALE: [
+    { name: 'Consulenza Legale', durationMinutes: 45 },
+    { name: 'Esame Pratica/Documenti', durationMinutes: 60 },
   ],
-  PET_GROOMING: [
-    { name: 'Lavaggio & Asciugatura', durationMinutes: 45 },
+  COMMERCIALISTA: [
+    { name: 'Consulenza Fiscale', durationMinutes: 45 },
+    { name: 'Dichiarazione dei Redditi', durationMinutes: 60 },
+  ],
+  AGENZIA_IMMOBILIARE: [
+    { name: 'Valutazione Immobile', durationMinutes: 60 },
+    { name: 'Appuntamento di Visita', durationMinutes: 45 },
+  ],
+  // 🐶 ANIMALI
+  TOELETTATURA: [
+    { name: 'Lavaggio + Asciugatura', durationMinutes: 45 },
     { name: 'Tosatura & Taglio', durationMinutes: 60 },
-    { name: 'Taglio Unghie & Pulizia', durationMinutes: 20 },
   ],
-  SCUOLE_CORSI: [
-    { name: 'Lezione Individuale', durationMinutes: 60 },
+  VETERINARIO: [
+    { name: 'Visita di Controllo', durationMinutes: 30 },
+    { name: 'Vaccinazione', durationMinutes: 15 },
+  ],
+  // 📚 ISTRUZIONE & SPORT
+  INSEGNANTE_PRIVATO: [
     { name: 'Ripetizione / Tutoraggio', durationMinutes: 60 },
-    { name: 'Verifica di Livello', durationMinutes: 45 },
+    { name: 'Lezione Singola Lingua', durationMinutes: 60 },
   ],
-  // ALTRO → empty array → no suggestions shown
+  PERSONAL_TRAINER: [
+    { name: 'Allenamento Individuale', durationMinutes: 60 },
+    { name: 'Check Corporeo Anamnesi', durationMinutes: 45 },
+  ],
+  // ALTRO
   ALTRO: [],
 }
 
-/**
- * Returns the suggestions for a given activity type, or empty if not found.
- */
 export function getSuggestions(activityType: string): ServiceSuggestion[] {
   return SERVICE_SUGGESTIONS[activityType] ?? []
 }

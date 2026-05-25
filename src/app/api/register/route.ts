@@ -4,9 +4,13 @@ import { hashPassword } from '@/lib/auth'
 import { z } from 'zod'
 
 const VALID_ACTIVITY_TYPES = [
-  'ESTETICA_BEAUTY','SALONI_CAPELLI','BENESSERE_SPA','TATUAGGI_PIERCING',
-  'AUTO_MOTO','FISIOTERAPIA_MEDICA','PERSONAL_TRAINER_SPORT','STUDI_LEALI_CONSULENZA',
-  'PET_GROOMING','SCUOLE_CORSI','ALTRO',
+  'ODONTOIATRA','IGIENISTA_DENTALE','FISIOTERAPIA_OSTEOPATA','MEDICO_BASE','DERMATOLOGO','PSICOLOGO','NUTRIZIONISTA',
+  'SALONI_CAPELLI','BARBERIA','CENTRO_ESTETICO','MASSAGGI_OLISTICO','TATUAGGI_PIERCING','ONICOTECNICA',
+  'AUTOFFICINA','GOMMISTA','LAVAGGIO_AUTO',
+  'STUDIO_LEGALE','COMMERCIALISTA','AGENZIA_IMMOBILIARE',
+  'TOELETTATURA','VETERINARIO',
+  'INSEGNANTE_PRIVATO','PERSONAL_TRAINER',
+  'ALTRO',
 ]
 
 const registerSchema = z.object({
@@ -90,6 +94,15 @@ export async function POST(request: NextRequest) {
   try {
     await ensureDbSchema()
     const body = await request.json()
+
+    // Check password confirmation
+    if (body.confirmPassword && body.password !== body.confirmPassword) {
+      return NextResponse.json(
+        { error: 'Le password non coincidono' },
+        { status: 400 }
+      )
+    }
+
     const data = registerSchema.parse(body)
 
     // Check slug availability
