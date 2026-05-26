@@ -173,10 +173,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send welcome email (fire-and-forget — don't block the response)
-    sendWelcomeEmail(data.fullName, data.businessName, data.slug, data.email).catch((err) => {
+    // Send welcome email (must await — Vercel kills pending promises after response)
+    try {
+      await sendWelcomeEmail(data.fullName, data.businessName, data.slug, data.email)
+    } catch (err) {
       console.error('[register] Failed to send welcome email:', err)
-    })
+    }
 
     return NextResponse.json(
       {

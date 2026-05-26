@@ -98,7 +98,7 @@ export async function sendWelcomeEmail(ownerName: string, businessName: string, 
   }
   try {
     const result = await r.emails.send({
-      from: `${getFromName()} <support@intelligenda.it>`,
+      from: `${getFromName()} <${getFromAddress()}>`,
       to: ownerEmail,
       subject: `Benvenuto su IntelliGenda — ${businessName} è pronto!`,
       html: renderWelcomeEmail(ownerName, businessName, slug),
@@ -124,7 +124,7 @@ export async function sendPasswordResetEmail(ownerName: string, ownerEmail: stri
   const resetUrl = `https://${slug}.intelligenda.it/admin/reset-password?token=${resetToken}`
   try {
     const result = await r.emails.send({
-      from: `${getFromName()} <support@intelligenda.it>`,
+      from: `${getFromName()} <${getFromAddress()}>`,
       to: ownerEmail,
       subject: 'Reimposta la tua password — IntelliGenda',
       html: renderPasswordResetEmail(ownerName, resetUrl),
