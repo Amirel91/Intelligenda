@@ -673,7 +673,7 @@ export default function LandingPage() {
 
       {/* ==================== FOOTER ==================== */}
       <footer className="py-8 text-center border-t border-stone-100">
-        <p className="text-xs text-stone-400">&copy; {new Date().getFullYear()} IntelliGenda</p>
+        <p className="text-xs text-stone-400">&copy; 2026 IntelliGenda &egrave; un prodotto di <a href="https://www.mecalab.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-stone-600 transition-colors">MecaLab</a> &mdash; Tutti i diritti riservati.</p>
         <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
           <a
             href="/termini"

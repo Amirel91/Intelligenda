@@ -162,7 +162,7 @@ export default function TerminiPage() {
       {/* Footer */}
       <footer className="py-8 text-center border-t border-stone-100">
         <p className="text-xs text-stone-400">
-          &copy; {new Date().getFullYear()} IntelliGenda &mdash; Tutti i diritti riservati
+          &copy; 2026 IntelliGenda &egrave; un prodotto di <a href="https://www.mecalab.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-stone-600 transition-colors">MecaLab</a> &mdash; Tutti i diritti riservati.
         </p>
       </footer>
     </div>
