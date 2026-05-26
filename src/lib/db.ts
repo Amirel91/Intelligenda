@@ -179,6 +179,10 @@ const MIGRATION_SQL = [
   `ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "remindedAt" TIMESTAMP(3)`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "shopDescription" TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "features" TEXT[] DEFAULT ARRAY[]::TEXT[]`,
+  // ============ PASSWORD RESET MIGRATIONS ============
+  `ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "resetToken" TEXT`,
+  `ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "resetTokenExpires" TIMESTAMP(3)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "AdminUser_resetToken_key" ON "AdminUser"("resetToken") WHERE "resetToken" IS NOT NULL`,
 ]
 
 /**

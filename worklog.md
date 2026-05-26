@@ -43,3 +43,30 @@ Stage Summary:
 - Files created: src/app/admin/clienti/page.tsx, src/app/api/clients/route.ts
 - Files modified: src/app/admin/calendario/page.tsx, src/app/admin/layout.tsx
 - All 4 requested features verified complete (2 were already implemented)
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix missing welcome email and "Password dimenticata?" link
+
+Work Log:
+- Investigated login page: confirmed "Password dimenticata?" link was never added
+- Investigated register route: confirmed sendWelcomeEmail() call was never added
+- Investigated email.ts: confirmed sendWelcomeEmail() and sendPasswordResetEmail() functions were never created
+- Verified no forgot-password/reset-password API routes or pages existed
+- Added resetToken/resetTokenExpires fields to AdminUser model in schema.prisma
+- Added 3 migration DDL statements in db.ts for the new columns
+- Created sendWelcomeEmail() and sendPasswordResetEmail() in email.ts with HTML templates
+- Added sendWelcomeEmail() fire-and-forget call in /api/register after tenant creation
+- Created POST /api/auth/forgot-password with anti-enumeration pattern
+- Created POST /api/auth/reset-password with token validation + password hash
+- Created /admin/forgot-password page with email form + success state
+- Created /admin/reset-password page with new password form + token validation
+- Added "Password dimenticata?" link to /admin/login page (below the Accedi button)
+- Generated Prisma client, clean build with 52 routes
+
+Stage Summary:
+- All previous session edits were lost (never actually applied) — rebuilt everything from scratch
+- Files created: forgot-password/route.ts, reset-password/route.ts, forgot-password/page.tsx, reset-password/page.tsx
+- Files modified: schema.prisma, db.ts, email.ts, register/route.ts, login/page.tsx
+- Build passes cleanly with 52 routes including 4 new password reset routes

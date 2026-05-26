@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema } from '@/lib/db'
 import { hashPassword } from '@/lib/auth'
+import { sendWelcomeEmail } from '@/lib/email'
 import { z } from 'zod'
 
 const VALID_ACTIVITY_TYPES = [
@@ -171,6 +172,11 @@ export async function POST(request: NextRequest) {
         `[register] Tenant "${data.slug}" created but domain not registered on Vercel: ${domainResult.msg}`
       )
     }
+
+    // Send welcome email (fire-and-forget — don't block the response)
+    sendWelcomeEmail(data.fullName, data.businessName, data.slug, data.email).catch((err) => {
+      console.error('[register] Failed to send welcome email:', err)
+    })
 
     return NextResponse.json(
       {
