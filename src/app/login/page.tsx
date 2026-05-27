@@ -143,8 +143,18 @@ export default function GlobalLoginPage() {
           </button>
         </form>
 
+        {/* Forgot password */}
+        <div className="text-center mt-4">
+          <a
+            href="/admin/forgot-password"
+            className="text-sm text-stone-500 hover:text-stone-800 font-medium transition-colors cursor-pointer"
+          >
+            Hai dimenticato la password?
+          </a>
+        </div>
+
         {/* Footer */}
-        <div className="text-center mt-6 space-y-3">
+        <div className="text-center mt-3 space-y-3">
           <button
             onClick={() => router.push('/landing')}
             className="inline-flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors"
