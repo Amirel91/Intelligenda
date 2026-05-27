@@ -183,6 +183,8 @@ const MIGRATION_SQL = [
   `ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "resetToken" TEXT`,
   `ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "resetTokenExpires" TIMESTAMP(3)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "AdminUser_resetToken_key" ON "AdminUser"("resetToken") WHERE "resetToken" IS NOT NULL`,
+  // ============ OWNER EMAIL UNIQUE (partial — skip empty strings) ============
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Tenant_ownerEmail_key" ON "Tenant"("ownerEmail") WHERE "ownerEmail" != ''`,
   // ============ PLATFORM SETTINGS TABLE ============
   `CREATE TABLE IF NOT EXISTS "PlatformSetting" (
     "key" TEXT NOT NULL PRIMARY KEY,

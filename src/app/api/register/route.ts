@@ -106,9 +106,18 @@ export async function POST(request: NextRequest) {
 
     const data = registerSchema.parse(body)
 
+    // Check email uniqueness
+    const existingEmail = await db.tenant.findFirst({ where: { ownerEmail: data.email } })
+    if (existingEmail) {
+      return NextResponse.json(
+        { error: 'Questa email è già registrata. Se hai già un account, accedi dalla pagina di login.' },
+        { status: 409 }
+      )
+    }
+
     // Check slug availability
-    const existing = await db.tenant.findUnique({ where: { slug: data.slug } })
-    if (existing) {
+    const existingSlug = await db.tenant.findUnique({ where: { slug: data.slug } })
+    if (existingSlug) {
       return NextResponse.json(
         { error: 'Questo indirizzo è già occupato. Scegline un altro.' },
         { status: 409 }
