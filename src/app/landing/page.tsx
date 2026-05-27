@@ -285,48 +285,90 @@ export default function LandingPage() {
             Accedi alla tua agenda&nbsp;&rarr;
           </a>
         </div>
+        <a
+          href="#come-funziona"
+          className="mt-6 inline-flex items-center gap-1 text-stone-400 hover:text-stone-600 text-sm transition-colors"
+        >
+          Scopri come funziona&nbsp;&darr;
+        </a>
+      </section>
+
+      {/* ==================== COME FUNZIONA ==================== */}
+      <section id="come-funziona" className="py-24 md:py-32 px-6 scroll-mt-14">
+        <h2 className="text-3xl font-extrabold text-stone-900 tracking-tight mb-12 text-center">
+          Tre passi. Automazione totale.
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {/* Step 01 */}
+          <div className="bg-stone-50 border border-stone-100 rounded-3xl p-8 md:p-10">
+            <span className="text-stone-400 font-mono text-sm mb-2 block">01</span>
+            <h3 className="text-lg font-semibold text-stone-900 mb-3">Configura.</h3>
+            <p className="text-stone-500 text-sm leading-relaxed">
+              Scegli la tua professione. IntelliGenda ti suggerisce subito i tuoi servizi di punta con durate predefinite.
+              Attiva le tue postazioni, imposta i tuoi orari e la tua agenda è pronta in 30 secondi.
+            </p>
+          </div>
+          {/* Step 02 */}
+          <div className="bg-stone-50 border border-stone-100 rounded-3xl p-8 md:p-10">
+            <span className="text-stone-400 font-mono text-sm mb-2 block">02</span>
+            <h3 className="text-lg font-semibold text-stone-900 mb-3">Condividi.</h3>
+            <p className="text-stone-500 text-sm leading-relaxed">
+              Scarica il tuo QR Code unico per la vetrina del negozio o inserisci il tuo link dedicato sui profili
+              Instagram, Facebook e Google Maps. I tuoi clienti sapranno sempre dove trovarti, anche quando sei chiuso.
+            </p>
+          </div>
+          {/* Step 03 */}
+          <div className="bg-stone-50 border border-stone-100 rounded-3xl p-8 md:p-10">
+            <span className="text-stone-400 font-mono text-sm mb-2 block">03</span>
+            <h3 className="text-lg font-semibold text-stone-900 mb-3">Ricevi.</h3>
+            <p className="text-stone-500 text-sm leading-relaxed">
+              Il cliente prenota dallo smartphone in 3 click, senza registrazioni o password. L&apos;algoritmo smart calcola
+              i tempi dei trattamenti, assegna la poltrona libera e aggiunge in automatico le tue pause di pulizia.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* ==================== BENTO GRID — VALORI ==================== */}
       <section className="py-24 md:py-32 px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {/* Card 1 — Algoritmo */}
+          {/* Card 1 — Ottimizzazione matematica */}
           <div className="bg-stone-50 border border-stone-100 rounded-3xl p-8 md:p-10">
             <div className="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center mb-6">
               <Brain className="w-5 h-5 text-stone-900" />
             </div>
             <h3 className="text-lg font-semibold text-stone-900 mb-3">
-              Niente buchi, niente sovrapposizioni.
+              Ottimizzazione matematica.
             </h3>
             <p className="text-stone-500 text-sm leading-relaxed">
-              Il sistema calcola la durata totale dei servizi e trova l&apos;incastro perfetto sul calendario.
-              Ogni slot e ottimizzato al millimetro, senza intervalli morti tra un appuntamento e l&apos;altro.
+              L&apos;algoritmo predittivo calcola la durata totale dei trattamenti e trova l&apos;incastro perfetto sul calendario delle tue postazioni.
+              Ogni slot è ottimizzato al millimetro, azzerando i tempi morti e i buchi nell&apos;agenda.
             </p>
           </div>
-          {/* Card 2 — Zero barriere */}
+          {/* Card 2 — Nessun ostacolo */}
           <div className="bg-stone-50 border border-stone-100 rounded-3xl p-8 md:p-10">
             <div className="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center mb-6">
               <Smartphone className="w-5 h-5 text-stone-900" />
             </div>
             <h3 className="text-lg font-semibold text-stone-900 mb-3">
-              Zero barriere.
+              Nessun ostacolo.
             </h3>
             <p className="text-stone-500 text-sm leading-relaxed">
-              Nessuna app da scaricare, nessuna password da ricordare per i tuoi clienti.
-              Prenotano in 3 click direttamente dal loro smartphone, dal tuo link o dal QR Code in vetrina.
+              Nessuna applicazione da scaricare, nessuna password da ricordare o recuperare per i tuoi clienti.
+              Prenotano in meno di un minuto direttamente dallo smartphone, riducendo al minimo la resistenza all&apos;acquisto.
             </p>
           </div>
-          {/* Card 3 — Sotto controllo */}
+          {/* Card 3 — Controllo centralizzato */}
           <div className="bg-stone-50 border border-stone-100 rounded-3xl p-8 md:p-10">
             <div className="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center mb-6">
               <LayoutDashboard className="w-5 h-5 text-stone-900" />
             </div>
             <h3 className="text-lg font-semibold text-stone-900 mb-3">
-              Sotto il tuo controllo.
+              Controllo centralizzato.
             </h3>
             <p className="text-stone-500 text-sm leading-relaxed">
-              Gestisci poltrone, collaboratori, orari e ferie da un unico pannello installabile sul tuo telefono come un&apos;app nativa.
-              Tutto quello che serve, a portata di mano.
+              Gestisci più poltrone, collaboratori, orari speciali e periodi di ferie da un unico pannello installabile sul tuo telefono.
+              In più, IntelliGenda crea in automatico l&apos;archivio storico dei tuoi clienti con il loro fatturato e le ultime visite.
             </p>
           </div>
         </div>
