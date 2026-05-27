@@ -281,7 +281,7 @@ export default function LandingPage() {
         </div>
         <a
           href="#come-funziona"
-          className="mt-8 inline-flex items-center gap-1 text-stone-400 hover:text-stone-600 text-sm transition-colors"
+          className="mt-10 inline-flex items-center gap-1 text-stone-400 hover:text-stone-600 text-sm transition-colors"
         >
           Scopri come funziona&nbsp;&darr;
         </a>
@@ -416,7 +416,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 bg-stone-50 rounded-3xl p-6 sm:p-8 border border-stone-100">
             {serverError && (
               <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm text-center flex items-center justify-center gap-2">
                 <X className="w-4 h-4 shrink-0" />
