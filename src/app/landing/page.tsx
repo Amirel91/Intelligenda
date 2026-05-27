@@ -264,12 +264,12 @@ export default function LandingPage() {
       {/* ==================== HERO ==================== */}
       <section className="pt-32 pb-24 md:pt-48 md:pb-36 flex flex-col items-center text-center px-6">
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-stone-900 leading-none max-w-4xl">
-          Il tuo tempo.
+          Il tuo tempo,
           <br />
-          <span className="text-stone-400">Senza interruzioni.</span>
+          <span className="text-stone-400">senza interruzioni.</span>
         </h1>
         <p className="text-xl text-stone-500 max-w-2xl mx-auto mt-6 font-normal leading-relaxed">
-          IntelliGenda automatizza le prenotazioni della tua attivita. L&apos;algoritmo smart incastra gli appuntamenti al millimetro. Tu ti concentri solo sul tuo lavoro.
+          IntelliGenda automatizza le prenotazioni della tua attivit&agrave;. L&apos;algoritmo smart incastra gli appuntamenti al millimetro. Tu ti concentri solo sul tuo lavoro.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
