@@ -14,6 +14,11 @@ function getResend(): Resend | null {
 
 function getFromAddress(): string { return process.env.EMAIL_FROM || 'noreply@intelligenda.it' }
 function getFromName(): string { return 'IntelliGenda' }
+// Standard headers for inbox trust (DMARC/SPF best practices)
+const EMAIL_HEADERS = {
+  'List-Unsubscribe': '<mailto:unsubscribe@intelligenda.it>',
+  'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+}
 function formatDate(date: Date | string): string { const d = typeof date === 'string' ? parseISO(date) : date; return format(d, "d MMMM yyyy", { locale: it }) }
 function formatTime(date: Date | string): string { const d = typeof date === 'string' ? parseISO(date) : date; return format(d, "HH:mm") }
 function formatPrice(price: number): string { return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(price) }
@@ -62,7 +67,7 @@ export async function sendBookingConfirmationEmails(b: EmailBookingData, s: Shop
   const fromAddr = `${getFromName()} <${getFromAddress()}>`
   const cu = slug ? `https://${slug}.intelligenda.it/prenota/cancella/${b.bookingId}` : `${process.env.NEXT_PUBLIC_BASE_URL || 'https://intelligenda.it'}/prenota/cancella/${b.bookingId}`
   const p: Promise<unknown>[] = []
-  if (b.customerEmail) p.push(r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Prenotazione confermata — ${s.shopName}`, html: renderBookingConfirmationCustomer(b, s, cu) }))
+  if (b.customerEmail) p.push(r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Prenotazione confermata — ${s.shopName}`, html: renderBookingConfirmationCustomer(b, s, cu), headers: EMAIL_HEADERS }))
   if (s.shopEmail) p.push(r.emails.send({ from: fromAddr, to: s.shopEmail, subject: `Nuova prenotazione — ${b.customerName} ${b.customerSurname}`, html: renderBookingConfirmationAdmin(b, s) }))
   await Promise.allSettled(p)
 }
@@ -71,7 +76,7 @@ export async function sendCancellationEmails(b: EmailBookingData, s: ShopData): 
   const r = getResend(); if (!r) return
   const fromAddr = `${getFromName()} <${getFromAddress()}>`
   const p: Promise<unknown>[] = []
-  if (b.customerEmail) p.push(r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Prenotazione annullata — ${s.shopName}`, html: renderCancellationCustomer(b, s) }))
+  if (b.customerEmail) p.push(r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Prenotazione annullata — ${s.shopName}`, html: renderCancellationCustomer(b, s), headers: EMAIL_HEADERS }))
   if (s.shopEmail) p.push(r.emails.send({ from: fromAddr, to: s.shopEmail, subject: `Prenotazione annullata — ${b.customerName} ${b.customerSurname}`, html: renderCancellationAdmin(b, s) }))
   await Promise.allSettled(p)
 }
@@ -80,7 +85,7 @@ export async function sendReminderEmail(b: EmailBookingData, s: ShopData, slug: 
   const r = getResend(); if (!r || !b.customerEmail) return
   const fromAddr = `${getFromName()} <${getFromAddress()}>`
   const cu = slug ? `https://${slug}.intelligenda.it/prenota/cancella/${b.bookingId}` : `${process.env.NEXT_PUBLIC_BASE_URL || 'https://intelligenda.it'}/prenota/cancella/${b.bookingId}`
-  try { await r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Promemoria — ${s.shopName}`, html: renderReminder(b, s, cu) }) } catch {}
+  try { await r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Promemoria — ${s.shopName}`, html: renderReminder(b, s, cu), headers: EMAIL_HEADERS }) } catch {}
 }
 
 // ============ WELCOME EMAIL ============
@@ -141,6 +146,7 @@ export async function sendWelcomeEmail(ownerName: string, businessName: string, 
       to: ownerEmail,
       subject: customSubject || `Benvenuto su IntelliGenda — ${businessName} è pronto!`,
       html: renderWelcomeEmail(ownerName, businessName, slug, customBody),
+      headers: EMAIL_HEADERS,
     })
     console.log('[sendWelcomeEmail] Result:', result)
   } catch (err) {
@@ -167,6 +173,7 @@ export async function sendPasswordResetEmail(ownerName: string, ownerEmail: stri
       to: ownerEmail,
       subject: 'Reimposta la tua password — IntelliGenda',
       html: renderPasswordResetEmail(ownerName, resetUrl),
+      headers: EMAIL_HEADERS,
     })
     console.log('[sendPasswordResetEmail] Result:', result)
   } catch (err) {
