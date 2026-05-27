@@ -25,6 +25,7 @@ const registerSchema = z.object({
   email: z.string().email('Email non valida'),
   password: z.string().min(6, 'Minimo 6 caratteri'),
   activityType: z.string().default('ALTRO'),
+  couponCode: z.string().optional(),
 })
 
 const DOMAIN_BASE = 'intelligenda.it'
@@ -124,7 +125,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate coupon code if provided
+    let couponExtraDays = 0
+    let couponDiscount = 0
+    if (data.couponCode) {
+      const coupon = await db.coupon.findUnique({ where: { code: data.couponCode.toUpperCase().trim() } })
+      if (!coupon) {
+        return NextResponse.json({ error: 'Codice coupon non valido' }, { status: 400 })
+      }
+      if (!coupon.active) {
+        return NextResponse.json({ error: 'Questo codice coupon non è più attivo' }, { status: 400 })
+      }
+      if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+        return NextResponse.json({ error: 'Questo codice coupon è scaduto' }, { status: 400 })
+      }
+      if (coupon.usedByTenantId) {
+        return NextResponse.json({ error: 'Questo codice coupon è già stato utilizzato' }, { status: 400 })
+      }
+      couponExtraDays = coupon.extraTrialDays || 0
+      couponDiscount = coupon.discountAmount || 0
+    }
+
     // Create tenant (starts with trial subscription)
+    const trialEndDate = couponExtraDays > 0
+      ? new Date(Date.now() + (30 + couponExtraDays) * 24 * 60 * 60 * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
     const tenant = await db.tenant.create({
       data: {
         slug: data.slug,
@@ -133,8 +159,17 @@ export async function POST(request: NextRequest) {
         ownerEmail: data.email,
         active: true,
         subscriptionStatus: 'trial',
+        planEndDate: trialEndDate,
       },
     })
+
+    // Mark coupon as used if one was applied
+    if (data.couponCode) {
+      await db.coupon.update({
+        where: { code: data.couponCode.toUpperCase().trim() },
+        data: { usedByTenantId: tenant.id, usedAt: new Date(), active: false },
+      })
+    }
 
     // Resolve activity type (fallback to ALTRO if invalid)
     const activityType = VALID_ACTIVITY_TYPES.includes(data.activityType)

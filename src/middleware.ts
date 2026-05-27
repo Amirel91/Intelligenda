@@ -2,12 +2,91 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const MAIN_DOMAINS = ['localhost:3000', 'localhost', 'intelligenda.it', 'www.intelligenda.it']
 
-export function middleware(request: NextRequest) {
+// Paths that are ALWAYS accessible (never blocked by maintenance or IP ban)
+const EXCLUDED_PATHS = ['/superadmin', '/superadmin/login', '/api/superadmin', '/api/auth', '/api/internal']
+
+function isExcludedPath(pathname: string): boolean {
+  return EXCLUDED_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
+}
+
+// Simple in-memory cache (per-edge-instance, ~30s TTL)
+let maintenanceCache: { enabled: boolean; ts: number } | null = null
+let bannedIPsCache: { ips: string[]; ts: number } | null = null
+const CACHE_TTL = 30_000 // 30 seconds
+
+async function checkMaintenanceStatus(): Promise<boolean> {
+  const now = Date.now()
+  if (maintenanceCache && now - maintenanceCache.ts < CACHE_TTL) {
+    return maintenanceCache.enabled
+  }
+  try {
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000'
+    const res = await fetch(`${baseUrl}/api/internal/maintenance-status`, {
+      headers: { 'x-internal-check': 'true' },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      maintenanceCache = { enabled: data.maintenance === true, ts: now }
+      return maintenanceCache.enabled
+    }
+  } catch { /* fallback to cached value */ }
+  return maintenanceCache?.enabled ?? false
+}
+
+async function checkIPBanned(ip: string): Promise<boolean> {
+  if (!ip || ip === 'unknown') return false
+  const now = Date.now()
+  if (bannedIPsCache && now - bannedIPsCache.ts < CACHE_TTL) {
+    return bannedIPsCache.ips.includes(ip)
+  }
+  try {
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000'
+    const res = await fetch(`${baseUrl}/api/internal/banned-ips`, {
+      headers: { 'x-internal-check': 'true' },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      bannedIPsCache = { ips: Array.isArray(data.ips) ? data.ips : [], ts: now }
+      return bannedIPsCache.ips.includes(ip)
+    }
+  } catch { /* fallback */ }
+  return bannedIPsCache?.ips.includes(ip) ?? false
+}
+
+export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
   const domain = hostname.split(':')[0]
   const url = request.nextUrl.clone()
   const isVercelDomain = domain.endsWith('.vercel.app')
 
+  // Get client IP (Vercel headers)
+  const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || ''
+
+  // ---- IP BAN CHECK (skip for excluded paths) ----
+  if (!isExcludedPath(url.pathname) && clientIP) {
+    const banned = await checkIPBanned(clientIP)
+    if (banned) {
+      return new NextResponse('Access Denied', { status: 403 })
+    }
+  }
+
+  // ---- MAINTENANCE MODE CHECK (skip for excluded paths) ----
+  if (!isExcludedPath(url.pathname)) {
+    const maintenance = await checkMaintenanceStatus()
+    if (maintenance) {
+      const maintenanceUrl = request.nextUrl.clone()
+      maintenanceUrl.pathname = '/manutenzione'
+      return NextResponse.rewrite(maintenanceUrl)
+    }
+  }
+
+  // ---- SUBDOMAIN ROUTING ----
   if (isVercelDomain && url.pathname.startsWith('/t/')) {
     const slug = url.pathname.split('/')[2]
     if (slug && slug.length > 0) {
@@ -54,4 +133,5 @@ export function middleware(request: NextRequest) {
   return response
 }
 
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] }
+// Exclude /api/internal/* from middleware to avoid infinite recursion
+export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|api/internal).*)'] }

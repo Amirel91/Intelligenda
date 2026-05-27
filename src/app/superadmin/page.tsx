@@ -22,6 +22,11 @@ import {
   ChevronUp,
   Mail,
   Save,
+  Eye,
+  Shield,
+  Ticket,
+  LayoutDashboard,
+  Wrench,
 } from 'lucide-react'
 import Link from 'next/link'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
@@ -61,11 +66,15 @@ interface TenantRow {
   bookingCount: number
   adminCount: number
   hasConfig: boolean
-  // Billing
   subscriptionStatus: string | null
   planEndDate: string | null
   cancelReason: string | null
   cancelledAt: string | null
+  // Churn monitoring
+  lastActivity: string | null
+  daysInactive: number
+  isAtRisk: boolean
+  isWarning: boolean
 }
 
 interface Stats {
@@ -74,6 +83,7 @@ interface Stats {
   suspendedTenants: number
   totalBookings: number
   monthlyRevenue: number
+  payingTenants?: number
 }
 
 // ==================== SUBSCRIPTION BADGE ====================
@@ -107,6 +117,29 @@ function SubscriptionBadge({ status, planEndDate }: { status: string | null; pla
   )
 }
 
+// ==================== TAB CONFIG ====================
+
+const tabs = [
+  { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'coupon' as const, label: 'Coupon', icon: Ticket },
+  { id: 'security' as const, label: 'Sicurezza', icon: Shield },
+  { id: 'churn' as const, label: 'Clienti a Rischio', icon: AlertTriangle },
+]
+
+// ==================== FORMATTING HELPERS ====================
+
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString('it-IT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const formatDateTime = (dateStr: string) => {
+  return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
 // ==================== PAGE ====================
 
 export default function SuperAdminDashboard() {
@@ -125,6 +158,25 @@ export default function SuperAdminDashboard() {
   const [emailEnabled, setEmailEnabled] = useState('true')
   const [emailSaving, setEmailSaving] = useState(false)
   const [emailSaved, setEmailSaved] = useState(false)
+
+  // ===== TAB STATE =====
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'coupon' | 'security' | 'churn'>('dashboard')
+
+  // ===== MAINTENANCE MODE STATE =====
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [maintenanceLoading, setMaintenanceLoading] = useState(false)
+
+  // ===== COUPON STATE =====
+  const [coupons, setCoupons] = useState<any[]>([])
+  const [couponForm, setCouponForm] = useState({ code: '', discountAmount: '', extraTrialDays: '', expiryDate: '' })
+  const [couponSaving, setCouponSaving] = useState(false)
+
+  // ===== SECURITY STATE =====
+  const [spamLogs, setSpamLogs] = useState<any[]>([])
+  const [bannedIPs, setBannedIPs] = useState<any[]>([])
+
+  // ===== CHURN STATE =====
+  const [churnData, setChurnData] = useState<any[]>([])
 
   // ==================== FETCH DATA ====================
 
@@ -196,10 +248,136 @@ export default function SuperAdminDashboard() {
     }
   }, [router])
 
+  // ===== MAINTENANCE MODE =====
+
+  const fetchMaintenance = useCallback(async () => {
+    try {
+      const res = await fetch('/api/superadmin/maintenance', { headers: authHeaders() })
+      if (res.ok) {
+        const d = await res.json()
+        setMaintenanceMode(d.maintenance)
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  const toggleMaintenance = async () => {
+    setMaintenanceLoading(true)
+    try {
+      const headers = authHeaders()
+      const res = await fetch('/api/superadmin/maintenance', { method: 'PUT', headers, body: JSON.stringify({ enabled: !maintenanceMode }) })
+      if (res.ok) setMaintenanceMode(!maintenanceMode)
+    } catch { /* ignore */ }
+    finally { setMaintenanceLoading(false) }
+  }
+
+  // ===== COUPON =====
+
+  const fetchCoupons = useCallback(async () => {
+    try {
+      const res = await fetch('/api/superadmin/coupons', { headers: authHeaders() })
+      if (res.ok) setCoupons(await res.json())
+    } catch { /* ignore */ }
+  }, [])
+
+  const handleCreateCoupon = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCouponSaving(true)
+    try {
+      const headers = authHeaders()
+      const res = await fetch('/api/superadmin/coupons', {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          code: couponForm.code,
+          discountAmount: couponForm.discountAmount || undefined,
+          extraTrialDays: couponForm.extraTrialDays || undefined,
+          expiryDate: couponForm.expiryDate || undefined,
+        }),
+      })
+      if (res.ok) {
+        setCouponForm({ code: '', discountAmount: '', extraTrialDays: '', expiryDate: '' })
+        fetchCoupons()
+      } else {
+        const d = await res.json()
+        alert(d.error || 'Errore')
+      }
+    } catch { alert('Errore di connessione') }
+    finally { setCouponSaving(false) }
+  }
+
+  // ===== SECURITY =====
+
+  const fetchSecurity = useCallback(async () => {
+    try {
+      const res = await fetch('/api/superadmin/security', { headers: authHeaders() })
+      if (res.ok) {
+        const data = await res.json()
+        setSpamLogs(data.spamLogs || [])
+        setBannedIPs(data.bannedIPs || [])
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  const handleBanIP = async (ipAddress: string) => {
+    if (!confirm(`Bannare permanentemente l'IP ${ipAddress}?`)) return
+    try {
+      const headers = authHeaders()
+      const res = await fetch('/api/superadmin/security', {
+        method: 'POST', headers,
+        body: JSON.stringify({ ipAddress, reason: 'Bannato dal SuperAdmin' }),
+      })
+      if (res.ok) fetchSecurity()
+      else { const d = await res.json(); alert(d.error || 'Errore') }
+    } catch { alert('Errore') }
+  }
+
+  const handleUnbanIP = async (id: string) => {
+    try {
+      const headers = authHeaders()
+      await fetch(`/api/superadmin/security?id=${id}`, { method: 'DELETE', headers })
+      fetchSecurity()
+    } catch { /* ignore */ }
+  }
+
+  // ===== CHURN =====
+
+  const fetchChurn = useCallback(async () => {
+    try {
+      const res = await fetch('/api/superadmin/churn', { headers: authHeaders() })
+      if (res.ok) setChurnData(await res.json())
+    } catch { /* ignore */ }
+  }, [])
+
+  // ===== IMPERSONATE =====
+
+  const handleImpersonate = async (tenant: TenantRow) => {
+    setActionLoading(`imp-${tenant.id}`)
+    try {
+      const headers = authHeaders()
+      const res = await fetch('/api/superadmin/impersonate', {
+        method: 'POST', headers,
+        body: JSON.stringify({ tenantId: tenant.id }),
+      })
+      if (!res.ok) { const d = await res.json(); alert(d.error || 'Errore'); return }
+      const data = await res.json()
+      const adminUrl = data.redirectUrl
+      window.open(`${adminUrl}/impersonate?token=${encodeURIComponent(data.token)}&redirect=/admin`, '_blank')
+    } catch { alert('Errore di connessione') }
+    finally { setActionLoading(null) }
+  }
+
+  // ==================== EFFECTS ====================
+
   useEffect(() => {
     fetchData()
     fetchEmailSettings()
-  }, [fetchData, fetchEmailSettings])
+    fetchMaintenance()
+  }, [fetchData, fetchEmailSettings, fetchMaintenance])
+
+  useEffect(() => {
+    if (activeTab === 'coupon') fetchCoupons()
+    if (activeTab === 'security') fetchSecurity()
+    if (activeTab === 'churn') fetchChurn()
+  }, [activeTab, fetchCoupons, fetchSecurity, fetchChurn])
 
   // ==================== EMAIL SETTINGS ====================
 
@@ -297,16 +475,6 @@ export default function SuperAdminDashboard() {
     t.ownerName.toLowerCase().includes(search.toLowerCase())
   )
 
-  // ==================== HELPERS ====================
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-  }
-
   // ==================== RENDER ====================
 
   if (loading) {
@@ -362,48 +530,29 @@ export default function SuperAdminDashboard() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {/* ============ STATS CARDS ============ */}
-        {stats && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-blue-600" />
-                </div>
-                <span className="text-sm text-stone-500">Attività iscritte</span>
-              </div>
-              <p className="text-3xl font-bold text-stone-900">{stats.totalTenants}</p>
-              <p className="text-xs text-stone-400 mt-1">
-                <span className="text-emerald-600">{stats.activeTenants} attive</span> · <span className="text-orange-600">{stats.suspendedTenants} sospese</span>
-              </p>
-            </div>
 
-            <div className="bg-white rounded-2xl border border-stone-200 p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-emerald-600" />
-                </div>
-                <span className="text-sm text-stone-500">Ricavi mensili stimati</span>
-              </div>
-              <p className="text-3xl font-bold text-stone-900">{stats.monthlyRevenue}€</p>
-              <p className="text-xs text-stone-400 mt-1">{stats.payingTenants ?? stats.activeTenants} abbonamenti paganti x 40€/mese</p>
+        {/* ============ MAINTENANCE MODE ============ */}
+        <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-6 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
-
-            <div className="bg-white rounded-2xl border border-stone-200 p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                  <CalendarCheck className="w-5 h-5 text-purple-600" />
-                </div>
-                <span className="text-sm text-stone-500">Prenotazioni totali</span>
-              </div>
-              <p className="text-3xl font-bold text-stone-900">{stats.totalBookings}</p>
-              <p className="text-xs text-stone-400 mt-1">Gestite dall'intera piattaforma</p>
+            <div>
+              <p className="font-medium text-stone-900">Modalità Manutenzione</p>
+              <p className="text-xs text-stone-400">{maintenanceMode ? 'Tutti i siti sono offline' : 'Tutti i siti sono attivi'}</p>
             </div>
           </div>
-        )}
+          <button
+            onClick={toggleMaintenance}
+            disabled={maintenanceLoading}
+            className={`relative w-14 h-7 rounded-full transition-colors ${maintenanceMode ? 'bg-red-600' : 'bg-stone-300'}`}
+          >
+            <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${maintenanceMode ? 'translate-x-7' : 'translate-x-0.5'}`} />
+          </button>
+        </div>
 
-        {/* ============ EMAIL SETTINGS ============ */}
-        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden mb-8">
+        {/* ============ EMAIL SETTINGS (COLLAPSIBLE) ============ */}
+        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden mb-6">
           <button
             onClick={() => setShowEmailSettings(!showEmailSettings)}
             className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-stone-50/50 transition-colors"
@@ -488,181 +637,597 @@ export default function SuperAdminDashboard() {
           )}
         </div>
 
-        {/* ============ TENANTS TABLE ============ */}
-        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
-          {/* Search bar */}
-          <div className="p-4 border-b border-stone-100">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Cerca attività, slug, email..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors"
-              />
-            </div>
-          </div>
+        {/* ============ TAB BAR ============ */}
+        <div className="flex gap-1 bg-stone-100 rounded-xl p-1 mb-6 overflow-x-auto">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id) }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === tab.id ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-stone-50 text-left">
-                  <th className="px-4 py-3 font-medium text-stone-500">Attività</th>
-                  <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">Titolare</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">Sottodominio</th>
-                  <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">Pren.</th>
-                  <th className="px-4 py-3 font-medium text-stone-500 hidden lg:table-cell">Abbonamento</th>
-                  <th className="px-4 py-3 font-medium text-stone-500">Stato</th>
-                  <th className="px-4 py-3 font-medium text-stone-500 text-right">Azioni</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-stone-400">
-                      {search ? 'Nessuna attività corrisponde alla ricerca' : 'Nessuna attività registrata'}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map(tenant => (
-                    <React.Fragment key={tenant.id}>
-                      <tr className="hover:bg-stone-50/50 transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div>
-                              <p className="font-medium text-stone-900">{tenant.businessName}</p>
-                              <p className="text-xs text-stone-400 md:hidden">{tenant.ownerName}</p>
-                            </div>
-                            {tenant.cancelReason && (
-                              <button
-                                onClick={() => setExpandedTenant(expandedTenant === tenant.id ? null : tenant.id)}
-                                className="p-1 rounded text-orange-500 hover:bg-orange-50 transition-colors"
-                                title="Motivo disdetta"
-                              >
-                                <MessageSquareOff className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 hidden md:table-cell">
-                          <p className="text-stone-600">{tenant.ownerName}</p>
-                          <p className="text-xs text-stone-400">{tenant.ownerEmail}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <a
-                            href={`https://${tenant.slug}.intelligenda.it`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-stone-600 hover:text-stone-900 font-mono text-xs"
-                          >
-                            {tenant.slug}.intelligenda.it
-                          </a>
-                        </td>
-                        <td className="px-4 py-3 hidden sm:table-cell">
-                          <span className="inline-flex items-center gap-1 text-stone-600">
-                            <CalendarCheck className="w-3.5 h-3.5" />
-                            {tenant.bookingCount}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <SubscriptionBadge status={tenant.subscriptionStatus} planEndDate={tenant.planEndDate} />
-                        </td>
-                        <td className="px-4 py-3">
-                          {tenant.active ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Attiva
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-medium">
-                              <Ban className="w-3 h-3" />
-                              Sospesa
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1">
-                            {tenant.slug !== 'default' && (
-                              <>
-                                <button
-                                  onClick={() => handleToggleActive(tenant)}
-                                  disabled={actionLoading === tenant.id}
-                                  className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-                                    tenant.active
-                                      ? 'text-orange-600 hover:bg-orange-50'
-                                      : 'text-emerald-600 hover:bg-emerald-50'
-                                  }`}
-                                  title={tenant.active ? 'Sospendi' : 'Riattiva'}
-                                >
-                                  {actionLoading === tenant.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : tenant.active ? (
-                                    <Ban className="w-4 h-4" />
-                                  ) : (
-                                    <CheckCircle2 className="w-4 h-4" />
-                                  )}
-                                </button>
-                                {confirmDelete === tenant.id ? (
-                                  <button
-                                    onClick={() => handleDelete(tenant)}
-                                    disabled={actionLoading === tenant.id}
-                                    className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-                                    title="Conferma eliminazione"
-                                  >
-                                    {actionLoading === tenant.id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <AlertTriangle className="w-4 h-4" />
-                                    )}
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => setConfirmDelete(tenant.id)}
-                                    className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-                                    title="Elimina"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
+        {/* ============ TAB: DASHBOARD ============ */}
+        {activeTab === 'dashboard' && (
+          <>
+            {/* STATS CARDS */}
+            {stats && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="bg-white rounded-2xl border border-stone-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="text-sm text-stone-500">Attività iscritte</span>
+                  </div>
+                  <p className="text-3xl font-bold text-stone-900">{stats.totalTenants}</p>
+                  <p className="text-xs text-stone-400 mt-1">
+                    <span className="text-emerald-600">{stats.activeTenants} attive</span> · <span className="text-orange-600">{stats.suspendedTenants} sospese</span>
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-stone-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <span className="text-sm text-stone-500">Ricavi mensili stimati</span>
+                  </div>
+                  <p className="text-3xl font-bold text-stone-900">{stats.monthlyRevenue}€</p>
+                  <p className="text-xs text-stone-400 mt-1">{stats.payingTenants ?? stats.activeTenants} abbonamenti paganti x 40€/mese</p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-stone-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                      <CalendarCheck className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-sm text-stone-500">Prenotazioni totali</span>
+                  </div>
+                  <p className="text-3xl font-bold text-stone-900">{stats.totalBookings}</p>
+                  <p className="text-xs text-stone-400 mt-1">Gestite dall&apos;intera piattaforma</p>
+                </div>
+              </div>
+            )}
+
+            {/* TENANTS TABLE */}
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+              {/* Search bar */}
+              <div className="p-4 border-b border-stone-100">
+                <div className="relative max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Cerca attività, slug, email..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-stone-50 text-left">
+                      <th className="px-4 py-3 font-medium text-stone-500">Attività</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">Titolare</th>
+                      <th className="px-4 py-3 font-medium text-stone-500">Sottodominio</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">Pren.</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden lg:table-cell">Abbonamento</th>
+                      <th className="px-4 py-3 font-medium text-stone-500">Stato</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden xl:table-cell">Utilizzo</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 text-right">Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {filtered.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-12 text-center text-stone-400">
+                          {search ? 'Nessuna attività corrisponde alla ricerca' : 'Nessuna attività registrata'}
                         </td>
                       </tr>
-                      {/* Expanded row: cancel reason details */}
-                      {expandedTenant === tenant.id && tenant.cancelReason && (
-                        <tr className="bg-orange-50/50">
-                          <td colSpan={7} className="px-4 py-3">
-                            <div className="flex items-start gap-3 ml-2">
-                              <MessageSquareOff className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                              <div className="space-y-1">
-                                <p className="text-xs font-medium text-orange-800">Motivo disdetta</p>
-                                <p className="text-xs text-orange-700">{tenant.cancelReason}</p>
-                                {tenant.cancelledAt && (
-                                  <p className="text-xs text-orange-500">
-                                    Data disdetta: {formatDate(tenant.cancelledAt)}
-                                    {tenant.planEndDate && ` — Servizio attivo fino al: ${formatDate(tenant.planEndDate)}`}
-                                  </p>
+                    ) : (
+                      filtered.map(tenant => (
+                        <React.Fragment key={tenant.id}>
+                          <tr className="hover:bg-stone-50/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <p className="font-medium text-stone-900">{tenant.businessName}</p>
+                                  <p className="text-xs text-stone-400 md:hidden">{tenant.ownerName}</p>
+                                </div>
+                                {tenant.cancelReason && (
+                                  <button
+                                    onClick={() => setExpandedTenant(expandedTenant === tenant.id ? null : tenant.id)}
+                                    className="p-1 rounded text-orange-500 hover:bg-orange-50 transition-colors"
+                                    title="Motivo disdetta"
+                                  >
+                                    <MessageSquareOff className="w-3.5 h-3.5" />
+                                  </button>
                                 )}
                               </div>
-                            </div>
+                            </td>
+                            <td className="px-4 py-3 hidden md:table-cell">
+                              <p className="text-stone-600">{tenant.ownerName}</p>
+                              <p className="text-xs text-stone-400">{tenant.ownerEmail}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <a
+                                href={`https://${tenant.slug}.intelligenda.it`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-stone-600 hover:text-stone-900 font-mono text-xs"
+                              >
+                                {tenant.slug}.intelligenda.it
+                              </a>
+                            </td>
+                            <td className="px-4 py-3 hidden sm:table-cell">
+                              <span className="inline-flex items-center gap-1 text-stone-600">
+                                <CalendarCheck className="w-3.5 h-3.5" />
+                                {tenant.bookingCount}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 hidden lg:table-cell">
+                              <SubscriptionBadge status={tenant.subscriptionStatus} planEndDate={tenant.planEndDate} />
+                            </td>
+                            <td className="px-4 py-3">
+                              {tenant.active ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Attiva
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-medium">
+                                  <Ban className="w-3 h-3" />
+                                  Sospesa
+                                </span>
+                              )}
+                            </td>
+                            {/* Churn / Utilizzo column */}
+                            <td className="px-4 py-3 hidden xl:table-cell">
+                              {tenant.isAtRisk ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                                  <AlertTriangle className="w-3 h-3" /> Inattivo ({tenant.daysInactive}g)
+                                </span>
+                              ) : tenant.isWarning ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">
+                                  <Clock className="w-3 h-3" /> {tenant.daysInactive}g
+                                </span>
+                              ) : (
+                                <span className="text-xs text-emerald-600">{tenant.daysInactive === 0 ? 'Oggi' : `${tenant.daysInactive}g fa`}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-end gap-1">
+                                {/* Impersonate button */}
+                                <button
+                                  onClick={() => handleImpersonate(tenant)}
+                                  disabled={actionLoading === `imp-${tenant.id}`}
+                                  className="p-2 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors disabled:opacity-50"
+                                  title="Accedi come Admin"
+                                >
+                                  {actionLoading === `imp-${tenant.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                                {tenant.slug !== 'default' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleToggleActive(tenant)}
+                                      disabled={actionLoading === tenant.id}
+                                      className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                                        tenant.active
+                                          ? 'text-orange-600 hover:bg-orange-50'
+                                          : 'text-emerald-600 hover:bg-emerald-50'
+                                      }`}
+                                      title={tenant.active ? 'Sospendi' : 'Riattiva'}
+                                    >
+                                      {actionLoading === tenant.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : tenant.active ? (
+                                        <Ban className="w-4 h-4" />
+                                      ) : (
+                                        <CheckCircle2 className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                    {confirmDelete === tenant.id ? (
+                                      <button
+                                        onClick={() => handleDelete(tenant)}
+                                        disabled={actionLoading === tenant.id}
+                                        className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                                        title="Conferma eliminazione"
+                                      >
+                                        {actionLoading === tenant.id ? (
+                                          <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                          <AlertTriangle className="w-4 h-4" />
+                                        )}
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => setConfirmDelete(tenant.id)}
+                                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                                        title="Elimina"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                          {/* Expanded row: cancel reason details */}
+                          {expandedTenant === tenant.id && tenant.cancelReason && (
+                            <tr className="bg-orange-50/50">
+                              <td colSpan={8} className="px-4 py-3">
+                                <div className="flex items-start gap-3 ml-2">
+                                  <MessageSquareOff className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-orange-800">Motivo disdetta</p>
+                                    <p className="text-xs text-orange-700">{tenant.cancelReason}</p>
+                                    {tenant.cancelledAt && (
+                                      <p className="text-xs text-orange-500">
+                                        Data disdetta: {formatDate(tenant.cancelledAt)}
+                                        {tenant.planEndDate && ` — Servizio attivo fino al: ${formatDate(tenant.planEndDate)}`}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Footer */}
+              <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-400">
+                {filtered.length} di {tenants.length} attività
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ============ TAB: COUPON ============ */}
+        {activeTab === 'coupon' && (
+          <div className="space-y-6">
+            {/* Create coupon form */}
+            <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <Ticket className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="font-medium text-stone-900">Crea Coupon</h2>
+                  <p className="text-xs text-stone-400">Genera un codice sconto per i nuovi iscritti</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateCoupon} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Codice *</label>
+                  <input
+                    type="text"
+                    required
+                    value={couponForm.code}
+                    onChange={e => setCouponForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    placeholder="VALTELLINA30"
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Sconto (€)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={couponForm.discountAmount}
+                    onChange={e => setCouponForm(prev => ({ ...prev, discountAmount: e.target.value }))}
+                    placeholder="10.00"
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Giorni prova extra</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={couponForm.extraTrialDays}
+                    onChange={e => setCouponForm(prev => ({ ...prev, extraTrialDays: e.target.value }))}
+                    placeholder="30"
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Scadenza</label>
+                  <input
+                    type="date"
+                    value={couponForm.expiryDate}
+                    onChange={e => setCouponForm(prev => ({ ...prev, expiryDate: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors"
+                  />
+                </div>
+                <div className="sm:col-span-2 lg:col-span-4">
+                  <button
+                    type="submit"
+                    disabled={couponSaving || !couponForm.code}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-colors"
+                  >
+                    {couponSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {couponSaving ? 'Creazione...' : 'Crea Coupon'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Coupons table */}
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-stone-100">
+                <h2 className="font-medium text-stone-900">Coupon Esistenti</h2>
+                <p className="text-xs text-stone-400">{coupons.length} coupon totali</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-stone-50 text-left">
+                      <th className="px-4 py-3 font-medium text-stone-500">Codice</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">Sconto</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">Giorni prova</th>
+                      <th className="px-4 py-3 font-medium text-stone-500">Stato</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">Usato da</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden lg:table-cell">Creato</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {coupons.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-12 text-center text-stone-400">
+                          Nessun coupon creato
+                        </td>
+                      </tr>
+                    ) : (
+                      coupons.map((coupon: any) => {
+                        const isExpired = coupon.expiryDate && new Date(coupon.expiryDate) <= new Date()
+                        const status = coupon.usedAt ? 'used' : isExpired ? 'expired' : 'active'
+                        const statusConfig = {
+                          active: { label: 'Attivo', bg: 'bg-emerald-50', color: 'text-emerald-700' },
+                          used: { label: 'Usato', bg: 'bg-stone-100', color: 'text-stone-500' },
+                          expired: { label: 'Scaduto', bg: 'bg-red-50', color: 'text-red-700' },
+                        }[status]
+                        return (
+                          <tr key={coupon.id} className="hover:bg-stone-50/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className="font-mono font-medium text-stone-900">{coupon.code}</span>
+                            </td>
+                            <td className="px-4 py-3 hidden sm:table-cell text-stone-600">
+                              {coupon.discountAmount ? `${coupon.discountAmount}€` : '—'}
+                            </td>
+                            <td className="px-4 py-3 hidden sm:table-cell text-stone-600">
+                              {coupon.extraTrialDays ? `+${coupon.extraTrialDays}gg` : '—'}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
+                                {statusConfig.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 hidden md:table-cell text-stone-600">
+                              {coupon.usedByTenantName || '—'}
+                            </td>
+                            <td className="px-4 py-3 hidden lg:table-cell text-stone-400 text-xs">
+                              {formatDateTime(coupon.createdAt)}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============ TAB: SICUREZZA ============ */}
+        {activeTab === 'security' && (
+          <div className="space-y-6">
+            {/* Spam logs */}
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-stone-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-medium text-stone-900">Log Bloccati</h2>
+                    <p className="text-xs text-stone-400">{spamLogs.length} tentativi sospetti</p>
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-stone-50 text-left">
+                      <th className="px-4 py-3 font-medium text-stone-500">IP</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">Path</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">Data</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 text-right">Azione</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {spamLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-12 text-center text-stone-400">
+                          Nessun log di spam
+                        </td>
+                      </tr>
+                    ) : (
+                      spamLogs.map((log: any) => (
+                        <tr key={log.id} className="hover:bg-stone-50/50 transition-colors">
+                          <td className="px-4 py-3 font-mono text-stone-900 text-xs">{log.ipAddress}</td>
+                          <td className="px-4 py-3 hidden sm:table-cell text-stone-600 text-xs truncate max-w-48">{log.path}</td>
+                          <td className="px-4 py-3 hidden md:table-cell text-stone-400 text-xs">{formatDateTime(log.createdAt)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handleBanIP(log.ipAddress)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 text-xs font-medium hover:bg-red-100 transition-colors"
+                            >
+                              <Ban className="w-3 h-3" />
+                              Banna
+                            </button>
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-          {/* Footer */}
-          <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-400">
-            {filtered.length} di {tenants.length} attività
+            {/* Banned IPs */}
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+              <div className="px-4 sm:px-6 py-4 border-b border-stone-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-medium text-stone-900">IP Bannati</h2>
+                    <p className="text-xs text-stone-400">{bannedIPs.length} IP bloccati</p>
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-stone-50 text-left">
+                      <th className="px-4 py-3 font-medium text-stone-500">IP</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">Motivo</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">Data</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 text-right">Azione</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {bannedIPs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-12 text-center text-stone-400">
+                          Nessun IP bannato
+                        </td>
+                      </tr>
+                    ) : (
+                      bannedIPs.map((banned: any) => (
+                        <tr key={banned.id} className="hover:bg-stone-50/50 transition-colors">
+                          <td className="px-4 py-3 font-mono text-stone-900 text-xs">{banned.ipAddress}</td>
+                          <td className="px-4 py-3 hidden sm:table-cell text-stone-600 text-xs">{banned.reason}</td>
+                          <td className="px-4 py-3 hidden md:table-cell text-stone-400 text-xs">{formatDateTime(banned.createdAt)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handleUnbanIP(banned.id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-100 text-stone-700 text-xs font-medium hover:bg-stone-200 transition-colors"
+                            >
+                              <Wrench className="w-3 h-3" />
+                              Rimuovi
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ============ TAB: CHURN MONITOR ============ */}
+        {activeTab === 'churn' && (
+          <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-stone-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="font-medium text-stone-900">Clienti a Rischio</h2>
+                  <p className="text-xs text-stone-400">{churnData.length} tenant con inattività superiore a 7 giorni</p>
+                </div>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-stone-50 text-left">
+                    <th className="px-4 py-3 font-medium text-stone-500">Attività</th>
+                    <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">Sottodominio</th>
+                    <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">Ultima attività</th>
+                    <th className="px-4 py-3 font-medium text-stone-500">Giorni inattivo</th>
+                    <th className="px-4 py-3 font-medium text-stone-500 hidden lg:table-cell">Abbonamento</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {churnData.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-12 text-center text-stone-400">
+                        Nessun cliente a rischio — tutti i tenant sono attivi!
+                      </td>
+                    </tr>
+                  ) : (
+                    churnData.map((tenant: any) => {
+                      const daysInactive = tenant.daysInactive || 0
+                      const riskLevel = daysInactive > 14
+                        ? { label: 'Inattivo', bg: 'bg-red-50', color: 'text-red-700' }
+                        : { label: 'Attenzione', bg: 'bg-amber-50', color: 'text-amber-700' }
+                      return (
+                        <tr key={tenant.id} className="hover:bg-stone-50/50 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-stone-900">{tenant.businessName}</p>
+                          </td>
+                          <td className="px-4 py-3 hidden sm:table-cell">
+                            <a
+                              href={`https://${tenant.slug}.intelligenda.it`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-stone-600 hover:text-stone-900 font-mono text-xs"
+                            >
+                              {tenant.slug}.intelligenda.it
+                            </a>
+                          </td>
+                          <td className="px-4 py-3 hidden md:table-cell text-stone-400 text-xs">
+                            {tenant.lastActivity ? formatDateTime(tenant.lastActivity) : 'Mai'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-stone-900">{daysInactive}</span>
+                              <span className="text-xs text-stone-400">gg</span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${riskLevel.bg} ${riskLevel.color}`}>
+                                {riskLevel.label}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 hidden lg:table-cell">
+                            <SubscriptionBadge status={tenant.subscriptionStatus} planEndDate={tenant.planEndDate} />
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-400">
+              {churnData.length} tenant a rischio su {tenants.length} totali
+            </div>
+          </div>
+        )}
 
         {/* Back link */}
         <div className="text-center mt-8">

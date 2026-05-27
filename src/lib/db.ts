@@ -191,6 +191,49 @@ const MIGRATION_SQL = [
     "value" TEXT NOT NULL DEFAULT '',
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  // ============ ADMIN USER LAST LOGIN ============
+  `ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "lastLoginAt" TIMESTAMP(3)`,
+  // ============ COUPON TABLE ============
+  `CREATE TABLE IF NOT EXISTS "Coupon" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "code" TEXT NOT NULL,
+    "discountAmount" DOUBLE PRECISION,
+    "extraTrialDays" INTEGER,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "expiryDate" TIMESTAMP(3),
+    "usedByTenantId" TEXT,
+    "usedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Coupon_code_key" ON "Coupon"("code")`,
+  // ============ SYSTEM SETTINGS TABLE ============
+  `CREATE TABLE IF NOT EXISTS "SystemSetting" (
+    "key" TEXT NOT NULL PRIMARY KEY,
+    "value" TEXT NOT NULL DEFAULT ''
+  )`,
+  `DO $$ BEGIN
+    INSERT INTO "SystemSetting" ("key", "value") VALUES ('maintenance_mode', 'false')
+    ON CONFLICT ("key") DO NOTHING;
+  END $$`,
+  // ============ SPAM LOG TABLE ============
+  `CREATE TABLE IF NOT EXISTS "SpamLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "ipAddress" TEXT NOT NULL,
+    "tenantId" TEXT,
+    "path" TEXT NOT NULL DEFAULT '',
+    "reason" TEXT NOT NULL DEFAULT '',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS "SpamLog_ipAddress_idx" ON "SpamLog"("ipAddress")`,
+  `CREATE INDEX IF NOT EXISTS "SpamLog_createdAt_idx" ON "SpamLog"("createdAt")`,
+  // ============ BANNED IP TABLE ============
+  `CREATE TABLE IF NOT EXISTS "BannedIP" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "ipAddress" TEXT NOT NULL,
+    "reason" TEXT NOT NULL DEFAULT '',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "BannedIP_ipAddress_key" ON "BannedIP"("ipAddress")`,
 ]
 
 /**

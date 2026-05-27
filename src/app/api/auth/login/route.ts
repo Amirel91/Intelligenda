@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
 
     const token = await createToken({ username: user.username, id: user.id, tenantId: tenant.id })
 
+    // Track last login for churn monitoring
+    await db.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {})
+
     const response = NextResponse.json({ success: true, username: user.username })
     response.cookies.set('admin_token', token, {
       httpOnly: true,

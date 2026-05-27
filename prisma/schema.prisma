@@ -208,7 +208,55 @@ model AdminUser {
   resetToken       String?  @unique
   resetTokenExpires DateTime?
 
+  // Track last login for churn monitoring
+  lastLoginAt       DateTime?
+
   @@unique([tenantId, username])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// ============ COUPON ============
+
+model Coupon {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  discountAmount  Float?                // e.g. 10.0 for €10 off
+  extraTrialDays  Int?                  // e.g. 30 for 30 extra trial days
+  active          Boolean   @default(true)
+  expiryDate      DateTime?
+  usedByTenantId  String?                // once used, locked to this tenant
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+}
+
+// ============ SYSTEM SETTINGS (global) ============
+
+model SystemSetting {
+  key   String @id
+  value String @default("")
+  @@map("SystemSetting")
+}
+
+// ============ SPAM LOG ============
+
+model SpamLog {
+  id        String   @id @default(cuid())
+  ipAddress String
+  tenantId  String?
+  path      String   @default("")
+  reason    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([ipAddress])
+  @@index([createdAt])
+}
+
+// ============ BANNED IP ============
+
+model BannedIP {
+  id        String   @id @default(cuid())
+  ipAddress String   @unique
+  reason    String   @default("")
+  createdAt DateTime @default(now())
 }
