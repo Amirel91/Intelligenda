@@ -379,7 +379,18 @@ export default function AdminCalendario() {
                       <span className="font-medium text-stone-900 text-sm">{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColors[booking.status] || ''}`}>{statusLabels[booking.status] || booking.status}</span>
                     </div>
-                    <div className="text-sm text-stone-600">{booking.customerName} {booking.customerSurname}</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-stone-600 truncate">{booking.customerName} {booking.customerSurname}</span>
+                      {booking.status !== 'cancelled' && booking.status !== 'blocked' && booking.customerPhone && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openWhatsApp(booking) }}
+                          className="shrink-0 p-2 rounded-full bg-emerald-50 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 transition-colors"
+                          title="Invia promemoria WhatsApp"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                     <div className="text-xs text-stone-400 mt-1">{booking.services.map(bs => bs.service.name).join(', ')} &middot; EUR{booking.totalPrice.toFixed(2)}</div>
                     {booking.resource && (
                       <div className="mt-1">
@@ -417,7 +428,16 @@ export default function AdminCalendario() {
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">{booking.resource.name}</span>
                         )}
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-1">
+                        {booking.status !== 'cancelled' && booking.status !== 'blocked' && booking.customerPhone && (
+                          <button
+                            onClick={() => openWhatsApp(booking)}
+                            className="p-2 rounded-full bg-emerald-50 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 transition-colors"
+                            title="Invia promemoria WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                        )}
                         <button onClick={() => setSelectedBooking(booking)} className="text-xs px-2 py-1.5 rounded-md text-stone-600 hover:bg-stone-100 transition-colors">Dettagli</button>
                         {booking.status !== 'cancelled' && (
                           <button onClick={() => updateBookingStatus(booking.id, 'cancelled')} className="text-xs px-2 py-1.5 rounded-md text-amber-600 hover:bg-amber-50 transition-colors">Annulla</button>
@@ -467,7 +487,16 @@ export default function AdminCalendario() {
                       <td className="px-4 py-3 hidden lg:table-cell">{booking.resource ? <span className="text-xs px-2 py-1 rounded-full bg-stone-100 text-stone-600 font-medium">{booking.resource.name}</span> : null}</td>
                       <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[booking.status] || ''}`}>{statusLabels[booking.status] || booking.status}</span></td>
                       <td className="px-4 py-3 print:hidden">
-                        <div className="flex gap-1">
+                        <div className="flex items-center gap-1">
+                          {booking.status !== 'cancelled' && booking.status !== 'blocked' && booking.customerPhone && (
+                            <button
+                              onClick={() => openWhatsApp(booking)}
+                              className="p-1.5 rounded-full bg-emerald-50 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              title="Invia promemoria WhatsApp"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           {booking.status !== 'cancelled' && (<button onClick={() => updateBookingStatus(booking.id, 'cancelled')} className="text-xs px-2 py-1 rounded-md text-amber-600 hover:bg-amber-50 transition-colors">Annulla</button>)}
                           {deleteConfirm === booking.id ? (
                             <span className="flex items-center gap-1">
@@ -562,7 +591,18 @@ export default function AdminCalendario() {
                           <span className="font-medium text-stone-900 text-sm">{formatTime(booking.startTime)} - {formatTime(booking.endTime)}</span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColors[booking.status] || ''}`}>{statusLabels[booking.status] || booking.status}</span>
                         </div>
-                        <div className="text-sm text-stone-600">{booking.customerName} {booking.customerSurname}</div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm text-stone-600 truncate">{booking.customerName} {booking.customerSurname}</span>
+                          {booking.status !== 'cancelled' && booking.status !== 'blocked' && booking.customerPhone && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openWhatsApp(booking) }}
+                              className="shrink-0 p-2.5 rounded-full bg-emerald-50 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              title="Invia promemoria WhatsApp"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                         <div className="text-xs text-stone-400 mt-1">{booking.services.map(bs => bs.service.name).join(', ')} &middot; EUR{booking.totalPrice.toFixed(2)}</div>
                         {booking.resource && (
                           <div className="mt-1">
