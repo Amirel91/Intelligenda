@@ -20,6 +20,8 @@ import {
   MessageSquareOff,
   ChevronDown,
   ChevronUp,
+  Mail,
+  Save,
 } from 'lucide-react'
 import Link from 'next/link'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
@@ -117,8 +119,29 @@ export default function SuperAdminDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [expandedTenant, setExpandedTenant] = useState<string | null>(null)
+  const [showEmailSettings, setShowEmailSettings] = useState(false)
+  const [emailSubject, setEmailSubject] = useState('')
+  const [emailBody, setEmailBody] = useState('')
+  const [emailEnabled, setEmailEnabled] = useState('true')
+  const [emailSaving, setEmailSaving] = useState(false)
+  const [emailSaved, setEmailSaved] = useState(false)
 
   // ==================== FETCH DATA ====================
+
+  const fetchEmailSettings = useCallback(async () => {
+    const headers = authHeaders()
+    try {
+      const res = await fetch('/api/superadmin/settings', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setEmailSubject(data.welcome_email_subject || '')
+        setEmailBody(data.welcome_email_body || '')
+        setEmailEnabled(data.welcome_email_enabled || 'true')
+      }
+    } catch {
+      // Ignore — use defaults
+    }
+  }, [])
 
   const fetchData = useCallback(async () => {
     const token = getSuperAdminToken()
@@ -175,7 +198,29 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+    fetchEmailSettings()
+  }, [fetchData, fetchEmailSettings])
+
+  // ==================== EMAIL SETTINGS ====================
+
+  const handleSaveEmailSettings = async () => {
+    setEmailSaving(true)
+    setEmailSaved(false)
+    try {
+      const headers = authHeaders()
+      await Promise.all([
+        fetch('/api/superadmin/settings', { method: 'PUT', headers, body: JSON.stringify({ key: 'welcome_email_subject', value: emailSubject }) }),
+        fetch('/api/superadmin/settings', { method: 'PUT', headers, body: JSON.stringify({ key: 'welcome_email_body', value: emailBody }) }),
+        fetch('/api/superadmin/settings', { method: 'PUT', headers, body: JSON.stringify({ key: 'welcome_email_enabled', value: emailEnabled }) }),
+      ])
+      setEmailSaved(true)
+      setTimeout(() => setEmailSaved(false), 3000)
+    } catch {
+      alert('Errore nel salvataggio')
+    } finally {
+      setEmailSaving(false)
+    }
+  }
 
   // ==================== ACTIONS ====================
 
@@ -356,6 +401,92 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ============ EMAIL SETTINGS ============ */}
+        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden mb-8">
+          <button
+            onClick={() => setShowEmailSettings(!showEmailSettings)}
+            className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-stone-50/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-medium text-stone-900">Email di Benvenuto</p>
+                <p className="text-xs text-stone-400">Personalizza il testo inviato ai nuovi iscritti</p>
+              </div>
+            </div>
+            {showEmailSettings ? <ChevronUp className="w-5 h-5 text-stone-400" /> : <ChevronDown className="w-5 h-5 text-stone-400" />}
+          </button>
+
+          {showEmailSettings && (
+            <div className="px-6 pb-6 border-t border-stone-100 pt-4 space-y-4">
+              {/* Enable/Disable toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-stone-900">Invio automatico</p>
+                  <p className="text-xs text-stone-400">Attiva o disattiva l&apos;invio della email di benvenuto</p>
+                </div>
+                <button
+                  onClick={() => setEmailEnabled(emailEnabled === 'true' ? 'false' : 'true')}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${emailEnabled === 'true' ? 'bg-stone-900' : 'bg-stone-300'}`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${emailEnabled === 'true' ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">Oggetto dell&apos;email</label>
+                <input
+                  type="text"
+                  value={emailSubject}
+                  onChange={e => setEmailSubject(e.target.value)}
+                  placeholder="Benvenuto su IntelliGenda — {attivita} e pronto!"
+                  className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors"
+                />
+                <p className="text-xs text-stone-400 mt-1">Variabili: {'{attivita}'}, {'{nome}'}</p>
+              </div>
+
+              {/* Body */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">Corpo dell&apos;email (HTML)</label>
+                <textarea
+                  value={emailBody}
+                  onChange={e => setEmailBody(e.target.value)}
+                  placeholder={`<h2>Ciao {nome}!</h2><p>Il tuo negozio <strong>{attivita}</strong> e pronto.</p><p>Accedi alla dashboard: <a href="{dashboard}">{url}/admin</a></p>`}
+                  rows={8}
+                  className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 transition-colors font-mono"
+                />
+                <p className="text-xs text-stone-400 mt-1">Variabili: {'{nome}'}, {'{attivita}'}, {'{slug}'}, {'{dashboard}'}, {'{url}'}</p>
+              </div>
+
+              {/* Save button */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveEmailSettings}
+                  disabled={emailSaving}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-colors"
+                >
+                  {emailSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {emailSaving ? 'Salvataggio...' : 'Salva impostazioni'}
+                </button>
+                {emailSaved && (
+                  <span className="text-sm text-emerald-600 font-medium">Salvato!</span>
+                )}
+                {emailBody && (
+                  <button
+                    onClick={() => { setEmailSubject(''); setEmailBody(''); setEmailEnabled('true') }}
+                    className="text-sm text-stone-400 hover:text-stone-600 transition-colors"
+                  >
+                    Ripristina default
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* ============ TENANTS TABLE ============ */}
         <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">

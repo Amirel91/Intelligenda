@@ -85,9 +85,17 @@ export async function sendReminderEmail(b: EmailBookingData, s: ShopData, slug: 
 
 // ============ WELCOME EMAIL ============
 
-function renderWelcomeEmail(ownerName: string, businessName: string, slug: string): string {
+function renderWelcomeEmail(ownerName: string, businessName: string, slug: string, customBody?: string): string {
   const dashboardUrl = `https://${slug}.intelligenda.it/admin`
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Benvenuto su IntelliGenda</title><style>body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}body{margin:0;padding:0;width:100%!important;height:100%!important;background-color:#f5f5f4}.email-container{max-width:600px;margin:0 auto;background-color:#fff;border-radius:12px;overflow:hidden}.header{background:linear-gradient(135deg,#1c1917,#292524);padding:32px 40px;text-align:center}.header h1{margin:0;font-size:24px;font-weight:700;color:#fafaf9;letter-spacing:-0.025em}.header p{margin:8px 0 0;font-size:14px;color:#a8a29e}.content{padding:32px 40px}.content h2{margin:0 0 16px;font-size:20px;font-weight:600;color:#1c1917}.content p{margin:0 0 12px;font-size:15px;line-height:1.6;color:#44403c}.step{display:flex;align-items:flex-start;gap:16px;margin:20px 0;padding:16px;background:#fafaf9;border-radius:8px}.step-number{width:32px;height:32px;min-width:32px;border-radius:50%;background:#1c1917;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}.step-content h3{margin:0 0 4px;font-size:15px;font-weight:600;color:#1c1917}.step-content p{margin:0;font-size:14px;color:#78716c;line-height:1.5}.btn{display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;text-align:center;background-color:#1c1917;color:#fff}.divider{height:1px;background-color:#e7e5e4;margin:24px 0}.footer{padding:24px 40px;text-align:center;font-size:12px;color:#a8a29e;background-color:#fafaf9}</style></head><body><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0"><tr><td align="center"><div class="email-container"><div class="header"><h1>Benvenuto su IntelliGenda!</h1><p>Il tuo sistema di prenotazioni online</p></div><div class="content"><h2>Ciao ${ownerName}, il tuo account è pronto!</h2><p>Hai appena creato <strong>${businessName}</strong> su IntelliGenda. Ecco 3 passi veloci per iniziare:</p><div class="step"><div class="step-number">1</div><div class="step-content"><h3>Accedi alla tua dashboard</h3><p>Vai su ${slug}.intelligenda.it/admin e accedi con le tue credenziali per gestire il tuo negozio.</p></div></div><div class="step"><div class="step-number">2</div><div class="step-content"><h3>Configura i tuoi servizi</h3><p>Aggiungi i servizi che offri, imposta i prezzi e le durate. I clienti potranno prenotare direttamente online.</p></div></div><div class="step"><div class="step-number">3</div><div class="step-content"><h3>Condividi il link di prenotazione</h3><p>Il tuo link di prenotazione è <strong>${slug}.intelligenda.it</strong>. Condividilo sui social, sul sito o via WhatsApp!</p></div></div><div style="margin-top:28px;text-align:center"><a href="${dashboardUrl}" class="btn">Vai alla Dashboard</a></div><div class="divider"></div><p style="font-size:14px;color:#78716c">Hai bisogno di aiuto? Rispondi a questa email o scrivi a <a href="mailto:support@intelligenda.it" style="color:#1c1917;font-weight:600">support@intelligenda.it</a>.</p></div><div class="footer"><p>Email inviata da <strong>IntelliGenda</strong> — Il sistema di prenotazioni intelligente per la tua attività.</p></div></div></td></tr></table></body></html>`
+  const bodyHtml = customBody
+    ? customBody
+        .replace(/\{nome\}/gi, ownerName)
+        .replace(/\{attivita\}/gi, businessName)
+        .replace(/\{slug\}/gi, slug)
+        .replace(/\{dashboard\}/gi, dashboardUrl)
+        .replace(/\{url\}/gi, `${slug}.intelligenda.it`)
+    : `<h2>Ciao ${ownerName}, il tuo account è pronto!</h2><p>Hai appena creato <strong>${businessName}</strong> su IntelliGenda. Ecco 3 passi veloci per iniziare:</p><div class="step"><div class="step-number">1</div><div class="step-content"><h3>Accedi alla tua dashboard</h3><p>Vai su ${slug}.intelligenda.it/admin e accedi con le tue credenziali per gestire il tuo negozio.</p></div></div><div class="step"><div class="step-number">2</div><div class="step-content"><h3>Configura i tuoi servizi</h3><p>Aggiungi i servizi che offri, imposta i prezzi e le durate. I clienti potranno prenotare direttamente online.</p></div></div><div class="step"><div class="step-number">3</div><div class="step-content"><h3>Condividi il link di prenotazione</h3><p>Il tuo link di prenotazione è <strong>${slug}.intelligenda.it</strong>. Condividilo sui social, sul sito o via WhatsApp!</p></div></div><div style="margin-top:28px;text-align:center"><a href="${dashboardUrl}" class="btn">Vai alla Dashboard</a></div><div class="divider"></div><p style="font-size:14px;color:#78716c">Hai bisogno di aiuto? Rispondi a questa email o scrivi a <a href="mailto:support@intelligenda.it" style="color:#1c1917;font-weight:600">support@intelligenda.it</a>.</p>`
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Benvenuto su IntelliGenda</title><style>body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}body{margin:0;padding:0;width:100%!important;height:100%!important;background-color:#f5f5f4}.email-container{max-width:600px;margin:0 auto;background-color:#fff;border-radius:12px;overflow:hidden}.header{background:linear-gradient(135deg,#1c1917,#292524);padding:32px 40px;text-align:center}.header h1{margin:0;font-size:24px;font-weight:700;color:#fafaf9;letter-spacing:-0.025em}.header p{margin:8px 0 0;font-size:14px;color:#a8a29e}.content{padding:32px 40px}.content h2{margin:0 0 16px;font-size:20px;font-weight:600;color:#1c1917}.content p{margin:0 0 12px;font-size:15px;line-height:1.6;color:#44403c}.step{display:flex;align-items:flex-start;gap:16px;margin:20px 0;padding:16px;background:#fafaf9;border-radius:8px}.step-number{width:32px;height:32px;min-width:32px;border-radius:50%;background:#1c1917;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}.step-content h3{margin:0 0 4px;font-size:15px;font-weight:600;color:#1c1917}.step-content p{margin:0;font-size:14px;color:#78716c;line-height:1.5}.btn{display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;text-align:center;background-color:#1c1917;color:#fff}.divider{height:1px;background-color:#e7e5e4;margin:24px 0}.footer{padding:24px 40px;text-align:center;font-size:12px;color:#a8a29e;background-color:#fafaf9}</style></head><body><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0"><tr><td align="center"><div class="email-container"><div class="header"><h1>Benvenuto su IntelliGenda!</h1><p>Il tuo sistema di prenotazioni online</p></div><div class="content">${bodyHtml}</div><div class="footer"><p>Email inviata da <strong>IntelliGenda</strong> — Il sistema di prenotazioni intelligente per la tua attività.</p></div></div></td></tr></table></body></html>`
 }
 
 export async function sendWelcomeEmail(ownerName: string, businessName: string, slug: string, ownerEmail: string): Promise<void> {
@@ -96,12 +104,43 @@ export async function sendWelcomeEmail(ownerName: string, businessName: string, 
     console.error('[sendWelcomeEmail] Resend not initialized — check RESEND_API_KEY')
     return
   }
+
+  let customSubject: string | undefined
+  let customBody: string | undefined
+
+  // Check for custom welcome email settings from PlatformSetting table
+  try {
+    const { db } = await import('@/lib/db')
+    const rows = await db.$queryRawUnsafe<Array<{ key: string; value: string }>>(
+      `SELECT "key", "value" FROM "PlatformSetting" WHERE "key" IN ('welcome_email_enabled', 'welcome_email_subject', 'welcome_email_body')`
+    )
+    const settings: Record<string, string> = {}
+    for (const row of rows) settings[row.key] = row.value
+
+    // If welcome_email_enabled is explicitly 'false', skip sending
+    if (settings['welcome_email_enabled'] === 'false') {
+      console.log('[sendWelcomeEmail] Welcome email disabled via platform settings — skipping')
+      return
+    }
+
+    if (settings['welcome_email_subject']) {
+      customSubject = settings['welcome_email_subject']
+        .replace(/\{attivita\}/gi, businessName)
+        .replace(/\{nome\}/gi, ownerName)
+    }
+    if (settings['welcome_email_body']) {
+      customBody = settings['welcome_email_body']
+    }
+  } catch (err) {
+    console.warn('[sendWelcomeEmail] Could not load platform settings, using defaults:', err)
+  }
+
   try {
     const result = await r.emails.send({
       from: `${getFromName()} <${getFromAddress()}>`,
       to: ownerEmail,
-      subject: `Benvenuto su IntelliGenda — ${businessName} è pronto!`,
-      html: renderWelcomeEmail(ownerName, businessName, slug),
+      subject: customSubject || `Benvenuto su IntelliGenda — ${businessName} è pronto!`,
+      html: renderWelcomeEmail(ownerName, businessName, slug, customBody),
     })
     console.log('[sendWelcomeEmail] Result:', result)
   } catch (err) {

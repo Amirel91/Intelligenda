@@ -49,10 +49,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { canInstall: canInstallPWA, isIOS: isIOSSafari, promptInstall: promptPWAInstall, dismiss: dismissPWAInstall } = usePWAInstall()
 
   const isLoginPage = pathname === '/admin/login'
+  const isPublicPage = pathname === '/admin/login' || pathname === '/admin/forgot-password' || pathname === '/admin/reset-password'
 
   useEffect(() => {
-    // On login page, skip auth check entirely
-    if (isLoginPage) {
+    // On public pages (login, forgot-password, reset-password), skip auth check entirely
+    if (isPublicPage) {
       setLoading(false)
       return
     }
@@ -83,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.shopName) setShopName(data.shopName) })
       .catch(() => {})
-  }, [router, isLoginPage])
+  }, [router, isPublicPage])
 
   const handleLogout = async () => {
     await fetch('/api/auth/me', { method: 'POST' })
@@ -91,8 +92,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/admin/login')
   }
 
-  // Show loading spinner only on non-login pages while checking auth
-  if (loading && !isLoginPage) {
+  // Show loading spinner only on non-public pages while checking auth
+  if (loading && !isPublicPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
@@ -100,8 +101,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     )
   }
 
-  // On login page, render children directly without sidebar
-  if (isLoginPage) {
+  // On public pages, render children directly without sidebar
+  if (isPublicPage) {
     return <>{children}</>
   }
 
