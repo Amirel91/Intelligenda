@@ -325,6 +325,13 @@ export default function LandingPage() {
 
       {/* ==================== BENTO GRID — VALORI ==================== */}
       <section className="py-24 md:py-32 px-6">
+        <div className="text-center mt-24 mb-16">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-stone-900 tracking-tight text-center">
+            Nessun pensiero.
+            <br />
+            <span className="text-stone-400">Pensa solo al tuo lavoro.</span>
+          </h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {/* Card 1 — Ottimizzazione matematica */}
           <div className="bg-stone-50 border border-stone-100 rounded-3xl p-8 md:p-10">
