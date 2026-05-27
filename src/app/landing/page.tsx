@@ -278,16 +278,10 @@ export default function LandingPage() {
           >
             Inizia la prova gratuita di 30 giorni
           </a>
-          <a
-            href="/login"
-            className="text-stone-600 hover:text-stone-900 font-medium text-sm transition-colors"
-          >
-            Accedi alla tua agenda&nbsp;&rarr;
-          </a>
         </div>
         <a
           href="#come-funziona"
-          className="mt-6 inline-flex items-center gap-1 text-stone-400 hover:text-stone-600 text-sm transition-colors"
+          className="mt-8 inline-flex items-center gap-1 text-stone-400 hover:text-stone-600 text-sm transition-colors"
         >
           Scopri come funziona&nbsp;&darr;
         </a>
