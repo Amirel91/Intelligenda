@@ -905,6 +905,55 @@ export default function PrenotaPage() {
     </div>
   )
 
+  // Reusable coupon input block (independent of auth state)
+  const CouponInputBlock = () => (
+    <div>
+      <label className="block text-sm font-medium text-stone-700 mb-1.5">
+        Hai un codice sconto? <span className="text-stone-400 font-normal">(opzionale)</span>
+      </label>
+      {couponValid ? (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 bg-emerald-50">
+          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span className="flex-1 text-sm font-medium text-emerald-700">
+            -€{couponDiscount!.toFixed(2)} applicato
+          </span>
+          <button
+            type="button"
+            onClick={removeCoupon}
+            className="p-1 rounded-md hover:bg-emerald-100 text-emerald-600 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={couponCode}
+            onChange={e => {
+              setCouponCode(e.target.value.toUpperCase())
+              if (couponError) setCouponError('')
+            }}
+            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), validateCoupon())}
+            placeholder="SCONTO10"
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors uppercase ${
+              couponError ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+            }`}
+          />
+          <button
+            type="button"
+            onClick={validateCoupon}
+            disabled={couponLoading || !couponCode.trim()}
+            className="px-4 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+          >
+            {couponLoading ? '...' : 'Applica'}
+          </button>
+        </div>
+      )}
+      {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
+    </div>
+  )
+
   const StepCustomerInfo = () => (
     <div>
       <div className="mb-6">
@@ -960,6 +1009,9 @@ export default function PrenotaPage() {
 
           {/* Booking summary */}
           <BookingSummaryBlock />
+
+          {/* Coupon code input — always visible for logged-in users */}
+          <CouponInputBlock />
         </>
       ) : (
         /* ===== GUEST or INCOMPLETE PROFILE: form first, then account box below ===== */
@@ -1043,51 +1095,7 @@ export default function PrenotaPage() {
         </div>
 
         {/* Coupon code input */}
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">
-            Codice sconto <span className="text-stone-400 font-normal">(opzionale)</span>
-          </label>
-          {couponValid ? (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 bg-emerald-50">
-              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span className="flex-1 text-sm font-medium text-emerald-700">
-                -€{couponDiscount!.toFixed(2)} applicato
-              </span>
-              <button
-                type="button"
-                onClick={removeCoupon}
-                className="p-1 rounded-md hover:bg-emerald-100 text-emerald-600 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={couponCode}
-                onChange={e => {
-                  setCouponCode(e.target.value.toUpperCase())
-                  if (couponError) setCouponError('')
-                }}
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), validateCoupon())}
-                placeholder="SCONTO10"
-                className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors uppercase ${
-                  couponError ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={validateCoupon}
-                disabled={couponLoading || !couponCode.trim()}
-                className="px-4 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-              >
-                {couponLoading ? '...' : 'Applica'}
-              </button>
-            </div>
-          )}
-          {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
-        </div>
+        <CouponInputBlock />
 
         {/* Ricordami checkbox — only for guests */}
         {!customerAuth && (
