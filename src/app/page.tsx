@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Sparkles, Phone, Mail, MapPin, Clock, Star } from 'lucide-react'
+import { CalendarDays, Sparkles, Phone, Mail, MapPin, Star } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { CustomerNavbar } from '@/components/CustomerNavbar'
 
@@ -23,6 +23,7 @@ interface Service {
   price: number
   discountedPrice?: number
   durationMinutes: number
+  featured?: boolean
 }
 
 export default function HomePage() {
@@ -125,55 +126,6 @@ export default function HomePage() {
             </motion.div>
           )}
 
-          {/* Featured Services */}
-          {featuredServices.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.4 }}
-              className="mb-10 w-full"
-            >
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">In evidenza</h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {featuredServices.map((service, i) => {
-                  const hasDiscount = service.discountedPrice && service.discountedPrice > 0
-                  const effectivePrice = hasDiscount ? service.discountedPrice! : service.price
-                  return (
-                    <motion.button
-                      key={service.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + i * 0.08 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleFeaturedClick(service)}
-                      className="text-left p-4 rounded-2xl bg-white border border-stone-200 shadow-sm hover:shadow-md hover:border-stone-300 transition-all cursor-pointer"
-                    >
-                      <h3 className="font-medium text-stone-900 text-sm mb-2 leading-tight">{service.name}</h3>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-stone-400 text-xs">
-                          <Clock className="w-3 h-3" />
-                          {service.durationMinutes} min
-                        </div>
-                        <div className="text-right">
-                          {hasDiscount && (
-                            <span className="text-[10px] text-stone-400 line-through block">€{service.price.toFixed(2)}</span>
-                          )}
-                          <span className={`text-sm font-semibold ${hasDiscount ? 'text-green-600' : 'text-stone-900'}`}>
-                            €{effectivePrice.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.button>
-                  )
-                })}
-              </div>
-            </motion.div>
-          )}
-
           {/* CTA Button */}
           <Link href="/prenota">
             <motion.div
@@ -185,6 +137,37 @@ export default function HomePage() {
               Prenota un appuntamento
             </motion.div>
           </Link>
+
+          {/* Featured Services — super minimal, only service name */}
+          {featuredServices.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4 }}
+              className="mt-10 w-full"
+            >
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <h2 className="text-xs font-medium text-stone-400 uppercase tracking-widest">In evidenza</h2>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {featuredServices.map((service, i) => (
+                  <motion.button
+                    key={service.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + i * 0.06 }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handleFeaturedClick(service)}
+                    className="px-5 py-2.5 rounded-full bg-white border border-stone-200 text-stone-700 text-sm font-medium shadow-sm hover:shadow-md hover:border-stone-300 transition-all cursor-pointer"
+                  >
+                    {service.name}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Punti di Forza */}
           {config?.features?.filter(Boolean).length > 0 && (

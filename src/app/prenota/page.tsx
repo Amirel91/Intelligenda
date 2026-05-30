@@ -16,6 +16,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   PartyPopper,
   CalendarX,
   Download,
@@ -413,6 +414,18 @@ export default function PrenotaPage() {
     )
   }
 
+  // Accordion state for service category dropdowns
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set())
+
+  const toggleCategory = (cat: string) => {
+    setOpenCategories(prev => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
+
   const StepServices = () => {
     const withCategory = services.filter(s => s.category)
     const uncategorized = services.filter(s => !s.category)
@@ -427,6 +440,9 @@ export default function PrenotaPage() {
 
     const hasGroups = categoryMap.size > 0
 
+    // Helper: count selected services inside a group
+    const countSelected = (items: Service[]) => items.filter(s => booking.serviceIds.includes(s.id)).length
+
     return (
       <div>
         <div className="mb-6">
@@ -434,29 +450,92 @@ export default function PrenotaPage() {
           <p className="text-stone-500 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
         </div>
 
+        {/* No categories — flat list (unchanged) */}
         {!hasGroups && (
           <div className="space-y-3">
             {services.map(s => <ServiceCard key={s.id} service={s} />)}
           </div>
         )}
 
+        {/* With categories — collapsible dropdowns */}
         {hasGroups && (
-          <div className="space-y-6">
-            {Array.from(categoryMap.entries()).map(([category, items]) => (
-              <div key={category}>
-                <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3">{category}</h3>
-                <div className="space-y-3">
-                  {items.map(s => <ServiceCard key={s.id} service={s} />)}
+          <div className="space-y-3">
+            {Array.from(categoryMap.entries()).map(([category, items]) => {
+              const isOpen = openCategories.has(category)
+              const selectedCount = countSelected(items)
+              return (
+                <div key={category} className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+                  <button
+                    onClick={() => toggleCategory(category)}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="text-sm font-semibold text-stone-800">{category}</h3>
+                      <span className="text-xs text-stone-400">{items.length} servizi</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedCount > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-stone-900 text-white text-[10px] font-semibold flex items-center justify-center">
+                          {selectedCount}
+                        </span>
+                      )}
+                      <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-3 pb-3 space-y-2">
+                          {items.map(s => <ServiceCard key={s.id} service={s} />)}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
+            {/* Uncategorized services — always visible */}
             {uncategorized.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3">Altri servizi</h3>
-                <div className="space-y-3">
-                  {uncategorized.map(s => <ServiceCard key={s.id} service={s} />)}
-                </div>
+              <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+                <button
+                  onClick={() => toggleCategory('__uncategorized__')}
+                  className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-sm font-semibold text-stone-800">Altri servizi</h3>
+                    <span className="text-xs text-stone-400">{uncategorized.length} servizi</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {countSelected(uncategorized) > 0 && (
+                      <span className="w-5 h-5 rounded-full bg-stone-900 text-white text-[10px] font-semibold flex items-center justify-center">
+                        {countSelected(uncategorized)}
+                      </span>
+                    )}
+                    <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${openCategories.has('__uncategorized__') ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                <AnimatePresence>
+                  {openCategories.has('__uncategorized__') && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-3 pb-3 space-y-2">
+                        {uncategorized.map(s => <ServiceCard key={s.id} service={s} />)}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </div>
