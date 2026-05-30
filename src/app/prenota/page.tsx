@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -79,24 +79,6 @@ export default function PrenotaPage() {
   const [step, setStep] = useState(1)
   const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null)
   const [shopName, setShopName] = useState<string>('')
-
-  // Secret admin access: 5 consecutive taps on header title
-  const tapCountRef = useRef(0)
-  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const handleSecretTap = useCallback(() => {
-    tapCountRef.current += 1
-    if (tapTimerRef.current) clearTimeout(tapTimerRef.current)
-    if (tapCountRef.current >= 5) {
-      tapCountRef.current = 0
-      tapTimerRef.current = null
-      router.push('/admin')
-    } else {
-      tapTimerRef.current = setTimeout(() => {
-        tapCountRef.current = 0
-        tapTimerRef.current = null
-      }, 800)
-    }
-  }, [router])
 
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -1520,7 +1502,7 @@ export default function PrenotaPage() {
           >
             <ArrowLeft className="w-5 h-5 text-stone-600" />
           </button>
-          <h1 className="font-semibold text-stone-900 select-none" onClick={handleSecretTap}>Prenota</h1>
+          <h1 className="font-semibold text-stone-900">Prenota</h1>
         </div>
 
         {/* Steps indicator — 4 steps (confirmation is step 5, shown separately) */}
