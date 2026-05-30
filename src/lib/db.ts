@@ -370,39 +370,44 @@ let _schemaEnsured = false
 export async function ensureDbSchema(): Promise<{ ok: boolean; results: string[] }> {
   if (_schemaEnsured) return { ok: true, results: ['cached'] }
 
-  const results: string[] = []
   const connectionString = process.env.DATABASE_URL
-
   if (!connectionString) {
     console.error('[ensureDbSchema] No DATABASE_URL')
     return { ok: false, results: ['ERROR: No DATABASE_URL env var'] }
   }
 
-  let successCount = 0
+  try {
+    // Send all DDL in a single transaction — reduces ~60 HTTP round-trips to 1
+    const combinedSQL = MIGRATION_SQL.join(';\n')
+    const result = await neonRawQuery(connectionString, combinedSQL)
 
-  for (const ddl of MIGRATION_SQL) {
-    const result = await neonRawQuery(connectionString, ddl)
-    const short = ddl.replace(/\s+/g, ' ').substring(0, 55)
     if (result.ok) {
-      successCount++
-      results.push(`OK: ${short}`)
-      console.log(`[ensureDbSchema] OK: ${short}`)
+      _schemaEnsured = true
+      console.log('[ensureDbSchema] All migrations applied in single batch')
+      return { ok: true, results: ['batch OK'] }
     } else {
-      results.push(`FAIL: ${result.msg}`)
-      console.error(`[ensureDbSchema] FAIL: ${short} → ${result.msg}`)
+      console.error('[ensureDbSchema] Batch migration failed:', result.msg)
+      // Fall back to sequential execution on batch failure
+      let successCount = 0
+      const results: string[] = []
+      for (const ddl of MIGRATION_SQL) {
+        const r = await neonRawQuery(connectionString, ddl)
+        if (r.ok) {
+          successCount++
+          results.push(`OK: ${ddl.replace(/\s+/g, ' ').substring(0, 55)}`)
+        } else {
+          results.push(`FAIL: ${r.msg}`)
+        }
+      }
+      const majorityOk = successCount >= Math.ceil(MIGRATION_SQL.length * 0.7)
+      if (majorityOk) {
+        _schemaEnsured = true
+      }
+      return { ok: majorityOk, results }
     }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[ensureDbSchema] Error:', msg)
+    return { ok: false, results: [`ERROR: ${msg}`] }
   }
-
-  // Only cache as "ensured" if majority of DDL succeeded
-  const allOk = successCount === MIGRATION_SQL.length
-  const majorityOk = successCount >= Math.ceil(MIGRATION_SQL.length * 0.7)
-
-  if (majorityOk) {
-    _schemaEnsured = true
-    console.log(`[ensureDbSchema] Done: ${successCount}/${MIGRATION_SQL.length} succeeded`)
-    return { ok: true, results }
-  }
-
-  console.error(`[ensureDbSchema] Only ${successCount}/${MIGRATION_SQL.length} succeeded — will retry`)
-  return { ok: false, results }
 }

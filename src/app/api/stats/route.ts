@@ -10,17 +10,29 @@ export async function GET(request: NextRequest) {
 
     const config = await requireTenantConfig(request)
 
-    const now = new Date()
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    // Rome-aware today start
+    const romeNow = new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' })
+    const todayStart = new Date(romeNow)
+    todayStart.setHours(0, 0, 0, 0)
 
-    const todayBookings = await db.booking.findMany({
-      where: {
-        configId: config.id,
-        startTime: { gte: todayStart },
-        status: { in: ['confirmed', 'pending'] },
-      },
-      include: { services: { include: { service: true } } },
-    })
+    // Run all 3 queries in parallel
+    const [todayBookings, totalBookings, allRevenue] = await Promise.all([
+      db.booking.findMany({
+        where: {
+          configId: config.id,
+          startTime: { gte: todayStart },
+          status: { in: ['confirmed', 'pending'] },
+        },
+        include: { services: { include: { service: true } } },
+      }),
+      db.booking.count({
+        where: { configId: config.id, status: { in: ['confirmed', 'pending'] } },
+      }),
+      db.booking.aggregate({
+        where: { configId: config.id, status: { in: ['confirmed', 'pending'] } },
+        _sum: { totalPrice: true },
+      }),
+    ])
 
     const revenue = todayBookings.reduce((sum, b) => sum + b.totalPrice, 0)
 
@@ -36,14 +48,6 @@ export async function GET(request: NextRequest) {
       }
     }
     const topServices = Object.values(serviceCount).sort((a, b) => b.count - a.count).slice(0, 5)
-
-    const totalBookings = await db.booking.count({
-      where: { configId: config.id, status: { in: ['confirmed', 'pending'] } },
-    })
-    const allRevenue = await db.booking.aggregate({
-      where: { configId: config.id, status: { in: ['confirmed', 'pending'] } },
-      _sum: { totalPrice: true },
-    })
 
     return NextResponse.json({
       bookingsCount: todayBookings.length,

@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         active: true,
         sortOrder: (maxOrder?.sortOrder ?? -1) + 1,
         configId: config.id,
-        ...(data.serviceIds && {
+        ...(data.serviceIds && data.serviceIds.length > 0 && {
           services: {
             connect: data.serviceIds.map(id => ({ id })),
           },
@@ -104,6 +104,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dati non validi' }, { status: 400 })
     }
     console.error('POST /api/resources error:', error)
-    return NextResponse.json({ error: 'Errore nella creazione della risorsa' }, { status: 500 })
+    return NextResponse.json({ error: 'Errore nella creazione della risorsa', debug: error instanceof Error ? error.message : String(error) }, { status: 500 })
   }
 }

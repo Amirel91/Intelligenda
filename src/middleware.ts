@@ -68,22 +68,26 @@ export async function middleware(request: NextRequest) {
     || request.headers.get('x-real-ip')
     || ''
 
-  // ---- IP BAN CHECK (skip for excluded paths) ----
-  if (!isExcludedPath(url.pathname) && clientIP) {
-    const banned = await checkIPBanned(clientIP)
-    if (banned) {
-      return new NextResponse('Access Denied', { status: 403 })
-    }
+  // Run IP ban and maintenance checks in parallel (skip for excluded paths)
+  let banned = false
+  let maintenance = false
+  if (!isExcludedPath(url.pathname)) {
+    const checks = await Promise.all([
+      clientIP ? checkIPBanned(clientIP) : Promise.resolve(false),
+      checkMaintenanceStatus(),
+    ])
+    banned = checks[0]
+    maintenance = checks[1]
   }
 
-  // ---- MAINTENANCE MODE CHECK (skip for excluded paths) ----
-  if (!isExcludedPath(url.pathname)) {
-    const maintenance = await checkMaintenanceStatus()
-    if (maintenance) {
-      const maintenanceUrl = request.nextUrl.clone()
-      maintenanceUrl.pathname = '/manutenzione'
-      return NextResponse.rewrite(maintenanceUrl)
-    }
+  if (banned) {
+    return new NextResponse('Access Denied', { status: 403 })
+  }
+
+  if (maintenance) {
+    const maintenanceUrl = request.nextUrl.clone()
+    maintenanceUrl.pathname = '/manutenzione'
+    return NextResponse.rewrite(maintenanceUrl)
   }
 
   // ---- SUBDOMAIN ROUTING ----

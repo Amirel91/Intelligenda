@@ -81,7 +81,19 @@ export default function AdminCalendario() {
       .catch(() => {})
   }, [])
 
-  const isDateClosed = (dateStr: string) => closedDates.some(cd => cd.date === dateStr)
+  // Pre-compute bookings grouped by date string for O(1) lookup instead of O(N) per cell
+  const bookingsByDateMap = new Map<string, BookingWithServices[]>()
+  for (const b of bookings) {
+    const ds = new Date(b.startTime).toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })
+    const existing = bookingsByDateMap.get(ds)
+    if (existing) existing.push(b)
+    else bookingsByDateMap.set(ds, [b])
+  }
+
+  // Pre-compute closed date set for O(1) lookup
+  const closedDateSet = new Set(closedDates.map(cd => cd.date))
+
+  const isDateClosed = (dateStr: string) => closedDateSet.has(dateStr)
 
   const handleToggleCloseDay = async (dateStr: string) => {
     if (isDateClosed(dateStr)) {
@@ -114,13 +126,7 @@ export default function AdminCalendario() {
     finally { setCloseSaving(false) }
   }
 
-  const bookingsByDate = (dateStr: string) =>
-    bookings.filter(b => {
-      const d = new Date(b.startTime)
-      // Use Rome timezone to extract the date, not UTC
-      const ds = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }) // 'sv-SE' gives YYYY-MM-DD format
-      return ds === dateStr
-    })
+  const bookingsByDate = (dateStr: string) => bookingsByDateMap.get(dateStr) || []
 
   const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
   const dayNames = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']

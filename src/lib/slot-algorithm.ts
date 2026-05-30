@@ -78,7 +78,6 @@ export async function getAvailableSlots(
   configId?: string,
   resourceId?: string | null
 ): Promise<SlotResult> {
-  await ensureDbSchema()
   const dayOfWeek = getDayOfWeekRome(dateStr) // 1=Mon ... 7=Sun (Europe/Rome)
 
   // Get working hours for this day + closed periods
@@ -276,8 +275,6 @@ export async function findFreeResource(
   configId: string,
   preferredResourceId?: string | null
 ): Promise<string | null> {
-  await ensureDbSchema()
-
   const [timeH, timeM] = time.split(':').map(Number)
   const slotStart = timeH * 60 + timeM
   const slotEnd = slotStart + totalDurationMinutes
@@ -385,8 +382,6 @@ export async function getBatchAvailability(
   configId?: string,
   resourceId?: string | null
 ): Promise<Record<string, SlotResult['availability']>> {
-  await ensureDbSchema()
-
   // 1. Single query: config + working hours + closed dates + closed periods
   const config = await db.businessConfig.findFirst({
     where: configId ? { id: configId } : undefined,
@@ -586,7 +581,8 @@ export async function getBatchAvailability(
 }
 
 /**
- * Check if a specific slot is still available (for real-time validation)
+ * Lightweight single-slot availability check (1 DB query instead of 3).
+ * Used for real-time validation during booking creation.
  */
 export async function isSlotAvailable(
   dateStr: string,
@@ -595,15 +591,83 @@ export async function isSlotAvailable(
   configId?: string,
   resourceId?: string | null
 ): Promise<boolean> {
-  const { slots } = await getAvailableSlots(dateStr, totalDurationMinutes, configId, resourceId)
-  return slots.includes(time)
+  const [timeH, timeM] = time.split(':').map(Number)
+  const slotStart = timeH * 60 + timeM
+  const slotEnd = slotStart + totalDurationMinutes
+
+  const config = await db.businessConfig.findFirst({
+    where: configId ? { id: configId } : undefined,
+    select: { id: true, lunchBreakEnabled: true, lunchBreakStart: true, lunchBreakEnd: true, minNoticeHours: true },
+  })
+  if (!config) return false
+
+  // Check lunch break
+  if (config.lunchBreakEnabled && config.lunchBreakStart && config.lunchBreakEnd) {
+    const [lsH, lsM] = config.lunchBreakStart.split(':').map(Number)
+    const [leH, leM] = config.lunchBreakEnd.split(':').map(Number)
+    const lunchStart = lsH * 60 + lsM
+    const lunchEnd = leH * 60 + leM
+    if (slotStart < lunchEnd && slotEnd > lunchStart) return false
+  }
+
+  // Check if today: minimum notice
+  if (isTodayRome(dateStr)) {
+    const minNoticeMinutes = (config.minNoticeHours || 1) * 60
+    const cutoff = getCurrentMinutesRome() + minNoticeMinutes
+    if (slotStart < cutoff) return false
+  }
+
+  // Get active resources
+  let resources = await db.resource.findMany({
+    where: { configId: config.id, active: true },
+    select: { id: true },
+  })
+  if (resourceId) {
+    resources = resources.filter(r => r.id === resourceId)
+    if (resources.length === 0) return false
+  }
+
+  // Get bookings for this date (single query)
+  const dayStart = createInRome(dateStr, '00:00')
+  const dayEnd = createInRome(dateStr, '23:59')
+  const bookings = await db.booking.findMany({
+    where: {
+      startTime: { gte: dayStart, lte: dayEnd },
+      status: { in: ['confirmed', 'pending', 'blocked'] },
+      configId: config.id,
+    },
+    select: { startTime: true, endTime: true, resourceId: true },
+  })
+
+  // Check unassigned bookings (block all resources)
+  const unassignedBlocked = bookings
+    .filter(b => !b.resourceId)
+    .some(b => {
+      const bs = getMinutesFromMidnightRome(new Date(b.startTime))
+      const be = getMinutesFromMidnightRome(new Date(b.endTime))
+      return slotStart < be && slotEnd > bs
+    })
+  if (unassignedBlocked) return false
+
+  // Check if at least one resource is free
+  for (const resource of resources) {
+    const hasOverlap = bookings
+      .filter(b => b.resourceId === resource.id)
+      .some(b => {
+        const bs = getMinutesFromMidnightRome(new Date(b.startTime))
+        const be = getMinutesFromMidnightRome(new Date(b.endTime))
+        return slotStart < be && slotEnd > bs
+      })
+    if (!hasOverlap) return true
+  }
+
+  return false
 }
 
 /**
  * Check if a date is a closed date
  */
 export async function isDateClosed(dateStr: string, configId?: string): Promise<boolean> {
-  await ensureDbSchema()
   const config = await db.businessConfig.findFirst({
     where: configId ? { id: configId } : undefined,
     include: { closedDates: true, closedPeriods: true },
@@ -623,7 +687,6 @@ export async function getAllClosedDatesInRange(
   endDate: string,
   configId?: string
 ): Promise<string[]> {
-  await ensureDbSchema()
   const config = await db.businessConfig.findFirst({
     where: configId ? { id: configId } : undefined,
     include: { closedDates: true, closedPeriods: true },

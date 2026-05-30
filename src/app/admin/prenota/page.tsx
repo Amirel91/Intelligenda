@@ -113,7 +113,8 @@ export default function AdminPrenota() {
     }
   }, [step])
 
-  const isDayClosed = (dateStr: string) => closedDates.includes(dateStr)
+  const closedDateSet = new Set(closedDates)
+  const isDayClosed = (dateStr: string) => closedDateSet.has(dateStr)
 
   const totalServiceDuration = booking.serviceIds.reduce((sum, id) => {
     const s = services.find(sv => sv.id === id)
@@ -155,29 +156,16 @@ export default function AdminPrenota() {
     const daysInMonth = lastDay.getDate()
 
     try {
-      const newAvail: Record<string, AvailabilityLevel> = {}
-      const promises: Promise<void>[] = []
+      const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+      const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`
 
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-        promises.push(
-          fetch(`/api/slots?date=${dateStr}&duration=${totalDuration}`)
-            .then(r => r.json())
-            .then(data => {
-              newAvail[dateStr] = data.availability || 'none'
-            })
-            .catch(() => {})
-        )
-      }
+      const res = await fetch(`/api/slots/batch?startDate=${startDate}&endDate=${endDate}&duration=${totalDuration}`)
+      if (!res.ok) throw new Error('Failed to fetch batch availability')
 
-      const batchSize = 5
-      for (let i = 0; i < promises.length; i += batchSize) {
-        await Promise.all(promises.slice(i, i + batchSize))
-      }
-
-      setDayAvailabilities(newAvail)
+      const data = await res.json()
+      setDayAvailabilities(data || {})
     } catch (e) {
-      console.error('Error fetching availability:', e)
+      console.error('Error fetching batch availability:', e)
     }
   }, [totalDuration])
 
