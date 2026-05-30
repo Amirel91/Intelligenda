@@ -59,6 +59,7 @@ model BusinessConfig {
   closedPeriods   ClosedPeriod[]
   services        Service[]
   bookings        Booking[]
+  merchantCoupons MerchantCoupon[]
   resources       Resource[]
   customerUsers    CustomerUser[]
 
@@ -136,6 +137,29 @@ model Resource {
   @@index([configId, active])
 }
 
+// ============ MERCHANT COUPONS (per-negozio) ============
+
+model MerchantCoupon {
+  id              String    @id @default(cuid())
+  code            String    // e.g. "SCONTO10"
+  discountAmount  Float     // fixed € discount (e.g. 10.0 = €10 off)
+  maxUses         Int       @default(100)   // max total uses
+  usedCount       Int       @default(0)     // current usage
+  isActive        Boolean   @default(true)
+  expiresAt       DateTime?                // optional expiry
+
+  configId        String
+  config          BusinessConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  bookings        Booking[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([configId, code])
+  @@index([configId])
+}
+
 // ============ BOOKINGS ============
 
 model Booking {
@@ -147,6 +171,8 @@ model Booking {
   startTime       DateTime
   endTime         DateTime
   totalPrice      Float
+  discountApplied Float?          // coupon discount amount (if any)
+  finalPrice      Float?          // totalPrice - discountApplied
   status          String          @default("confirmed") // confirmed, pending, cancelled, blocked
 
   configId        String
@@ -162,6 +188,8 @@ model Booking {
   customerId      String?
   customer        CustomerUser?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
+  couponId        String?
+  coupon          MerchantCoupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
   services        BookingService[]
 
   createdAt       DateTime        @default(now())

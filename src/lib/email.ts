@@ -27,6 +27,7 @@ function capitalizeFirst(s: string): string { return s.charAt(0).toUpperCase() +
 interface EmailBookingData {
   customerName: string; customerSurname: string; customerEmail: string | null; customerPhone: string
   startTime: Date | string; endTime: Date | string; totalPrice: number
+  discountApplied?: number; finalPrice?: number
   services: Array<{ service: { name: string; price: number; durationMinutes: number } }>
   resourceName?: string | null; bookingId: string
 }
@@ -39,12 +40,16 @@ function baseHtml(shopName: string, subject: string, bodyHtml: string): string {
 
 function renderBookingConfirmationCustomer(b: EmailBookingData, s: ShopData, cancelUrl: string): string {
   const rows = b.services.map(sv => `<div class="service-item"><div><div class="service-name">${sv.service.name}</div><div class="service-detail">${sv.service.durationMinutes} min</div></div><div class="service-price">${formatPrice(sv.service.price)}</div></div>`).join('')
-  return baseHtml(s.shopName, `Prenotazione confermata — ${s.shopName}`, `<h2>Prenotazione Confermata</h2><p>Ciao <strong>${capitalizeFirst(b.customerName)} ${capitalizeFirst(b.customerSurname)}</strong>,</p><p>La tua prenotazione è confermata:</p><table class="details"><tr><td>Data</td><td>${formatDate(b.startTime)}</td></tr><tr><td>Ora</td><td>${formatTime(b.startTime)} – ${formatTime(b.endTime)}</td></tr>${b.resourceName ? `<tr><td>Operatore</td><td>${b.resourceName}</td></tr>` : ''}</table><div style="background:#fafaf9;border-radius:8px;overflow:hidden">${rows}<div class="total"><span class="total-label">Totale</span><span class="total-value">${formatPrice(b.totalPrice)}</span></div></div><div style="margin-top:24px"><a href="${cancelUrl}" class="btn btn-danger">Annulla Prenotazione</a></div>`)
+  const discountLine = b.discountApplied ? `<div style="display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e7e5e4;font-size:14px;color:#16a34a"><span style="font-weight:600">Sconto applicato</span><span style="font-weight:600">-${formatPrice(b.discountApplied)}</span></div>` : ''
+  const displayTotal = b.finalPrice != null ? b.finalPrice : b.totalPrice
+  const totalLabel = b.discountApplied ? 'Totale scontato' : 'Totale'
+  return baseHtml(s.shopName, `Prenotazione confermata — ${s.shopName}`, `<h2>Prenotazione Confermata</h2><p>Ciao <strong>${capitalizeFirst(b.customerName)} ${capitalizeFirst(b.customerSurname)}</strong>,</p><p>La tua prenotazione è confermata:</p><table class="details"><tr><td>Data</td><td>${formatDate(b.startTime)}</td></tr><tr><td>Ora</td><td>${formatTime(b.startTime)} – ${formatTime(b.endTime)}</td></tr>${b.resourceName ? `<tr><td>Operatore</td><td>${b.resourceName}</td></tr>` : ''}</table><div style="background:#fafaf9;border-radius:8px;overflow:hidden">${rows}${discountLine}<div class="total"><span class="total-label">${totalLabel}</span><span class="total-value">${formatPrice(displayTotal)}</span></div></div><div style="margin-top:24px"><a href="${cancelUrl}" class="btn btn-danger">Annulla Prenotazione</a></div>`)
 }
 
 function renderBookingConfirmationAdmin(b: EmailBookingData, s: ShopData): string {
   const list = b.services.map(sv => sv.service.name).join(', ')
-  return baseHtml(s.shopName, `Nuova prenotazione — ${s.shopName}`, `<h2>Nuova Prenotazione</h2><table class="details"><tr><td>Cliente</td><td>${capitalizeFirst(b.customerName)} ${capitalizeFirst(b.customerSurname)}</td></tr><tr><td>Email</td><td>${b.customerEmail || 'Non fornita'}</td></tr><tr><td>Telefono</td><td>${b.customerPhone}</td></tr><tr><td>Data</td><td>${formatDate(b.startTime)}</td></tr><tr><td>Ora</td><td>${formatTime(b.startTime)} – ${formatTime(b.endTime)}</td></tr><tr><td>Servizi</td><td>${list}</td></tr><tr><td>Totale</td><td>${formatPrice(b.totalPrice)}</td></tr></table>`)
+  const discountInfo = b.discountApplied ? `<tr><td style="color:#16a34a;font-weight:600">Sconto applicato</td><td style="color:#16a34a;font-weight:600">-${formatPrice(b.discountApplied)}</td></tr><tr><td style="font-weight:700">Totale scontato</td><td style="font-weight:700">${formatPrice(b.finalPrice != null ? b.finalPrice : b.totalPrice)}</td></tr>` : `<tr><td>Totale</td><td>${formatPrice(b.totalPrice)}</td></tr>`
+  return baseHtml(s.shopName, `Nuova prenotazione — ${s.shopName}`, `<h2>Nuova Prenotazione</h2><table class="details"><tr><td>Cliente</td><td>${capitalizeFirst(b.customerName)} ${capitalizeFirst(b.customerSurname)}</td></tr><tr><td>Email</td><td>${b.customerEmail || 'Non fornita'}</td></tr><tr><td>Telefono</td><td>${b.customerPhone}</td></tr><tr><td>Data</td><td>${formatDate(b.startTime)}</td></tr><tr><td>Ora</td><td>${formatTime(b.startTime)} – ${formatTime(b.endTime)}</td></tr><tr><td>Servizi</td><td>${list}</td></tr>${discountInfo}</table>`)
 }
 
 function renderCancellationCustomer(b: EmailBookingData, s: ShopData): string {

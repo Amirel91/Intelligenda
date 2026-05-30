@@ -144,6 +144,32 @@ export async function POST(request: NextRequest) {
     const totalDuration = services.reduce((sum, s) => sum + s.durationMinutes + (s.cleanupMinutes || 0) + (s.bufferMinutes || 0), 0)
     const totalPrice = services.reduce((sum, s) => sum + s.price, 0)
 
+    // ============ COUPON VALIDATION & APPLICATION ============
+    const couponCode = (body.couponCode as string | undefined)?.trim().toUpperCase()
+    let appliedCoupon: { id: string; discountAmount: number } | null = null
+    let discountApplied = 0
+    let finalPrice = totalPrice
+
+    if (couponCode) {
+      const coupon = await db.merchantCoupon.findFirst({
+        where: { configId: config.id, code: couponCode, isActive: true },
+      })
+      if (coupon) {
+        // Re-validate: expiry, usage
+        if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+          return NextResponse.json({ error: 'Il codice sconto e scaduto' }, { status: 400 })
+        }
+        if (coupon.usedCount >= coupon.maxUses) {
+          return NextResponse.json({ error: 'Il codice sconto ha raggiunto il limite di utilizzi' }, { status: 400 })
+        }
+        discountApplied = Math.min(coupon.discountAmount, totalPrice) // never exceed total
+        finalPrice = totalPrice - discountApplied
+        appliedCoupon = { id: coupon.id, discountAmount: coupon.discountAmount }
+      } else {
+        return NextResponse.json({ error: 'Codice sconto non valido' }, { status: 400 })
+      }
+    }
+
     // Double-check slot availability (prevent race conditions)
     // If client specified a resourceId, check only that resource's availability
     const available = await isSlotAvailable(data.date, data.time, totalDuration, config.id, data.resourceId)
@@ -258,10 +284,13 @@ export async function POST(request: NextRequest) {
         startTime,
         endTime,
         totalPrice,
+        discountApplied: discountApplied > 0 ? discountApplied : null,
+        finalPrice: discountApplied > 0 ? finalPrice : null,
         status: 'confirmed',
         configId: config.id,
         ...(resourceId && { resourceId }),
         ...(customerId && { customerId }),
+        ...(appliedCoupon && { couponId: appliedCoupon.id }),
         services: {
           create: data.serviceIds.map((serviceId: string) => ({
             serviceId,
@@ -275,8 +304,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Increment coupon usedCount (non-blocking)
+    if (appliedCoupon) {
+      db.merchantCoupon.update({
+        where: { id: appliedCoupon.id },
+        data: { usedCount: { increment: 1 } },
+      }).catch(err => console.error('[booking] Failed to increment coupon usedCount:', err))
+    }
+
     const tenantSlug = request.cookies.get('tenant_slug')?.value || ''
-    sendBookingConfirmationEmails({ customerName: booking.customerName, customerSurname: booking.customerSurname, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone, startTime: booking.startTime, endTime: booking.endTime, totalPrice: booking.totalPrice, services: booking.services, resourceName: booking.resource?.name, bookingId: booking.id }, { shopName: booking.config?.shopName || config.shopName, shopEmail: booking.config?.shopEmail || config.shopEmail, shopPhone: booking.config?.shopPhone || config.shopPhone, shopAddress: booking.config?.shopAddress || config.shopAddress }, tenantSlug).catch(err => console.error('[email] skip:', err))
+    sendBookingConfirmationEmails({ customerName: booking.customerName, customerSurname: booking.customerSurname, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone, startTime: booking.startTime, endTime: booking.endTime, totalPrice: booking.totalPrice, discountApplied: booking.discountApplied ?? undefined, finalPrice: booking.finalPrice ?? undefined, services: booking.services, resourceName: booking.resource?.name, bookingId: booking.id }, { shopName: booking.config?.shopName || config.shopName, shopEmail: booking.config?.shopEmail || config.shopEmail, shopPhone: booking.config?.shopPhone || config.shopPhone, shopAddress: booking.config?.shopAddress || config.shopAddress }, tenantSlug).catch(err => console.error('[email] skip:', err))
 
     return NextResponse.json({ ...booking, shopName: booking.config?.shopName || config.shopName }, { status: 201 })
   } catch (error: unknown) {

@@ -18,6 +18,8 @@ interface BookingWithServices {
   startTime: string
   endTime: string
   totalPrice: number
+  discountApplied?: number | null
+  finalPrice?: number | null
   status: string
   resource?: { id: string; name: string } | null
   services: { service: { name: string; price: number; durationMinutes: number; cleanupMinutes: number } }[]
@@ -397,7 +399,7 @@ export default function AdminCalendario() {
                         </button>
                       )}
                     </div>
-                    <div className="text-xs text-stone-400 mt-1">{booking.services.map(bs => bs.service.name).join(', ')} &middot; EUR{booking.totalPrice.toFixed(2)}</div>
+                    <div className="text-xs text-stone-400 mt-1">{booking.services.map(bs => bs.service.name).join(', ')} &middot; <span className={booking.discountApplied != null && booking.discountApplied > 0 ? 'line-through text-stone-400' : ''}>EUR{booking.totalPrice.toFixed(2)}</span>{booking.discountApplied != null && booking.discountApplied > 0 && <span className="text-emerald-600 font-medium"> EUR{(booking.finalPrice ?? booking.totalPrice).toFixed(2)}</span>}</div>
                     {booking.resource && (
                       <div className="mt-1">
                         <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">{booking.resource.name}</span>
@@ -429,7 +431,10 @@ export default function AdminCalendario() {
                     <div className="text-sm text-stone-600 mb-3">{booking.services.map(bs => bs.service.name).join(', ')}</div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-stone-900 text-sm">EUR{booking.totalPrice.toFixed(2)}</span>
+                        <span className="font-semibold text-stone-900 text-sm">EUR{(booking.finalPrice ?? booking.totalPrice).toFixed(2)}</span>
+                        {booking.discountApplied != null && booking.discountApplied > 0 && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold">-€{booking.discountApplied.toFixed(2)}</span>
+                        )}
                         {booking.resource && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">{booking.resource.name}</span>
                         )}
@@ -609,7 +614,7 @@ export default function AdminCalendario() {
                             </button>
                           )}
                         </div>
-                        <div className="text-xs text-stone-400 mt-1">{booking.services.map(bs => bs.service.name).join(', ')} &middot; EUR{booking.totalPrice.toFixed(2)}</div>
+                        <div className="text-xs text-stone-400 mt-1">{booking.services.map(bs => bs.service.name).join(', ')} &middot; <span className={booking.discountApplied != null && booking.discountApplied > 0 ? 'line-through text-stone-400' : ''}>EUR{booking.totalPrice.toFixed(2)}</span>{booking.discountApplied != null && booking.discountApplied > 0 && <span className="text-emerald-600 font-medium"> EUR{(booking.finalPrice ?? booking.totalPrice).toFixed(2)}</span>}</div>
                         {booking.resource && (
                           <div className="mt-1">
                             <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">{booking.resource.name}</span>
@@ -737,7 +742,12 @@ export default function AdminCalendario() {
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-stone-200">
                   <div className="flex items-center gap-2 font-semibold text-stone-900"><Euro className="w-5 h-5" />Totale</div>
-                  <span className="text-xl font-bold text-stone-900">EUR{selectedBooking.totalPrice.toFixed(2)}</span>
+                  <div className="text-right">
+                    {selectedBooking.discountApplied != null && selectedBooking.discountApplied > 0 && (
+                      <div className="text-xs text-emerald-600 font-medium mb-0.5">Sconto -EUR{selectedBooking.discountApplied.toFixed(2)}</div>
+                    )}
+                    <span className="text-xl font-bold text-stone-900">EUR{(selectedBooking.finalPrice ?? selectedBooking.totalPrice).toFixed(2)}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 pt-3 border-t border-stone-100 flex-wrap">
                   {deleteConfirm === selectedBooking.id ? (

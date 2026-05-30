@@ -17,6 +17,7 @@ import {
   Users,
   UserCog,
   LifeBuoy,
+  Tag,
 } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/admin/servizi', label: 'Servizi', icon: Sparkles },
   { href: '/admin/postazioni', label: 'Postazioni', icon: UserCog },
   { href: '/admin/clienti', label: 'Clienti', icon: Users },
+  { href: '/admin/coupon', label: 'Codici Sconto', icon: Tag },
   { href: '/admin/impostazioni', label: 'Impostazioni', icon: Settings },
 ]
 

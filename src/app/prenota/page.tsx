@@ -119,6 +119,13 @@ export default function PrenotaPage() {
   const [regPassword, setRegPassword] = useState('')
   const [regPasswordConfirm, setRegPasswordConfirm] = useState('')
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('')
+  const [couponDiscount, setCouponDiscount] = useState<number | null>(null)
+  const [couponValid, setCouponValid] = useState(false)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
+
   // Utility: split a full name into firstName / lastName.
   // Handles single-word names gracefully (e.g. "Amir" → firstName="Amir", lastName="").
   // Handles multi-word names (e.g. "Mario Rossi" → firstName="Mario", lastName="Rossi").
@@ -311,6 +318,8 @@ export default function PrenotaPage() {
     const s = services.find(sv => sv.id === id)
     return sum + (s?.price || 0)
   }, 0), [booking.serviceIds, services])
+  const discountAmount = couponValid && couponDiscount ? Math.min(couponDiscount, totalPrice) : 0
+  const finalTotalPrice = totalPrice - discountAmount
 
   const selectedServices = useMemo(() => booking.serviceIds.map(id => services.find(s => s.id === id)).filter(Boolean) as Service[], [booking.serviceIds, services])
 
@@ -821,6 +830,36 @@ export default function PrenotaPage() {
     return Object.keys(errors).length === 0
   }
 
+  // Validate coupon
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) return
+    setCouponLoading(true)
+    setCouponError('')
+    setCouponValid(false)
+    setCouponDiscount(null)
+    try {
+      const res = await fetch(`/api/coupon/validate?code=${encodeURIComponent(couponCode.trim())}`)
+      const data = await res.json()
+      if (data.valid) {
+        setCouponValid(true)
+        setCouponDiscount(data.discountAmount)
+      } else {
+        setCouponError(data.error || 'Codice non valido')
+      }
+    } catch {
+      setCouponError('Errore nella verifica')
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
+  const removeCoupon = () => {
+    setCouponCode('')
+    setCouponValid(false)
+    setCouponDiscount(null)
+    setCouponError('')
+  }
+
   // Reusable booking summary block (shared by logged-in and guest views)
   const BookingSummaryBlock = () => (
     <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-100">
@@ -852,9 +891,15 @@ export default function PrenotaPage() {
             </div>
           ))}
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-emerald-600 pt-1">
+            <span className="font-medium">Sconto</span>
+            <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
+          </div>
+        )}
         <div className="border-t border-stone-200 pt-1 mt-1 flex justify-between">
-          <span className="font-semibold text-stone-900">Totale</span>
-          <span className="font-semibold text-stone-900">€{totalPrice.toFixed(2)}</span>
+          <span className="font-semibold text-stone-900">{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
+          <span className="font-semibold text-stone-900">€{finalTotalPrice.toFixed(2)}</span>
         </div>
       </div>
     </div>
@@ -995,6 +1040,53 @@ export default function PrenotaPage() {
             }`}
           />
           {formErrors.customerEmail && <p className="text-red-500 text-xs mt-1">{formErrors.customerEmail}</p>}
+        </div>
+
+        {/* Coupon code input */}
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-1.5">
+            Codice sconto <span className="text-stone-400 font-normal">(opzionale)</span>
+          </label>
+          {couponValid ? (
+            <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 bg-emerald-50">
+              <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="flex-1 text-sm font-medium text-emerald-700">
+                -€{couponDiscount!.toFixed(2)} applicato
+              </span>
+              <button
+                type="button"
+                onClick={removeCoupon}
+                className="p-1 rounded-md hover:bg-emerald-100 text-emerald-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={e => {
+                  setCouponCode(e.target.value.toUpperCase())
+                  if (couponError) setCouponError('')
+                }}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), validateCoupon())}
+                placeholder="SCONTO10"
+                className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors uppercase ${
+                  couponError ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={validateCoupon}
+                disabled={couponLoading || !couponCode.trim()}
+                className="px-4 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+              >
+                {couponLoading ? '...' : 'Applica'}
+              </button>
+            </div>
+          )}
+          {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
         </div>
 
         {/* Ricordami checkbox — only for guests */}
@@ -1271,6 +1363,8 @@ export default function PrenotaPage() {
         customer: customerPayload,
         // Optional registration: send password only if guest chose to register
         ...(wantRegister && regPassword && regPassword === regPasswordConfirm && !customerAuth ? { registerPassword: regPassword } : {}),
+        // Coupon code (if validated)
+        ...(couponValid && couponCode.trim() ? { couponCode: couponCode.trim() } : {}),
       }
 
       const res = await fetch('/api/bookings', {

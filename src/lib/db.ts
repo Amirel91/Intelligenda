@@ -298,6 +298,37 @@ const MIGRATION_SQL = [
   `CREATE INDEX IF NOT EXISTS "Booking_configId_status_startTime_idx" ON "Booking"("configId", "status", "startTime")`,
   // ============ ONE-TIME: REMOVE DEFAULT TEST TENANT ============
   `DELETE FROM "Tenant" WHERE "slug" = 'default'`,
+  // ============ MERCHANT COUPONS (per-negozio discount codes) ============
+  `CREATE TABLE IF NOT EXISTS "MerchantCoupon" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "code" TEXT NOT NULL,
+    "discountAmount" DOUBLE PRECISION NOT NULL,
+    "maxUses" INTEGER NOT NULL DEFAULT 100,
+    "usedCount" INTEGER NOT NULL DEFAULT 0,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "expiresAt" TIMESTAMP(3),
+    "configId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'MerchantCoupon_configId_fkey') THEN
+      ALTER TABLE "MerchantCoupon" ADD CONSTRAINT "MerchantCoupon_configId_fkey"
+        FOREIGN KEY ("configId") REFERENCES "BusinessConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "MerchantCoupon_configId_code_key" ON "MerchantCoupon"("configId", "code")`,
+  `CREATE INDEX IF NOT EXISTS "MerchantCoupon_configId_idx" ON "MerchantCoupon"("configId")`,
+  // ============ BOOKING COUPON FIELDS ============
+  `ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "discountApplied" DOUBLE PRECISION`,
+  `ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "finalPrice" DOUBLE PRECISION`,
+  `ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "couponId" TEXT`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Booking_couponId_fkey') THEN
+      ALTER TABLE "Booking" ADD CONSTRAINT "Booking_couponId_fkey"
+        FOREIGN KEY ("couponId") REFERENCES "MerchantCoupon"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+  END $$`,
 ]
 
 /**
