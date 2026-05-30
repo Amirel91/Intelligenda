@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ensureDbSchema } from '@/lib/db'
 import { getAvailableSlots } from '@/lib/slot-algorithm'
 import { getTenantConfig } from '@/lib/tenant'
 
@@ -7,6 +8,7 @@ export const dynamic = 'force-dynamic'
 // GET /api/slots?date=YYYY-MM-DD&duration=60&resourceId=xxx
 export async function GET(request: NextRequest) {
   try {
+    await ensureDbSchema()
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
     const duration = searchParams.get('duration')
