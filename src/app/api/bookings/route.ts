@@ -5,8 +5,9 @@ import { bookingSchema } from '@/lib/validations'
 import { isSlotAvailable, findFreeResource } from '@/lib/slot-algorithm'
 import { getTenantConfig, requireTenantConfig } from '@/lib/tenant'
 import { createInRome } from '@/lib/timezone'
-import { sendBookingConfirmationEmails } from '@/lib/email'
-import { getCustomerSession } from '@/lib/customer-auth'
+import { sendBookingConfirmationEmails, sendWelcomeWithCredentials } from '@/lib/email'
+import { getCustomerSession, createCustomerToken, setCustomerSessionCookie } from '@/lib/customer-auth'
+import { hashPassword } from '@/lib/auth'
 
 // ============ RATE LIMITING (In-Memory, Anti-Spam) ============
 // Max 2 bookings per IP per configId in a 2-hour window
@@ -164,8 +165,67 @@ export async function POST(request: NextRequest) {
     const customerSession = await getCustomerSession()
     let customerId: string | undefined
 
-    // Link booking to customer account if logged in
-    if (customerSession && customerSession.configId === config.id) {
+    // Optional registration: if guest provides registerPassword, create account
+    const registerPassword = body.registerPassword as string | undefined
+    const customerEmail = data.customer.customerEmail?.trim()
+
+    if (!customerSession && registerPassword && customerEmail) {
+      // Check if email already registered under this tenant
+      const existing = await db.customerUser.findFirst({
+        where: { email: customerEmail.toLowerCase(), configId: config.id },
+      })
+
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Questa email e gia registrata. Accedi invece di crearne uno nuovo.' },
+          { status: 409 }
+        )
+      }
+
+      // Hash password and create CustomerUser
+      const hashedPassword = await hashPassword(registerPassword)
+      const fullName = `${data.customer.customerName} ${data.customer.customerSurname || ''}`.trim()
+
+      try {
+        const newCustomer = await db.customerUser.create({
+          data: {
+            tenantId: config.tenantId,
+            configId: config.id,
+            nome: fullName,
+            telefono: data.customer.customerPhone,
+            email: customerEmail.toLowerCase(),
+            password: hashedPassword,
+          },
+        })
+
+        customerId = newCustomer.id
+
+        // Set customer session cookie so user is logged in after registration
+        const token = await createCustomerToken({
+          customerId: newCustomer.id,
+          email: newCustomer.email,
+          nome: newCustomer.nome,
+          telefono: newCustomer.telefono,
+          configId: newCustomer.configId,
+          tenantId: newCustomer.tenantId,
+        })
+        await setCustomerSessionCookie(token)
+
+        // Fire welcome email with credentials (async, non-blocking)
+        const tenantSlug = request.cookies.get('tenant_slug')?.value || ''
+        sendWelcomeWithCredentials(
+          fullName,
+          newCustomer.email,
+          registerPassword, // plain text for the email
+          { shopName: config.shopName },
+          tenantSlug
+        ).catch(err => console.error('[email] welcome_with_credentials skip:', err))
+      } catch (err) {
+        console.error('[booking] Failed to create customer account:', err)
+        // Don't block booking if account creation fails
+      }
+    } else if (customerSession && customerSession.configId === config.id) {
+      // Already logged in — link booking to existing account
       customerId = customerSession.customerId
       // Update customer profile with latest info (nome, telefono)
       await db.customerUser.update({

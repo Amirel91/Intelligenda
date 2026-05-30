@@ -181,6 +181,33 @@ export async function sendPasswordResetEmail(ownerName: string, ownerEmail: stri
   }
 }
 
+// ============ CUSTOMER WELCOME WITH CREDENTIALS ============
+
+function renderWelcomeWithCredentialsHtml(name: string, email: string, password: string, shopName: string): string {
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Benvenuto — ${shopName}</title><style>body{margin:0;padding:0;width:100%;height:100%;background-color:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}.container{max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}.header{background:linear-gradient(135deg,#1c1917,#292524);padding:40px 32px;text-align:center}.header h1{margin:0;font-size:22px;font-weight:600;color:#fafaf9;letter-spacing:-0.02em}.header p{margin:6px 0 0;font-size:13px;color:#a8a29e}.body{padding:32px}.body h2{margin:0 0 12px;font-size:18px;font-weight:600;color:#1c1917}.body p{margin:0 0 16px;font-size:15px;color:#44403c;line-height:1.6}.cred-box{background:#fafaf9;border:1px solid #e7e5e4;border-radius:12px;padding:20px;margin:20px 0}.cred-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e7e5e4;font-size:14px}.cred-row:last-child{border-bottom:none}.cred-label{color:#78716c;font-weight:500}.cred-value{color:#1c1917;font-weight:600;text-align:right;word-break:break-all}.cred-value.pw{font-family:'SF Mono',Monaco,'Courier New',monospace;letter-spacing:0.02em;font-size:15px}.btn{display:inline-block;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;text-align:center;background-color:#1c1917;color:#fff}.divider{height:1px;background-color:#e7e5e4;margin:24px 0}.footer{padding:24px 32px;text-align:center;font-size:12px;color:#a8a29e;border-top:1px solid #f5f5f4;background:#fafaf9}.note{font-size:13px;color:#78716c;line-height:1.5;background:#fffbeb;border-left:3px solid #f59e0b;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0}</style></head><body><div style="padding:24px 0"><div class="container"><div class="header"><h1>Benvenuto!</h1><p>${shopName}</p></div><div class="body"><h2>Ciao ${name}, il tuo account e pronto.</h2><p>Ti sei registrato con successo. Ecco i tuoi dati di accesso:</p><div class="cred-box"><div class="cred-row"><span class="cred-label">Email</span><span class="cred-value">${email}</span></div><div class="cred-row"><span class="cred-label">Password</span><span class="cred-value pw">${password}</span></div></div><div class="note">Conserva questa email per ritrovare facilmente le tue credenziali. Puoi cercarla nella tua casella di posta digitando &quot;IntelliGenda credenziali&quot;.</div><div class="divider"></div><p style="font-size:14px;color:#78716c">Grazie per aver scelto <strong>${shopName}</strong>. Ti aspettiamo!</p></div><div class="footer"><p>IntelliGenda — Prenotazioni intelligenti</p></div></div></div></body></html>`
+}
+
+export async function sendWelcomeWithCredentials(name: string, email: string, password: string, shop: { shopName: string }, slug: string): Promise<void> {
+  const r = getResend()
+  if (!r) {
+    console.error('[sendWelcomeWithCredentials] Resend not initialized')
+    return
+  }
+  const fromAddr = `${getFromName()} <${getFromAddress()}>`
+  try {
+    await r.emails.send({
+      from: fromAddr,
+      to: email,
+      subject: `Benvenuto! — I tuoi dati di accesso | ${shop.shopName}`,
+      html: renderWelcomeWithCredentialsHtml(name, email, password, shop.shopName),
+      headers: EMAIL_HEADERS,
+    })
+    console.log('[sendWelcomeWithCredentials] Sent to', email)
+  } catch (err) {
+    console.error('[sendWelcomeWithCredentials] Error:', err)
+  }
+}
+
 // ============ CUSTOMER OTP EMAIL (Apple minimal style) ============
 
 function renderOtpEmail(code: string, shopName: string): string {

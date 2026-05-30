@@ -77,7 +77,8 @@ model CustomerUser {
   nome            String         @default("")
   telefono        String         @unique
   email           String         @unique
-  // OTP fields for passwordless authentication
+  password        String?                            // bcrypt hash — set when customer registers with password
+  // OTP fields for passwordless authentication (legacy, kept for backward compatibility)
   otpCode         String?
   otpExpires      DateTime?
 

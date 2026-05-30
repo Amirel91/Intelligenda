@@ -114,14 +114,10 @@ export default function PrenotaPage() {
   const [customerAuth, setCustomerAuth] = useState<CustomerAuthData | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
 
-  // Inline OTP login flow (expanded below the form, not a modal)
-  const [showLoginFlow, setShowLoginFlow] = useState(false)
-  const [loginEmail, setLoginEmail] = useState('')
-  const [otpCode, setOtpCode] = useState('')
-  const [otpSent, setOtpSent] = useState(false)
-  const [otpSending, setOtpSending] = useState(false)
-  const [otpVerifying, setOtpVerifying] = useState(false)
-  const [otpError, setOtpError] = useState('')
+  // Optional registration during booking (password-based)
+  const [wantRegister, setWantRegister] = useState(false)
+  const [regPassword, setRegPassword] = useState('')
+  const [regPasswordConfirm, setRegPasswordConfirm] = useState('')
 
   // Utility: split a full name into firstName / lastName.
   // Handles single-word names gracefully (e.g. "Amir" → firstName="Amir", lastName="").
@@ -739,91 +735,11 @@ export default function PrenotaPage() {
     </div>
   )
 
-  // ==================== INLINE OTP LOGIN ====================
-
-  const handleRequestOtp = async () => {
-    if (!loginEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail)) {
-      setOtpError('Inserisci un indirizzo email valido')
-      return
-    }
-    setOtpError('')
-    setOtpSending(true)
-    try {
-      const res = await fetch('/api/auth/customer/request-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Errore nell\'invio del codice')
-      }
-      setOtpSent(true)
-    } catch (err) {
-      setOtpError(err instanceof Error ? err.message : 'Errore')
-    } finally {
-      setOtpSending(false)
-    }
-  }
-
-  const handleVerifyOtp = async () => {
-    if (!otpCode.trim() || otpCode.length !== 6) {
-      setOtpError('Inserisci il codice a 6 cifre')
-      return
-    }
-    setOtpError('')
-    setOtpVerifying(true)
-    try {
-      const res = await fetch('/api/auth/customer/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, otpCode }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Codice non valido')
-      }
-      const data = await res.json()
-      setCustomerAuth(data.customer)
-      setShowLoginFlow(false)
-      setOtpSent(false)
-      setOtpCode('')
-      setLoginEmail('')
-      // Pre-fill form with customer data — useEffect sync will also handle this
-      if (data.customer) {
-        const { firstName, lastName } = splitNome(data.customer.nome)
-        const phone = data.customer.telefono?.startsWith('temp_') ? '' : (data.customer.telefono || '')
-        const email = data.customer.email || ''
-        setBooking(prev => ({
-          ...prev,
-          customer: {
-            customerName: firstName || prev.customer.customerName,
-            customerSurname: lastName || prev.customer.customerSurname,
-            customerPhone: phone || prev.customer.customerPhone,
-            customerEmail: email || prev.customer.customerEmail,
-          },
-        }))
-      }
-    } catch (err) {
-      setOtpError(err instanceof Error ? err.message : 'Errore')
-    } finally {
-      setOtpVerifying(false)
-    }
-  }
-
-  const collapseLoginFlow = () => {
-    setShowLoginFlow(false)
-    setOtpSent(false)
-    setOtpCode('')
-    setOtpError('')
-    setLoginEmail('')
-  }
-
   // ==================== ACCOUNT SECTION (below form) ====================
 
-  // SITUATION A: Guest — amber box below form with inline OTP
+  // SITUATION A: Guest — amber box below form redirecting to /login
   // SITUATION B: Logged-in, complete profile — hidden (welcome shown instead)
-  // SITUATION C: Logged-in, incomplete profile — blue box above form (handled separately)
+  // SITUATION C: Logged-in, incomplete profile — blue box above form
   const AccountSection = () => {
     // Situation C: Logged in but incomplete profile — blue info box
     if (customerAuth && !hasCompleteProfile) {
@@ -849,7 +765,7 @@ export default function PrenotaPage() {
     // Situation B: Complete profile — no box needed (welcome card shown instead)
     if (hasCompleteProfile) return null
 
-    // Situation A: Guest — amber box with optional inline OTP expansion
+    // Situation A: Guest — amber box redirecting to /login
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -862,102 +778,19 @@ export default function PrenotaPage() {
           <div className="flex-1 h-px bg-stone-200" />
         </div>
 
-        {/* Amber trigger — collapsed state */}
-        {!showLoginFlow ? (
-          <button
-            onClick={() => setShowLoginFlow(true)}
-            className="w-full p-4 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center gap-3 text-left hover:bg-amber-100/60 transition-colors"
-          >
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-              <LogIn className="w-4 h-4 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-amber-900">Hai gia un account?</p>
-              <p className="text-xs text-amber-600">Accedi per precompilare i tuoi dati e gestire le prenotazioni.</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
-          </button>
-        ) : (
-          /* Expanded inline OTP flow */
-          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center">
-                  <LogIn className="w-3.5 h-3.5 text-amber-600" />
-                </div>
-                <span className="text-sm font-medium text-amber-900">Accedi al tuo account</span>
-              </div>
-              <button onClick={collapseLoginFlow} className="p-1 rounded-lg hover:bg-amber-100 transition-colors">
-                <X className="w-4 h-4 text-amber-400" />
-              </button>
-            </div>
-
-            {!otpSent ? (
-              <>
-                {/* Step 1: Email input */}
-                <p className="text-xs text-stone-500">Inserisci la tua email per ricevere un codice di accesso temporaneo.</p>
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-                    <input
-                      type="email"
-                      value={loginEmail}
-                      onChange={e => { setLoginEmail(e.target.value); setOtpError('') }}
-                      placeholder="La tua email"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-amber-400 transition-colors text-sm"
-                      onKeyDown={e => e.key === 'Enter' && handleRequestOtp()}
-                    />
-                  </div>
-                  <button
-                    onClick={handleRequestOtp}
-                    disabled={otpSending || !loginEmail.trim()}
-                    className="px-5 py-3 rounded-xl bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-                  >
-                    {otpSending ? 'Invio...' : 'Invia Codice'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Step 2: OTP code input */}
-                <p className="text-xs text-stone-500 flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5" />
-                  Codice inviato a <strong className="text-stone-700">{loginEmail}</strong>
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '')); setOtpError('') }}
-                    placeholder="000000"
-                    className="flex-1 px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-amber-400 transition-colors text-center text-xl font-bold tracking-[0.15em]"
-                    onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()}
-                    autoFocus
-                  />
-                  <button
-                    onClick={handleVerifyOtp}
-                    disabled={otpVerifying || otpCode.length !== 6}
-                    className="px-5 py-3 rounded-xl bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-                  >
-                    {otpVerifying ? 'Verifica...' : 'Verifica'}
-                  </button>
-                </div>
-                <button
-                  onClick={() => { setOtpSent(false); setOtpCode(''); setOtpError('') }}
-                  className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-                >
-                  Non ho ricevuto il codice — invia di nuovo
-                </button>
-              </>
-            )}
-
-            {otpError && (
-              <p className="text-sm text-red-500">{otpError}</p>
-            )}
+        <Link
+          href="/login?callback=/prenota"
+          className="w-full p-4 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center gap-3 text-left hover:bg-amber-100/60 transition-colors"
+        >
+          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <LogIn className="w-4 h-4 text-amber-600" />
           </div>
-        )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-amber-900">Hai gia un account?</p>
+            <p className="text-xs text-amber-600">Accedi per gestire le tue prenotazioni.</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
+        </Link>
       </motion.div>
     )
   }
@@ -976,6 +809,12 @@ export default function PrenotaPage() {
     else if (!/^[+]?[\d\s()-]{8,}$/.test(booking.customer.customerPhone)) errors.customerPhone = 'Telefono non valido'
     if (booking.customer.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(booking.customer.customerEmail)) {
       errors.customerEmail = 'Email non valida'
+    }
+    // Registration password validation
+    if (wantRegister) {
+      if (!booking.customer.customerEmail.trim()) errors.customerEmail = 'Email obbligatoria per la registrazione'
+      if (!regPassword || regPassword.length < 6) errors.regPassword = 'La password deve avere almeno 6 caratteri'
+      if (regPassword !== regPasswordConfirm) errors.regPasswordConfirm = 'Le password non coincidono'
     }
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -1171,6 +1010,90 @@ export default function PrenotaPage() {
         )}
           </div>
 
+          {/* Optional registration — only for guests, with email required */}
+          {!customerAuth && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4"
+            >
+              <label className="flex items-start gap-2.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={wantRegister}
+                  onChange={e => {
+                    setWantRegister(e.target.checked)
+                    if (!e.target.checked) {
+                      setRegPassword('')
+                      setRegPasswordConfirm('')
+                      setFormErrors(prev => {
+                        const { regPassword, regPasswordConfirm, ...rest } = prev
+                        return rest
+                      })
+                    }
+                  }}
+                  className="w-4 h-4 mt-0.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
+                />
+                <div>
+                  <span className="text-sm font-medium text-stone-700 group-hover:text-stone-900 transition-colors">
+                    Voglio registrarmi per salvare i miei dati
+                  </span>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    Crea un account per gestire le tue prenotazioni in futuro. Ti invieremo i dati di accesso via email.
+                  </p>
+                </div>
+              </label>
+
+              {/* Dynamic password fields */}
+              <AnimatePresence>
+                {wantRegister && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 space-y-3 pl-6 border-l-2 border-amber-200">
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1.5">Crea Password *</label>
+                        <input
+                          type="password"
+                          value={regPassword}
+                          onChange={e => {
+                            setRegPassword(e.target.value)
+                            if (formErrors.regPassword) setFormErrors(prev => ({ ...prev, regPassword: '' }))
+                          }}
+                          placeholder="Almeno 6 caratteri"
+                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
+                            formErrors.regPassword ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+                          }`}
+                        />
+                        {formErrors.regPassword && <p className="text-red-500 text-xs mt-1">{formErrors.regPassword}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-stone-700 mb-1.5">Conferma Password *</label>
+                        <input
+                          type="password"
+                          value={regPasswordConfirm}
+                          onChange={e => {
+                            setRegPasswordConfirm(e.target.value)
+                            if (formErrors.regPasswordConfirm) setFormErrors(prev => ({ ...prev, regPasswordConfirm: '' }))
+                          }}
+                          placeholder="Ripeti la password"
+                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
+                            formErrors.regPasswordConfirm ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+                          }`}
+                        />
+                        {formErrors.regPasswordConfirm && <p className="text-red-500 text-xs mt-1">{formErrors.regPasswordConfirm}</p>}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
           {/* SITUATION A: Amber account box BELOW form fields (only for guests) */}
           {!customerAuth && <AccountSection />}
         </>
@@ -1347,6 +1270,8 @@ export default function PrenotaPage() {
         time: booking.time,
         ...(booking.resourceId ? { resourceId: booking.resourceId } : {}),
         customer: customerPayload,
+        // Optional registration: send password only if guest chose to register
+        ...(wantRegister && regPassword && regPassword === regPasswordConfirm && !customerAuth ? { registerPassword: regPassword } : {}),
       }
 
       const res = await fetch('/api/bookings', {
