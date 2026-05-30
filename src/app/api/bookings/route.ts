@@ -182,6 +182,17 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Check if phone number is already used by another customer
+      const existingPhone = await db.customerUser.findFirst({
+        where: { telefono: data.customer.customerPhone },
+      })
+      if (existingPhone) {
+        return NextResponse.json(
+          { error: 'Questo numero di telefono e gia associato a un account. Rimuovi la spunta di registrazione o usa un altro numero.' },
+          { status: 409 }
+        )
+      }
+
       // Hash password and create CustomerUser
       const hashedPassword = await hashPassword(registerPassword)
       const fullName = `${data.customer.customerName} ${data.customer.customerSurname || ''}`.trim()

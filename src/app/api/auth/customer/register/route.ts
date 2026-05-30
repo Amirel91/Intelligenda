@@ -98,6 +98,17 @@ export async function POST(request: NextRequest) {
         )
       }
     } else {
+      // Check if phone number is already used by another customer
+      const existingPhone = await db.customerUser.findUnique({
+        where: { telefono: trimmedPhone },
+      })
+      if (existingPhone) {
+        return NextResponse.json(
+          { error: 'Questo numero di telefono e gia associato a un account. Usa un altro numero o accedi.' },
+          { status: 409 }
+        )
+      }
+
       // Create new CustomerUser
       await db.customerUser.create({
         data: {
@@ -133,8 +144,16 @@ export async function POST(request: NextRequest) {
     await sendOtpEmail(normalizedEmail, otpCode, config.shopName)
 
     return NextResponse.json({ success: true, email: normalizedEmail })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('POST /api/auth/customer/register error:', error)
-    return NextResponse.json({ error: 'Errore nella registrazione' }, { status: 500 })
+    // Handle Prisma unique constraint violations gracefully
+    const msg = error instanceof Error ? error.message : String(error)
+    if (msg.includes('Unique') || msg.includes('unique') || msg.includes('duplicate')) {
+      return NextResponse.json(
+        { error: 'Email o telefono gia registrati. Prova con dati diversi o accedi al tuo account esistente.' },
+        { status: 409 }
+      )
+    }
+    return NextResponse.json({ error: 'Errore nella registrazione. Riprova tra poco.' }, { status: 500 })
   }
 }

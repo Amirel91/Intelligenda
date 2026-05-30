@@ -279,6 +279,8 @@ const MIGRATION_SQL = [
         FOREIGN KEY ("configId") REFERENCES "BusinessConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
     END IF;
   END $$`,
+  // ============ CUSTOMER PASSWORD COLUMN ============
+  `ALTER TABLE "CustomerUser" ADD COLUMN IF NOT EXISTS "password" TEXT`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "CustomerUser_telefono_key" ON "CustomerUser"("telefono")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "CustomerUser_email_key" ON "CustomerUser"("email")`,
   `CREATE INDEX IF NOT EXISTS "CustomerUser_configId_idx" ON "CustomerUser"("configId")`,
