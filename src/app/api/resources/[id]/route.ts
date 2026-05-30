@@ -48,7 +48,7 @@ export async function PUT(
       }
     }
 
-    // Build update data
+    // Build update data for scalar fields
     const updateData: Record<string, unknown> = {}
     if (data.name !== undefined) updateData.name = data.name.trim()
     if (data.active !== undefined) updateData.active = data.active
@@ -56,19 +56,53 @@ export async function PUT(
 
     // If serviceIds is provided, update the many-to-many relation
     if (data.serviceIds !== undefined) {
-      const resource = await db.resource.update({
-        where: { id },
-        data: {
-          ...updateData,
-          services: {
-            set: data.serviceIds.map(sid => ({ id: sid })),
-          },
-        },
-        include: {
-          services: { select: { id: true } },
-        },
+      // Validate serviceIds belong to this tenant
+      const validServices = await db.service.findMany({
+        where: { id: { in: data.serviceIds }, configId: config.id },
+        select: { id: true },
       })
-      return NextResponse.json(resource)
+      const safeIds = data.serviceIds.filter(id => validServices.some(s => s.id === id))
+
+      try {
+        const resource = await db.resource.update({
+          where: { id },
+          data: {
+            ...updateData,
+            services: {
+              set: safeIds.map(sid => ({ id: sid })),
+            },
+          },
+          include: {
+            services: { select: { id: true } },
+          },
+        })
+        return NextResponse.json(resource)
+      } catch (setError: unknown) {
+        // Fallback: update scalar fields first, then try setting services separately
+        console.warn('[PUT /api/resources] services set failed, trying fallback:', setError)
+        await db.resource.update({
+          where: { id },
+          data: updateData,
+        })
+        try {
+          await db.resource.update({
+            where: { id },
+            data: {
+              services: {
+                set: safeIds.map(sid => ({ id: sid })),
+              },
+            },
+          })
+        } catch (fallbackErr: unknown) {
+          console.warn('[PUT /api/resources] Fallback set also failed:', fallbackErr)
+          // Return resource without services updated rather than failing
+        }
+        const resource = await db.resource.findUnique({
+          where: { id },
+          include: { services: { select: { id: true } } },
+        })
+        return NextResponse.json(resource)
+      }
     }
 
     const resource = await db.resource.update({
@@ -90,8 +124,16 @@ export async function PUT(
     if (error && typeof error === 'object' && 'issues' in error) {
       return NextResponse.json({ error: 'Dati non validi' }, { status: 400 })
     }
-    console.error('PUT /api/resources/[id] error:', error)
-    return NextResponse.json({ error: "Errore nell'aggiornamento della risorsa" }, { status: 500 })
+    const prismaErr = error as Record<string, unknown> | undefined
+    const prismaCode = prismaErr?.code as string | undefined
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error('PUT /api/resources/[id] error:', {
+      prismaCode,
+      message: errMsg,
+      stack: error instanceof Error ? error.stack : undefined,
+      meta: prismaErr?.meta,
+    })
+    return NextResponse.json({ error: "Errore nell'aggiornamento della risorsa", debug: errMsg, code: prismaCode || 'unknown' }, { status: 500 })
   }
 }
 

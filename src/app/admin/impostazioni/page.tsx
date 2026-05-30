@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Save, Store, Clock, Key, Check, AlertCircle, UtensilsCrossed, Users, Plus, Pencil, Trash2, X, ShieldAlert, Plane, Download, QrCode } from 'lucide-react'
+import { Save, Store, Clock, Key, Check, AlertCircle, UtensilsCrossed, Plane, Download, QrCode } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 
 interface BusinessConfig {
@@ -43,15 +43,6 @@ const defaultHours: WorkingHour[] = Array.from({ length: 7 }, (_, i) => ({
   closed: i === 6,
 }))
 
-interface Resource {
-  id: string
-  name: string
-  active: boolean
-  sortOrder: number
-  _count: { bookings: number }
-  services?: { id: string }[]
-}
-
 const defaultConfig: BusinessConfig = {
   id: '',
   shopName: '',
@@ -76,20 +67,7 @@ export default function AdminImpostazioni() {
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
-  const [activeTab, setActiveTab] = useState<'negozio' | 'orari' | 'postazioni' | 'password'>('negozio')
-
-  // Resources state
-  const [resources, setResources] = useState<Resource[]>([])
-  const [resourcesLoading, setResourcesLoading] = useState(false)
-  const [newResourceName, setNewResourceName] = useState('')
-  const [newResourceServiceIds, setNewResourceServiceIds] = useState<string[]>([])
-  const [addingResource, setAddingResource] = useState(false)
-  const [editingResource, setEditingResource] = useState<Resource | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editServiceIds, setEditServiceIds] = useState<string[]>([])
-  const [savingResource, setSavingResource] = useState(false)
-  const [deletingResource, setDeletingResource] = useState<string | null>(null)
-  const [shopServices, setShopServices] = useState<{ id: string; name: string }[]>([])
+  const [activeTab, setActiveTab] = useState<'negozio' | 'orari' | 'password'>('negozio')
 
   // Closed Periods state
   const [closedPeriods, setClosedPeriods] = useState<ClosedPeriod[]>([])
@@ -136,29 +114,6 @@ export default function AdminImpostazioni() {
       .then(data => { if (Array.isArray(data)) setClosedPeriods(data) })
       .catch(err => console.error('Closed periods fetch error:', err))
   }, [])
-
-  const fetchResources = async () => {
-    setResourcesLoading(true)
-    try {
-      const [resRes, servRes] = await Promise.all([
-        fetch('/api/resources'),
-        fetch('/api/services?all=true'),
-      ])
-      if (resRes.ok) {
-        const data = await resRes.json()
-        setResources(Array.isArray(data) ? data : [])
-      }
-      if (servRes.ok) {
-        const data = await servRes.json()
-        setShopServices(Array.isArray(data) ? data.map((s: { id: string; name: string }) => ({ id: s.id, name: s.name })) : [])
-      }
-    } catch { /* silent */ }
-    finally { setResourcesLoading(false) }
-  }
-
-  useEffect(() => {
-    if (activeTab === 'postazioni') fetchResources()
-  }, [activeTab])
 
   const saveConfig = async () => {
     setSaving(true); setSaved(false); setSaveError('')
@@ -209,85 +164,6 @@ export default function AdminImpostazioni() {
 
   const updateHour = (index: number, field: keyof WorkingHour, value: string | boolean) => {
     setHours(prev => prev.map((h, i) => i === index ? { ...h, [field]: value } : h))
-  }
-
-  // ============ RESOURCE HANDLERS ============
-
-  const handleAddResource = async () => {
-    if (!newResourceName.trim()) return
-    setAddingResource(true)
-    try {
-      const res = await fetch('/api/resources', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newResourceName.trim(), serviceIds: newResourceServiceIds }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        const details = data.debug ? `\n\nDettaglio: ${data.debug}` : ''
-        const code = data.code && data.code !== 'unknown' ? `\nCodice: ${data.code}` : ''
-        alert(`${data.error || 'Errore nella creazione'}${code}${details}`)
-        console.error('[handleAddResource] Error:', data)
-        return
-      }
-      setNewResourceName('')
-      setNewResourceServiceIds([])
-      fetchResources()
-    } catch { alert('Errore di connessione') }
-    finally { setAddingResource(false) }
-  }
-
-  const handleSaveResourceName = async (id: string) => {
-    if (!editName.trim()) return
-    setSavingResource(true)
-    try {
-      const res = await fetch(`/api/resources/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim(), serviceIds: editServiceIds }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        alert(data.error || 'Errore')
-        return
-      }
-      setEditingResource(null)
-      setEditName('')
-      setEditServiceIds([])
-      fetchResources()
-    } catch { alert('Errore di connessione') }
-    finally { setSavingResource(false) }
-  }
-
-  const handleToggleResource = async (res: Resource) => {
-    try {
-      const response = await fetch(`/api/resources/${res.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active: !res.active }),
-      })
-      if (!response.ok) {
-        const data = await response.json()
-        alert(data.error || 'Errore')
-        return
-      }
-      fetchResources()
-    } catch { alert('Errore di connessione') }
-  }
-
-  const handleDeleteResource = async (id: string) => {
-    if (!confirm('Eliminare questa postazione? Le prenotazioni associate non verranno cancellate.')) return
-    setDeletingResource(id)
-    try {
-      const res = await fetch(`/api/resources/${id}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const data = await res.json()
-        alert(data.error || 'Errore')
-        return
-      }
-      fetchResources()
-    } catch { alert('Errore di connessione') }
-    finally { setDeletingResource(null) }
   }
 
   // ---- Closed Periods CRUD ----
@@ -366,7 +242,6 @@ export default function AdminImpostazioni() {
   const tabs = [
     { id: 'negozio' as const, label: 'Negozio', icon: Store },
     { id: 'orari' as const, label: 'Orari', icon: Clock },
-    { id: 'postazioni' as const, label: 'Postazioni', icon: Users },
     { id: 'password' as const, label: 'Password', icon: Key },
   ]
 
@@ -654,169 +529,6 @@ export default function AdminImpostazioni() {
             )}
           </div>
         </>
-      )}
-
-      {/* Tab: Postazioni / Collaboratori */}
-      {activeTab === 'postazioni' && (
-        <div className="bg-white rounded-xl border border-stone-200 p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-stone-500" />
-            <h2 className="font-semibold text-stone-900">Postazioni / Collaboratori</h2>
-          </div>
-          <p className="text-stone-500 text-sm mb-6">
-            Gestisci le postazioni o i collaboratori della tua attivita. I clienti potranno prenotare
-            in parallelo sulle postazioni disponibili.
-          </p>
-
-          {/* Resource list */}
-          <div className="space-y-2 mb-6">
-            {resourcesLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin w-6 h-6 border-2 border-stone-300 border-t-stone-900 rounded-full" />
-              </div>
-            ) : resources.length === 0 ? (
-              <p className="text-stone-400 text-sm text-center py-6">Nessuna postazione configurata</p>
-            ) : (
-              resources.map((res) => (
-                <div
-                  key={res.id}
-                  className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
-                    res.active
-                      ? 'border-stone-200 bg-white'
-                      : 'border-stone-100 bg-stone-50 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${res.active ? 'bg-emerald-500' : 'bg-stone-300'}`} />
-                    {editingResource?.id === res.id ? (
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSaveResourceName(res.id)}
-                        className="px-2 py-1 rounded-lg border-2 border-stone-900 text-sm text-stone-900 outline-none w-40"
-                        autoFocus
-                      />
-                    ) : (
-                      <div className="min-w-0">
-                        <span className="text-sm font-medium text-stone-900 truncate block">{res.name}</span>
-                        {res._count.bookings > 0 && (
-                          <span className="text-xs text-stone-400">{res._count.bookings} prenotaz. future</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {editingResource?.id === res.id ? (
-                      <>
-                        <button
-                          onClick={() => handleSaveResourceName(res.id)}
-                          disabled={savingResource || !editName.trim()}
-                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 transition-colors"
-                          title="Salva"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => { setEditingResource(null); setEditName('') }}
-                          className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors"
-                          title="Annulla"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleToggleResource(res)}
-                          className={`p-1.5 rounded-lg text-xs font-medium px-2 transition-colors ${
-                            res.active
-                              ? 'text-amber-600 hover:bg-amber-50'
-                              : 'text-emerald-600 hover:bg-emerald-50'
-                          }`}
-                          title={res.active ? 'Disattiva' : 'Riattiva'}
-                        >
-                          {res.active ? 'ON' : 'OFF'}
-                        </button>
-                        <button
-                          onClick={() => { setEditingResource(res); setEditName(res.name); setEditServiceIds(res.services?.map(s => s.id) || []) }}
-                          className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors"
-                          title="Modifica nome"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteResource(res.id)}
-                          disabled={deletingResource === res.id}
-                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                          title="Elimina"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  {/* Service assignment checkboxes when editing */}
-                  {editingResource?.id === res.id && (
-                    <div className="mt-3 ml-9">
-                      <p className="text-xs font-medium text-stone-500 mb-2">Servizi abilitati per questo operatore:</p>
-                      <div className="space-y-1.5">
-                        {shopServices.map(svc => {
-                          const isChecked = editServiceIds.includes(svc.id)
-                          return (
-                            <label key={svc.id} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer py-1 px-2 rounded-lg hover:bg-stone-100 transition-colors">
-                              <input type="checkbox" checked={isChecked} onChange={(e) => { setEditServiceIds(prev => e.target.checked ? [...prev, svc.id] : prev.filter(sid => sid !== svc.id)) }} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-500" />
-                              <span className="truncate">{svc.name}</span>
-                            </label>
-                          )
-                        })}
-                      </div>
-                      <p className="text-xs text-stone-400 mt-1.5">{editServiceIds.length === 0 ? 'Nessun servizio selezionato = il collaboratore potra svolgere tutti i servizi.' : `${editServiceIds.length} servizio${editServiceIds.length > 1 ? 'i selezionati' : ' selezionato'}`}</p>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Add new resource */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newResourceName}
-              onChange={(e) => setNewResourceName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddResource()}
-              placeholder="Nome postazione (es. Poltrona 2)"
-              className="flex-1 px-4 py-2.5 rounded-xl border-2 border-stone-200 bg-white text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors"
-            />
-            <button
-              onClick={handleAddResource}
-              disabled={addingResource || !newResourceName.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Aggiungi
-            </button>
-          </div>
-
-          {/* Service selection for new resource */}
-          {shopServices.length > 0 && (
-            <div className="mt-4 p-4 rounded-xl bg-stone-50 border border-stone-100">
-              <p className="text-xs font-medium text-stone-500 mb-2">Servizi per la nuova postazione (opzionale):</p>
-              <div className="flex flex-wrap gap-2">
-                {shopServices.map(svc => {
-                  const isChecked = newResourceServiceIds.includes(svc.id)
-                  return (
-                    <button key={svc.id} onClick={() => setNewResourceServiceIds(prev => isChecked ? prev.filter(sid => sid !== svc.id) : [...prev, svc.id])} className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${isChecked ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-600 hover:border-stone-300'}`}>
-                      {svc.name}
-                    </button>
-                  )
-                })}
-              </div>
-              {newResourceServiceIds.length > 0 && <p className="text-xs text-stone-400 mt-2">{newResourceServiceIds.length} servizio{newResourceServiceIds.length > 1 ? 'i selezionati' : ' selezionato'}</p>}
-            </div>
-          )}
-        </div>
       )}
 
       {/* Tab: Password */}
