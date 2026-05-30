@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema, ensureApiLogTable, logApiPerformance } from '@/lib/db'
 import { getBatchAvailability } from '@/lib/slot-algorithm'
-import { getTenantConfig } from '@/lib/tenant'
+import { getTenantConfigWithCalendarIncludes } from '@/lib/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,13 +49,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const config = await getTenantConfig(request)
+    // INTERVENTO 1: Single query with eager-loaded calendar relations
+    const config = await getTenantConfigWithCalendarIncludes(request)
     if (!config) {
       return NextResponse.json({})
     }
     _configId = config.id
 
-    const result = await getBatchAvailability(startDate, endDate, durationMinutes, config.id, resourceId || undefined)
+    const result = await getBatchAvailability(
+      startDate, endDate, durationMinutes, config.id,
+      resourceId || undefined, config
+    )
     logApiPerformance('/api/slots/batch', Date.now() - startMs, config.id)
     return NextResponse.json(result)
   } catch (error) {

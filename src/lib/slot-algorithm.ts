@@ -380,16 +380,20 @@ export async function getBatchAvailability(
   endDate: string,
   totalDurationMinutes: number,
   configId?: string,
-  resourceId?: string | null
+  resourceId?: string | null,
+  // INTERVENTO 1: pre-loaded config (with workingHours, closedDates, closedPeriods)
+  preloadedConfig?: any,
 ): Promise<Record<string, SlotResult['availability']>> {
-  // 1. Single query: config + working hours + closed dates + closed periods
-  const config = await db.businessConfig.findFirst({
-    where: configId ? { id: configId } : undefined,
-    include: { workingHours: true, closedDates: true, closedPeriods: true },
-  })
+  // INTERVENTO 1: Use pre-loaded config if available, otherwise fetch from DB
+  let config = preloadedConfig || null
+  if (!config) {
+    config = await db.businessConfig.findFirst({
+      where: configId ? { id: configId } : undefined,
+      include: { workingHours: true, closedDates: true, closedPeriods: true },
+    })
+  }
 
   if (!config) {
-    // Return 'none' for all days (pure string iteration, no Date objects needed)
     const result: Record<string, SlotResult['availability']> = {}
     let cur = startDate
     const end = endDate
@@ -404,10 +408,47 @@ export async function getBatchAvailability(
   const closedDateSet = new Set(config.closedDates.map(cd => cd.date))
   const closedPeriods = config.closedPeriods || []
 
+  // INTERVENTO 2: Create a single Intl formatter instance for Rome timezone.
+  // Reusing one instance is ~50x cheaper than creating a new one per call inside loops.
+  const romeDateParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  })
+  const romeTimeParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  })
+  const romeWeekday = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome', weekday: 'long',
+  })
+
+  // INTERVENTO 2: Helpers — reuse single formatter instances
+  const fmtDateRome = (date: Date): string => {
+    const parts = romeDateParts.formatToParts(date)
+    const get = (t: string) => parts.find(p => p.type === t)?.value ?? ''
+    return `${get('year')}-${get('month')}-${get('day')}`
+  }
+  const fmtMinutesFromMidnight = (date: Date): number => {
+    const parts = romeTimeParts.formatToParts(date)
+    const h = parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10)
+    const m = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10)
+    return h * 60 + m
+  }
+  const WEEKDAY_MAP: Record<string, number> = {
+    Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4,
+    Friday: 5, Saturday: 6, Sunday: 7,
+  }
+  const getDayOfWeekCached = (dateStr: string): number => {
+    const ref = createInRome(dateStr, '12:00')
+    return WEEKDAY_MAP[romeWeekday.format(ref)] ?? 1
+  }
+
   // Minimum notice hours: cutoff for today's slots
   const minNoticeMinutes = (config.minNoticeHours || 1) * 60
-  const nowMinutesRome = isTodayRome(startDate) ? getCurrentMinutesRome() : -1
-  const noticeCutoff = nowMinutesRome >= 0 ? nowMinutesRome + minNoticeMinutes : -1
+  const todayRome = fmtDateRome(new Date())
+  const noticeCutoff = todayRome >= startDate && todayRome <= endDate
+    ? fmtMinutesFromMidnight(new Date()) + minNoticeMinutes
+    : -1
   const workingHoursByDay = new Map<number, { openMinutes: number; closeMinutes: number }>()
   for (const wh of config.workingHours) {
     if (wh.closed) continue
@@ -433,13 +474,11 @@ export async function getBatchAvailability(
     select: { id: true },
   })
 
-  // If a specific resourceId is requested, filter to only that resource
   if (resourceId) {
     resources = resources.filter(r => r.id === resourceId)
   }
 
   // 3. ALL bookings in the date range (single query with composite index)
-  // Use Rome-aware UTC boundaries
   const rangeStart = createInRome(startDate, '00:00')
   const rangeEnd = createInRome(endDate, '23:59')
   const allBookings = await db.booking.findMany({
@@ -451,16 +490,37 @@ export async function getBatchAvailability(
     select: { startTime: true, endTime: true, resourceId: true },
   })
 
-  // Group bookings by date string for fast lookup (Rome timezone)
-  const bookingsByDate = new Map<string, typeof allBookings>()
-  for (const b of allBookings) {
-    const dateKey = formatDateRome(new Date(b.startTime))
-    const existing = bookingsByDate.get(dateKey)
+  // INTERVENTO 2: Pre-compute Rome date + minutes for ALL bookings in one pass.
+  // Replaces ~200+ individual Intl calls inside the day loop.
+  const bookingsWithRome = allBookings.map(b => {
+    const start = new Date(b.startTime)
+    const end = new Date(b.endTime)
+    return {
+      dateKey: fmtDateRome(start),
+      startMinutes: fmtMinutesFromMidnight(start),
+      endMinutes: fmtMinutesFromMidnight(end),
+      resourceId: b.resourceId,
+    }
+  })
+
+  // Group bookings by date string for fast lookup
+  const bookingsByDate = new Map<string, typeof bookingsWithRome>()
+  for (const b of bookingsWithRome) {
+    const existing = bookingsByDate.get(b.dateKey)
     if (existing) existing.push(b)
-    else bookingsByDate.set(dateKey, [b])
+    else bookingsByDate.set(b.dateKey, [b])
   }
 
-  // Compute availability for each day in range (pure string iteration)
+  // INTERVENTO 2: Pre-compute day-of-week for every date in the range.
+  // Reuses a single Intl formatter instead of calling getDayOfWeekRome() 30+ times.
+  const dayOfWeekCache = new Map<string, number>()
+  let _d = startDate
+  while (_d <= endDate) {
+    dayOfWeekCache.set(_d, getDayOfWeekCached(_d))
+    _d = addDays(_d, 1)
+  }
+
+  // Compute availability for each day in range
   const STEP = 15
   const result: Record<string, SlotResult['availability']> = {}
 
@@ -469,23 +529,22 @@ export async function getBatchAvailability(
 
   while (cur <= end) {
     const dateStr = cur
-    const dayOfWeek = getDayOfWeekRome(dateStr)
 
-    // Closed (single day)?
+    // INTERVENTO 2: Use pre-computed day-of-week (zero Intl calls)
+    const dayOfWeek = dayOfWeekCache.get(dateStr) ?? 1
+
     if (closedDateSet.has(dateStr)) {
       result[dateStr] = 'none'
       cur = addDays(cur, 1)
       continue
     }
 
-    // Closed (period/vacation)?
     if (isDateInClosedPeriod(dateStr, closedPeriods)) {
       result[dateStr] = 'none'
       cur = addDays(cur, 1)
       continue
     }
 
-    // Working hours?
     const wh = workingHoursByDay.get(dayOfWeek)
     if (!wh) {
       result[dateStr] = 'none'
@@ -495,10 +554,10 @@ export async function getBatchAvailability(
 
     const { openMinutes, closeMinutes } = wh
 
-    // Get bookings for this specific day
+    // Get bookings for this specific day (already pre-computed with Rome minutes)
     const dayBookings = bookingsByDate.get(dateStr) || []
 
-    // Build per-resource and unassigned ranges
+    // Build per-resource and unassigned ranges (using pre-computed minutes)
     const resourceRanges = resources.map(r => ({
       id: r.id,
       bookedRanges: [] as { start: number; end: number }[],
@@ -506,11 +565,7 @@ export async function getBatchAvailability(
     const unassignedRanges: { start: number; end: number }[] = []
 
     for (const b of dayBookings) {
-      // Extract hours/minutes in Europe/Rome
-      const bs = getMinutesFromMidnightRome(new Date(b.startTime))
-      const be = getMinutesFromMidnightRome(new Date(b.endTime))
-      const range = { start: bs, end: be }
-
+      const range = { start: b.startMinutes, end: b.endMinutes }
       if (b.resourceId) {
         const res = resourceRanges.find(r => r.id === b.resourceId)
         if (res) res.bookedRanges.push(range)
@@ -520,28 +575,19 @@ export async function getBatchAvailability(
       }
     }
 
-    // Count available slots
     let availableCount = 0
     let totalPossible = 0
 
     // Check if today: apply minimum notice cutoff
-    const dayCutoff = (noticeCutoff >= 0 && dateStr === formatDateRome(new Date())) ? noticeCutoff : -1
+    const dayCutoff = (noticeCutoff >= 0 && dateStr === todayRome) ? noticeCutoff : -1
 
     for (let t = openMinutes; t + totalDurationMinutes <= closeMinutes; t += STEP) {
       totalPossible++
       const slotEnd = t + totalDurationMinutes
 
-      // Minimum notice check
-      if (dayCutoff >= 0 && t < dayCutoff) {
-        continue
-      }
+      if (dayCutoff >= 0 && t < dayCutoff) continue
+      if (lunchStart >= 0 && lunchEnd >= 0 && t < lunchEnd && slotEnd > lunchStart) continue
 
-      // Lunch break check
-      if (lunchStart >= 0 && lunchEnd >= 0 && t < lunchEnd && slotEnd > lunchStart) {
-        continue
-      }
-
-      // Check if free on at least one resource
       let hasFree = false
       for (const resource of resourceRanges) {
         let blocked = false
@@ -549,7 +595,6 @@ export async function getBatchAvailability(
           if (t < range.end && slotEnd > range.start) { blocked = true; break }
         }
         if (blocked) continue
-
         let isFree = true
         for (const range of resource.bookedRanges) {
           if (t < range.end && slotEnd > range.start) { isFree = false; break }
@@ -559,10 +604,6 @@ export async function getBatchAvailability(
       if (hasFree) availableCount++
     }
 
-    // Determine availability level
-    // GREEN  → ≥ 20% of slots still free (perceived as widely available)
-    // YELLOW → < 20% of slots free but not zero (scarce — encourages booking)
-    // RED    → 0 slots available (fully booked)
     totalPossible = Math.max(1, totalPossible)
     const freeRatio = availableCount / totalPossible
 

@@ -446,6 +446,33 @@ export function logApiPerformance(endpoint: string, responseTime: number, config
 // Reset schema cache so the new _ResourceServices table gets created on next request
 let _schemaEnsured = false
 
+/**
+ * INTERVENTO 3: Health-check query to detect if schema is already up-to-date.
+ * Tests the existence of the most recently added column ("featured" on "Service").
+ * If the column exists, we can safely skip all 65 DDL statements.
+ * This turns a 400-1200ms cold-start penalty into a ~80ms single query.
+ */
+async function isSchemaUpToDate(connectionString: string): Promise<boolean> {
+  try {
+    const response = await fetch(`https://${new URL(connectionString.replace(/^postgresql:\/\//, 'http://')).hostname}/sql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Neon-Connection-String': connectionString,
+      },
+      body: JSON.stringify({
+        query: `SELECT 1 FROM information_schema.columns WHERE table_name = 'Service' AND column_name = 'featured' LIMIT 1`
+      }),
+    })
+    if (!response.ok) return false
+    const text = await response.text()
+    const data = JSON.parse(text)
+    return Array.isArray(data.rows) && data.rows.length > 0
+  } catch {
+    return false
+  }
+}
+
 export async function ensureDbSchema(): Promise<{ ok: boolean; results: string[] }> {
   if (_schemaEnsured) return { ok: true, results: ['cached'] }
 
@@ -453,6 +480,13 @@ export async function ensureDbSchema(): Promise<{ ok: boolean; results: string[]
   if (!connectionString) {
     console.error('[ensureDbSchema] No DATABASE_URL')
     return { ok: false, results: ['ERROR: No DATABASE_URL env var'] }
+  }
+
+  // INTERVENTO 3: Fast path — single health-check query instead of 65 DDL
+  if (await isSchemaUpToDate(connectionString)) {
+    _schemaEnsured = true
+    console.log('[ensureDbSchema] Schema up-to-date (health-check passed)')
+    return { ok: true, results: ['fast-path'] }
   }
 
   // Execute DDL in parallel batches of 10.

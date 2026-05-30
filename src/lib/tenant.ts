@@ -88,6 +88,39 @@ export async function getTenantConfig(request: NextRequest) {
 }
 
 /**
+ * Like getTenantConfig, but eagerly loads workingHours, closedDates, closedPeriods.
+ * Use in hot-path API routes (e.g. /api/slots/batch) to avoid a redundant second query.
+ */
+export async function getTenantConfigWithCalendarIncludes(request: NextRequest) {
+  const slug = getTenantSlugFromRequest(request)
+  if (!slug) return null
+
+  const tenant = await db.tenant.findUnique({
+    where: { slug, active: true },
+    include: {
+      config: {
+        include: { workingHours: true, closedDates: true, closedPeriods: true },
+      },
+    },
+  })
+  if (!tenant) return null
+
+  // Same suspension check as getTenantConfig
+  const now = new Date()
+  const isSubscriptionExpired =
+    tenant.subscriptionStatus === 'cancelling' &&
+    tenant.planEndDate &&
+    new Date(tenant.planEndDate) <= now
+
+  const isSuspended =
+    tenant.subscriptionStatus === 'suspended' || isSubscriptionExpired
+
+  if (isSuspended) return null
+
+  return tenant.config || null
+}
+
+/**
  * Get config for server components (from cookies)
  */
 export async function getTenantConfigFromCookies() {
