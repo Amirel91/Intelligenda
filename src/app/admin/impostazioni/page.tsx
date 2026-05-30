@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Save, Store, Clock, Key, Check, AlertCircle, UtensilsCrossed, Plane, Download, QrCode } from 'lucide-react'
+import { Save, Store, Clock, Key, Check, AlertCircle, UtensilsCrossed, Plane, Download, QrCode, ShieldAlert, Plus, Trash2 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 
 interface BusinessConfig {
