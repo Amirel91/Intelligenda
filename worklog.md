@@ -93,3 +93,23 @@ Applied 7 changes across 7 files to fix a resource creation bug and implement ma
 - `npx prisma generate`: ✅ Success
 - `bunx tsc --noEmit`: ✅ No errors in modified files (all errors are pre-existing in unrelated files)
 - `bun run lint`: ✅ No new errors introduced (all errors are pre-existing React hook warnings)
+---
+Task ID: 1
+Agent: main
+Task: Fix post-registration page crash and calendar availability issues
+
+Work Log:
+- Investigated post-registration page crash: "This page couldn't load" after booking+registration success
+- Found root cause: `createInRome` import from `@/lib/timezone` was removed during performance optimization commit but still used in `buildGoogleCalendarUrl()` function called during StepConfirmation render
+- Restored the `createInRome` import on line 8 of `src/app/prenota/page.tsx`
+- Fixed cancellation link on success page: replaced stale page route `/prenota/cancella/{id}` with proper POST `/api/bookings/cancel` API call
+- Added `force-dynamic` to `/api/slots/batch/route.ts` and `/api/slots/route.ts` to prevent Next.js from caching availability responses (potential cause of calendar all-gray issue)
+- Added `ensureDbSchema()` to both slots API routes for cold-start robustness
+- Investigated calendar all-gray issue via sub-agent: confirmed both root causes already addressed (totalSlotDuration useMemo + force-dynamic)
+- Commits pushed: 02a071b (main fixes), c8d51e0 (defensive improvements)
+
+Stage Summary:
+- Post-registration crash FIXED: missing `createInRome` import restored
+- Calendar availability: `force-dynamic` added to slots APIs + `ensureDbSchema()` for robustness
+- Cancel link on success page FIXED: now uses proper API call instead of dead page route
+- All commits pushed to origin/main, Vercel will auto-deploy
