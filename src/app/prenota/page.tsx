@@ -23,6 +23,7 @@ import {
   ExternalLink,
   LogIn,
   Mail,
+  Star,
 } from 'lucide-react'
 
 // ==================== TYPES ====================
@@ -31,10 +32,13 @@ interface Service {
   id: string
   name: string
   description?: string
+  category?: string
   price: number
+  compareAtPrice?: number
   durationMinutes: number
   cleanupMinutes: number
   bufferMinutes: number
+  featured: boolean
   active: boolean
 }
 
@@ -346,55 +350,115 @@ export default function PrenotaPage() {
 
   // ==================== STEP 1: SERVICES ====================
 
-  const StepServices = () => (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli i servizi</h2>
-        <p className="text-stone-500 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
-      </div>
+  // Render a single service card (reused for featured, categorized, and uncategorized lists)
+  const ServiceCard = ({ service }: { service: Service }) => {
+    const isSelected = booking.serviceIds.includes(service.id)
+    const hasDiscount = service.compareAtPrice && service.compareAtPrice > service.price
+    return (
+      <motion.button
+        whileTap={{ scale: 0.98 }}
+        onClick={() => toggleService(service.id)}
+        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+          isSelected
+            ? 'border-stone-900 bg-stone-50'
+            : 'border-stone-200 bg-white hover:border-stone-300'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0 ${
+                  isSelected ? 'bg-stone-900 border-stone-900' : 'border-stone-300'
+                }`}
+              >
+                {isSelected && <Check className="w-3 h-3 text-white" />}
+              </div>
+              <span className="font-medium text-stone-900">{service.name}</span>
+              {service.featured && (
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+              )}
+            </div>
+            {service.description && (
+              <p className="text-stone-500 text-sm mt-1 ml-8">{service.description}</p>
+            )}
+          </div>
+          <div className="text-right ml-4 shrink-0">
+            {hasDiscount && (
+              <div className="text-xs text-stone-400 line-through">€{service.compareAtPrice!.toFixed(2)}</div>
+            )}
+            <div className={`font-semibold ${hasDiscount ? 'text-green-600' : 'text-stone-900'}`}>€{service.price.toFixed(2)}</div>
+            <div className="text-stone-400 text-xs flex items-center gap-1 justify-end">
+              <Clock className="w-3 h-3" />
+              {service.durationMinutes} min
+            </div>
+          </div>
+        </div>
+      </motion.button>
+    )
+  }
 
-      <div className="space-y-3">
-        {services.map(service => {
-          const isSelected = booking.serviceIds.includes(service.id)
-          return (
-            <motion.button
-              key={service.id}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => toggleService(service.id)}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                isSelected
-                  ? 'border-stone-900 bg-stone-50'
-                  : 'border-stone-200 bg-white hover:border-stone-300'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                        isSelected ? 'bg-stone-900 border-stone-900' : 'border-stone-300'
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    <span className="font-medium text-stone-900">{service.name}</span>
-                  </div>
-                  {service.description && (
-                    <p className="text-stone-500 text-sm mt-1 ml-8">{service.description}</p>
-                  )}
+  const StepServices = () => {
+    const featured = services.filter(s => s.featured)
+    const withCategory = services.filter(s => !s.featured && s.category)
+    const uncategorized = services.filter(s => !s.featured && !s.category)
+
+    // Group by category, preserving sort order
+    const categoryMap = new Map<string, Service[]>()
+    withCategory.forEach(s => {
+      const cat = s.category!
+      if (!categoryMap.has(cat)) categoryMap.set(cat, [])
+      categoryMap.get(cat)!.push(s)
+    })
+
+    const hasGroups = featured.length > 0 || categoryMap.size > 0
+
+    return (
+      <div>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli i servizi</h2>
+          <p className="text-stone-500 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
+        </div>
+
+        {!hasGroups && (
+          <div className="space-y-3">
+            {services.map(s => <ServiceCard key={s.id} service={s} />)}
+          </div>
+        )}
+
+        {hasGroups && (
+          <div className="space-y-6">
+            {featured.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">In evidenza</h3>
                 </div>
-                <div className="text-right ml-4 shrink-0">
-                  <div className="font-semibold text-stone-900">€{service.price.toFixed(2)}</div>
-                  <div className="text-stone-400 text-xs flex items-center gap-1 justify-end">
-                    <Clock className="w-3 h-3" />
-                    {service.durationMinutes} min
-                  </div>
+                <div className="space-y-3">
+                  {featured.map(s => <ServiceCard key={s.id} service={s} />)}
                 </div>
               </div>
-            </motion.button>
-          )
-        })}
-      </div>
+            )}
+
+            {Array.from(categoryMap.entries()).map(([category, items]) => (
+              <div key={category}>
+                <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3">{category}</h3>
+                <div className="space-y-3">
+                  {items.map(s => <ServiceCard key={s.id} service={s} />)}
+                </div>
+              </div>
+            ))}
+
+            {uncategorized.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3">Altri servizi</h3>
+                <div className="space-y-3">
+                  {uncategorized.map(s => <ServiceCard key={s.id} service={s} />)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
       {/* Selection summary */}
       {booking.serviceIds.length > 0 && (
@@ -419,7 +483,8 @@ export default function PrenotaPage() {
         </motion.div>
       )}
     </div>
-  )
+    )
+  }
 
   // ==================== STEP 2: OPERATOR SELECTION ====================
 
@@ -886,9 +951,14 @@ export default function PrenotaPage() {
         </div>
         <div className="border-t border-stone-200 pt-1 mt-1">
           {selectedServices.map(s => (
-            <div key={s.id} className="flex justify-between">
+            <div key={s.id} className="flex justify-between items-center">
               <span className="text-stone-600">{s.name}</span>
-              <span className="font-medium">€{s.price.toFixed(2)}</span>
+              <div className="text-right">
+                {s.compareAtPrice && s.compareAtPrice > s.price && (
+                  <span className="text-xs text-stone-400 line-through mr-1">€{s.compareAtPrice.toFixed(2)}</span>
+                )}
+                <span className="font-medium">{s.price.toFixed(2)}</span>
+              </div>
             </div>
           ))}
         </div>

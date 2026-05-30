@@ -25,10 +25,13 @@ export const bookingSchema = z.object({
 export const serviceSchema = z.object({
   name: z.string().min(2, 'Il nome deve avere almeno 2 caratteri'),
   description: z.string().optional().default(''),
+  category: z.string().optional().default(''),
   price: z.coerce.number().min(0, 'Il prezzo deve essere positivo'),
+  compareAtPrice: z.coerce.number().min(0).optional(),
   durationMinutes: z.coerce.number().int().min(5, 'Durata minima 5 minuti').max(480, 'Durata massima 8 ore'),
   cleanupMinutes: z.coerce.number().int().min(0, 'Il tempo di pulizia non puo essere negativo').max(120, 'Max 120 minuti').default(0),
   bufferMinutes: z.coerce.number().int().min(0, 'Il buffer non puo essere negativo').max(120, 'Max 120 minuti').default(0),
+  featured: z.boolean().default(false),
   active: z.boolean().default(true),
   sortOrder: z.coerce.number().int().default(0),
 })

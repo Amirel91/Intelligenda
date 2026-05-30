@@ -98,10 +98,13 @@ model Service {
   id              String          @id @default(cuid())
   name            String
   description     String?
+  category        String?
   price           Float
+  compareAtPrice  Float?          // "was €XX" price shown struck-through (Shopify pattern)
   durationMinutes Int
   cleanupMinutes  Int             @default(0)
   bufferMinutes   Int             @default(0)
+  featured        Boolean         @default(false)
   active          Boolean         @default(true)
   sortOrder       Int             @default(0)
 

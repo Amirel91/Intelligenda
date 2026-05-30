@@ -33,9 +33,13 @@ export async function PUT(
       data: {
         name: data.name,
         description: data.description,
+        category: data.category || null,
         price: data.price,
+        compareAtPrice: data.compareAtPrice ?? null,
         durationMinutes: data.durationMinutes,
         cleanupMinutes: data.cleanupMinutes,
+        bufferMinutes: data.bufferMinutes,
+        featured: data.featured,
         active: data.active,
         sortOrder: data.sortOrder,
       },

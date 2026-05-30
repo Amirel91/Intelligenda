@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, X, Clock, Euro, GripVertical, Timer, Zap, XCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Clock, Euro, GripVertical, Timer, Zap, XCircle, Star, Tag, Percent } from 'lucide-react'
 import { getSuggestions } from '@/lib/service-suggestions'
 
 interface Service {
   id: string
   name: string
   description?: string
+  category?: string
   price: number
+  compareAtPrice?: number
   durationMinutes: number
   cleanupMinutes: number
   bufferMinutes: number
+  featured: boolean
   active: boolean
   sortOrder: number
 }
@@ -20,10 +23,13 @@ interface Service {
 const emptyForm = {
   name: '',
   description: '',
+  category: '',
   price: 0,
+  compareAtPrice: 0,
   durationMinutes: 30,
   cleanupMinutes: 0,
   bufferMinutes: 0,
+  featured: false,
   active: true,
   sortOrder: 0,
 }
@@ -36,6 +42,7 @@ export default function AdminServizi() {
   const [form, setForm] = useState(emptyForm)
   // String-based input values to allow full clearing before re-typing
   const [priceStr, setPriceStr] = useState('0')
+  const [compareAtPriceStr, setCompareAtPriceStr] = useState('')
   const [durationStr, setDurationStr] = useState('30')
   const [cleanupStr, setCleanupStr] = useState('0')
   const [bufferStr, setBufferStr] = useState('0')
@@ -93,7 +100,7 @@ export default function AdminServizi() {
 
   const openNew = () => {
     setForm({ ...emptyForm, sortOrder: services.length + 1 })
-    setPriceStr('0'); setDurationStr('30'); setCleanupStr('0'); setBufferStr('0')
+    setPriceStr('0'); setCompareAtPriceStr(''); setDurationStr('30'); setCleanupStr('0'); setBufferStr('0')
     setEditingId(null); setShowForm(true); setError('')
   }
 
@@ -101,14 +108,17 @@ export default function AdminServizi() {
     setForm({
       name: s.name,
       description: s.description || '',
+      category: s.category || '',
       price: s.price,
+      compareAtPrice: s.compareAtPrice || 0,
       durationMinutes: s.durationMinutes,
       cleanupMinutes: s.cleanupMinutes || 0,
       bufferMinutes: s.bufferMinutes || 0,
+      featured: s.featured || false,
       active: s.active,
       sortOrder: s.sortOrder,
     })
-    setPriceStr(String(s.price)); setDurationStr(String(s.durationMinutes)); setCleanupStr(String(s.cleanupMinutes || 0)); setBufferStr(String(s.bufferMinutes || 0))
+    setPriceStr(String(s.price)); setCompareAtPriceStr(s.compareAtPrice ? String(s.compareAtPrice) : ''); setDurationStr(String(s.durationMinutes)); setCleanupStr(String(s.cleanupMinutes || 0)); setBufferStr(String(s.bufferMinutes || 0))
     setEditingId(s.id); setShowForm(true); setError('')
   }
 
@@ -116,10 +126,18 @@ export default function AdminServizi() {
     if (!form.name.trim()) { setError('Il nome e obbligatorio'); return }
     // Parse string inputs to final numeric values
     const finalPrice = priceStr === '' ? 0 : parseFloat(priceStr) || 0
+    const finalCompareAtPrice = compareAtPriceStr === '' ? 0 : parseFloat(compareAtPriceStr) || 0
     const finalDuration = durationStr === '' ? 5 : parseInt(durationStr) || 5
     const finalCleanup = cleanupStr === '' ? 0 : parseInt(cleanupStr) || 0
     const finalBuffer = bufferStr === '' ? 0 : parseInt(bufferStr) || 0
-    const payload = { ...form, price: finalPrice, durationMinutes: finalDuration, cleanupMinutes: finalCleanup, bufferMinutes: finalBuffer }
+    const payload = {
+      ...form,
+      price: finalPrice,
+      compareAtPrice: finalCompareAtPrice > 0 ? finalCompareAtPrice : undefined,
+      durationMinutes: finalDuration,
+      cleanupMinutes: finalCleanup,
+      bufferMinutes: finalBuffer,
+    }
     setSaving(true); setError('')
     try {
       const url = editingId ? `/api/services/${editingId}` : '/api/services'
@@ -198,7 +216,7 @@ export default function AdminServizi() {
                   onClick={() => {
                     setForm({ ...emptyForm, name: s.name, durationMinutes: s.durationMinutes, sortOrder: services.length + 1 })
                     setDurationStr(String(s.durationMinutes))
-                    setPriceStr('0'); setCleanupStr('0'); setBufferStr('0')
+                    setPriceStr('0'); setCompareAtPriceStr(''); setCleanupStr('0'); setBufferStr('0')
                     setEditingId(null)
                     setShowForm(true)
                     setError('')
@@ -224,12 +242,27 @@ export default function AdminServizi() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-stone-900">{service.name}</span>
+                  {service.featured && (
+                    <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                      <Star className="w-2.5 h-2.5" />Evidenza
+                    </span>
+                  )}
                   {!service.active && (<span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-200 text-stone-500 font-medium">Inattivo</span>)}
                 </div>
-                {service.description && (<p className="text-sm text-stone-500 truncate">{service.description}</p>)}
+                <div className="flex items-center gap-2 mt-0.5">
+                  {service.category && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-500 font-medium">
+                      <Tag className="w-2.5 h-2.5" />{service.category}
+                    </span>
+                  )}
+                  {service.description && (<p className="text-sm text-stone-500 truncate">{service.description}</p>)}
+                </div>
               </div>
               <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0">
                 <div className="text-left sm:text-right">
+                  {service.compareAtPrice && service.compareAtPrice > service.price && (
+                    <div className="text-xs text-stone-400 line-through">€{service.compareAtPrice.toFixed(2)}</div>
+                  )}
                   <div className="flex items-center gap-1 text-sm font-medium text-stone-900"><Euro className="w-3.5 h-3.5" />{service.price.toFixed(2)}</div>
                   <div className="flex items-center gap-1 text-xs text-stone-500">
                     <Clock className="w-3 h-3" />{service.durationMinutes} min
@@ -285,6 +318,15 @@ export default function AdminServizi() {
                   <textarea value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Descrizione opzionale del servizio..." rows={2} className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors resize-none" />
                 </div>
 
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-stone-700 mb-1.5">
+                    <Tag className="w-4 h-4" />
+                    Categoria
+                  </label>
+                  <input type="text" value={form.category} onChange={e => setForm(prev => ({ ...prev, category: e.target.value }))} placeholder="es. Viso, Corpo, Capelli..." className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+                  <p className="text-xs text-stone-400 mt-1">Raggruppa i servizi per categoria nella pagina del cliente. Lascia vuoto per nessuna categoria.</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1.5">Prezzo (EUR) *</label>
@@ -319,7 +361,22 @@ export default function AdminServizi() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-stone-700 mb-1.5">
+                    <Percent className="w-4 h-4" />
+                    Prezzo originario (opzionale)
+                  </label>
+                  <input type="text" inputMode="decimal" value={compareAtPriceStr} onChange={e => { setCompareAtPriceStr(e.target.value); setForm(prev => ({ ...prev, compareAtPrice: parseFloat(e.target.value) || 0 })) }} placeholder="es. 50.00" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+                  <p className="text-xs text-stone-400 mt-1">Se compilato, il cliente vedra questo prezzo barrato accanto al prezzo attuale scontato.</p>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div onClick={() => setForm(prev => ({ ...prev, featured: !prev.featured }))} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${form.featured ? 'bg-amber-500' : 'bg-stone-300'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${form.featured ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                    </div>
+                    <span className="text-sm text-stone-700">In evidenza</span>
+                  </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <div onClick={() => setForm(prev => ({ ...prev, active: !prev.active }))} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${form.active ? 'bg-stone-900' : 'bg-stone-300'}`}>
                       <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${form.active ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
