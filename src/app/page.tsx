@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Sparkles, Phone, Mail, MapPin } from 'lucide-react'
+import { CalendarDays, Sparkles, Phone, Mail, MapPin, Clock, Star } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { CustomerNavbar } from '@/components/CustomerNavbar'
 
@@ -17,9 +17,18 @@ interface BusinessConfig {
   features?: string[]
 }
 
+interface Service {
+  id: string
+  name: string
+  price: number
+  discountedPrice?: number
+  durationMinutes: number
+}
+
 export default function HomePage() {
   const router = useRouter()
   const [config, setConfig] = useState<BusinessConfig | null>(null)
+  const [featuredServices, setFeaturedServices] = useState<Service[]>([])
 
   // Secret admin access: 5 consecutive taps on shop logo
   const tapCountRef = useRef(0)
@@ -44,7 +53,6 @@ export default function HomePage() {
       fetch('/api/config')
         .then(res => {
           if (!res.ok) {
-            // No tenant context, redirect to landing
             window.location.href = '/landing'
             return null
           }
@@ -52,7 +60,6 @@ export default function HomePage() {
         })
         .then(data => { if (data && typeof data === 'object') setConfig(data) })
         .catch(() => {
-          // If config fetch fails (network error or no tenant), redirect to landing
           window.location.href = '/landing'
         })
     }
@@ -60,6 +67,24 @@ export default function HomePage() {
     const interval = setInterval(fetchConfig, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    fetch('/api/services')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const featured = data.filter((s: Service) => s.featured).slice(0, 3)
+          setFeaturedServices(featured)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleFeaturedClick = (service: Service) => {
+    const prefillData = JSON.stringify({ serviceId: service.id })
+    document.cookie = `ig_prefill_service=${encodeURIComponent(prefillData)};path=/prenota;max-age=300;samesite=lax`
+    router.push('/prenota')
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white">
@@ -97,6 +122,55 @@ export default function HomePage() {
               {config?.shopPhone && (<a href={`tel:${config.shopPhone}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"><Phone className="w-4 h-4" />{config.shopPhone}</a>)}
               {config?.shopEmail && (<a href={`mailto:${config.shopEmail}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"><Mail className="w-4 h-4" />{config.shopEmail}</a>)}
               {config?.shopAddress && (<div className="flex items-center justify-center gap-2 text-sm text-stone-500"><MapPin className="w-4 h-4 shrink-0" />{config.shopAddress}</div>)}
+            </motion.div>
+          )}
+
+          {/* Featured Services */}
+          {featuredServices.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4 }}
+              className="mb-10 w-full"
+            >
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">In evidenza</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {featuredServices.map((service, i) => {
+                  const hasDiscount = service.discountedPrice && service.discountedPrice > 0
+                  const effectivePrice = hasDiscount ? service.discountedPrice! : service.price
+                  return (
+                    <motion.button
+                      key={service.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + i * 0.08 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleFeaturedClick(service)}
+                      className="text-left p-4 rounded-2xl bg-white border border-stone-200 shadow-sm hover:shadow-md hover:border-stone-300 transition-all cursor-pointer"
+                    >
+                      <h3 className="font-medium text-stone-900 text-sm mb-2 leading-tight">{service.name}</h3>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-stone-400 text-xs">
+                          <Clock className="w-3 h-3" />
+                          {service.durationMinutes} min
+                        </div>
+                        <div className="text-right">
+                          {hasDiscount && (
+                            <span className="text-[10px] text-stone-400 line-through block">€{service.price.toFixed(2)}</span>
+                          )}
+                          <span className={`text-sm font-semibold ${hasDiscount ? 'text-green-600' : 'text-stone-900'}`}>
+                            €{effectivePrice.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.button>
+                  )
+                })}
+              </div>
             </motion.div>
           )}
 

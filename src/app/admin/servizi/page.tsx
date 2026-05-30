@@ -11,7 +11,7 @@ interface Service {
   description?: string
   category?: string
   price: number
-  compareAtPrice?: number
+  discountedPrice?: number
   durationMinutes: number
   cleanupMinutes: number
   bufferMinutes: number
@@ -25,7 +25,8 @@ const emptyForm = {
   description: '',
   category: '',
   price: 0,
-  compareAtPrice: 0,
+  discountedPrice: 0,
+  hasDiscount: false,
   durationMinutes: 30,
   cleanupMinutes: 0,
   bufferMinutes: 0,
@@ -43,6 +44,7 @@ export default function AdminServizi() {
   // String-based input values to allow full clearing before re-typing
   const [priceStr, setPriceStr] = useState('0')
   const [compareAtPriceStr, setCompareAtPriceStr] = useState('')
+  const [hasDiscountCheck, setHasDiscountCheck] = useState(false)
   const [durationStr, setDurationStr] = useState('30')
   const [cleanupStr, setCleanupStr] = useState('0')
   const [bufferStr, setBufferStr] = useState('0')
@@ -100,7 +102,7 @@ export default function AdminServizi() {
 
   const openNew = () => {
     setForm({ ...emptyForm, sortOrder: services.length + 1 })
-    setPriceStr('0'); setCompareAtPriceStr(''); setDurationStr('30'); setCleanupStr('0'); setBufferStr('0')
+    setPriceStr('0'); setCompareAtPriceStr(''); setHasDiscountCheck(false); setDurationStr('30'); setCleanupStr('0'); setBufferStr('0')
     setEditingId(null); setShowForm(true); setError('')
   }
 
@@ -110,7 +112,8 @@ export default function AdminServizi() {
       description: s.description || '',
       category: s.category || '',
       price: s.price,
-      compareAtPrice: s.compareAtPrice || 0,
+      discountedPrice: s.discountedPrice || 0,
+      hasDiscount: !!s.discountedPrice && s.discountedPrice > 0,
       durationMinutes: s.durationMinutes,
       cleanupMinutes: s.cleanupMinutes || 0,
       bufferMinutes: s.bufferMinutes || 0,
@@ -118,7 +121,7 @@ export default function AdminServizi() {
       active: s.active,
       sortOrder: s.sortOrder,
     })
-    setPriceStr(String(s.price)); setCompareAtPriceStr(s.compareAtPrice ? String(s.compareAtPrice) : ''); setDurationStr(String(s.durationMinutes)); setCleanupStr(String(s.cleanupMinutes || 0)); setBufferStr(String(s.bufferMinutes || 0))
+    setPriceStr(String(s.price)); setCompareAtPriceStr(s.discountedPrice ? String(s.discountedPrice) : ''); setHasDiscountCheck(!!s.discountedPrice && s.discountedPrice > 0); setDurationStr(String(s.durationMinutes)); setCleanupStr(String(s.cleanupMinutes || 0)); setBufferStr(String(s.bufferMinutes || 0))
     setEditingId(s.id); setShowForm(true); setError('')
   }
 
@@ -126,14 +129,15 @@ export default function AdminServizi() {
     if (!form.name.trim()) { setError('Il nome e obbligatorio'); return }
     // Parse string inputs to final numeric values
     const finalPrice = priceStr === '' ? 0 : parseFloat(priceStr) || 0
-    const finalCompareAtPrice = compareAtPriceStr === '' ? 0 : parseFloat(compareAtPriceStr) || 0
+    const finalDiscountedPrice = hasDiscountCheck && compareAtPriceStr !== '' ? (parseFloat(compareAtPriceStr) || 0) : 0
     const finalDuration = durationStr === '' ? 5 : parseInt(durationStr) || 5
     const finalCleanup = cleanupStr === '' ? 0 : parseInt(cleanupStr) || 0
     const finalBuffer = bufferStr === '' ? 0 : parseInt(bufferStr) || 0
     const payload = {
       ...form,
       price: finalPrice,
-      compareAtPrice: finalCompareAtPrice > 0 ? finalCompareAtPrice : undefined,
+      discountedPrice: hasDiscountCheck && finalDiscountedPrice > 0 ? finalDiscountedPrice : undefined,
+      hasDiscount: undefined,
       durationMinutes: finalDuration,
       cleanupMinutes: finalCleanup,
       bufferMinutes: finalBuffer,
@@ -216,7 +220,7 @@ export default function AdminServizi() {
                   onClick={() => {
                     setForm({ ...emptyForm, name: s.name, durationMinutes: s.durationMinutes, sortOrder: services.length + 1 })
                     setDurationStr(String(s.durationMinutes))
-                    setPriceStr('0'); setCompareAtPriceStr(''); setCleanupStr('0'); setBufferStr('0')
+                    setPriceStr('0'); setCompareAtPriceStr(''); setHasDiscountCheck(false); setCleanupStr('0'); setBufferStr('0')
                     setEditingId(null)
                     setShowForm(true)
                     setError('')
@@ -260,10 +264,10 @@ export default function AdminServizi() {
               </div>
               <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0">
                 <div className="text-left sm:text-right">
-                  {service.compareAtPrice && service.compareAtPrice > service.price && (
-                    <div className="text-xs text-stone-400 line-through">€{service.compareAtPrice.toFixed(2)}</div>
+                  {service.discountedPrice && service.discountedPrice > 0 && (
+                    <div className="text-xs text-stone-400 line-through">€{service.price.toFixed(2)}</div>
                   )}
-                  <div className="flex items-center gap-1 text-sm font-medium text-stone-900"><Euro className="w-3.5 h-3.5" />{service.price.toFixed(2)}</div>
+                  <div className={`flex items-center gap-1 text-sm font-medium ${service.discountedPrice && service.discountedPrice > 0 ? 'text-green-600' : 'text-stone-900'}`}><Euro className="w-3.5 h-3.5" />€{(service.discountedPrice && service.discountedPrice > 0 ? service.discountedPrice : service.price).toFixed(2)}</div>
                   <div className="flex items-center gap-1 text-xs text-stone-500">
                     <Clock className="w-3 h-3" />{service.durationMinutes} min
                     {(service.cleanupMinutes || 0) > 0 && (
@@ -362,12 +366,22 @@ export default function AdminServizi() {
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-stone-700 mb-1.5">
-                    <Percent className="w-4 h-4" />
-                    Prezzo originario (opzionale)
+                  <label className="flex items-center gap-2 cursor-pointer mb-1.5">
+                    <div onClick={() => {
+                      const next = !hasDiscountCheck
+                      setHasDiscountCheck(next)
+                      if (!next) { setCompareAtPriceStr(''); setForm(prev => ({ ...prev, discountedPrice: 0 })) }
+                    }} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${hasDiscountCheck ? 'bg-green-600' : 'bg-stone-300'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${hasDiscountCheck ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                    </div>
+                    <span className="text-sm font-medium text-stone-700">Attiva prezzo scontato</span>
                   </label>
-                  <input type="text" inputMode="decimal" value={compareAtPriceStr} onChange={e => { setCompareAtPriceStr(e.target.value); setForm(prev => ({ ...prev, compareAtPrice: parseFloat(e.target.value) || 0 })) }} placeholder="es. 50.00" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
-                  <p className="text-xs text-stone-400 mt-1">Se compilato, il cliente vedra questo prezzo barrato accanto al prezzo attuale scontato.</p>
+                  {hasDiscountCheck && (
+                    <input type="text" inputMode="decimal" value={compareAtPriceStr} onChange={e => { setCompareAtPriceStr(e.target.value); setForm(prev => ({ ...prev, discountedPrice: parseFloat(e.target.value) || 0 })) }} placeholder="es. 35.00" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+                  )}
+                  {hasDiscountCheck && compareAtPriceStr && (
+                    <p className="text-xs text-stone-400 mt-1">Il cliente vedra €{parseFloat(priceStr) || 0} barrato e €{parseFloat(compareAtPriceStr) || 0} come prezzo scontato.</p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between gap-4 pt-2">

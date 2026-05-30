@@ -100,7 +100,7 @@ model Service {
   description     String?
   category        String?
   price           Float
-  compareAtPrice  Float?          // "was €XX" price shown struck-through (Shopify pattern)
+  discountedPrice  Float?          // sale price — if set, used instead of price for cart/totals
   durationMinutes Int
   cleanupMinutes  Int             @default(0)
   bufferMinutes   Int             @default(0)

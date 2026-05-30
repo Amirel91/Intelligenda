@@ -329,9 +329,9 @@ const MIGRATION_SQL = [
         FOREIGN KEY ("couponId") REFERENCES "MerchantCoupon"("id") ON DELETE SET NULL ON UPDATE CASCADE;
     END IF;
   END $$`,
-  // ============ SERVICE EXTENSIONS (category, featured, compareAtPrice) ============
+  // ============ SERVICE EXTENSIONS (category, featured, discountedPrice) ============
   `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "category" TEXT`,
-  `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "compareAtPrice" DOUBLE PRECISION`,
+  `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "discountedPrice" DOUBLE PRECISION`,
   `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "featured" BOOLEAN NOT NULL DEFAULT false`,
 ]
 

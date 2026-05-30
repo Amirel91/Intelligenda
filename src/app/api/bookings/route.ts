@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     }
 
     const totalDuration = services.reduce((sum, s) => sum + s.durationMinutes + (s.cleanupMinutes || 0) + (s.bufferMinutes || 0), 0)
-    const totalPrice = services.reduce((sum, s) => sum + s.price, 0)
+    const totalPrice = services.reduce((sum, s) => sum + (s.discountedPrice && s.discountedPrice > 0 ? s.discountedPrice : s.price), 0)
 
     // ============ COUPON VALIDATION & APPLICATION ============
     const couponCode = (body.couponCode as string | undefined)?.trim().toUpperCase()

@@ -34,7 +34,7 @@ interface Service {
   description?: string
   category?: string
   price: number
-  compareAtPrice?: number
+  discountedPrice?: number
   durationMinutes: number
   cleanupMinutes: number
   bufferMinutes: number
@@ -242,6 +242,24 @@ export default function PrenotaPage() {
       .catch(() => setLoading(false))
   }, [])
 
+  // Prefill service from homepage featured click
+  useEffect(() => {
+    try {
+      const cookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('ig_prefill_service='))
+      if (cookie) {
+        const json = decodeURIComponent(cookie.split('=')[1])
+        const { serviceId } = JSON.parse(json)
+        if (serviceId) {
+          document.cookie = 'ig_prefill_service=;path=/prenota;max-age=0'
+          setBooking(prev => ({ ...prev, serviceIds: [serviceId] }))
+          setStep(2) // Jump to operator/date selection
+        }
+      }
+    } catch {}
+  }, [])
+
   // Fetch resources when entering step 2 (operator selection)
   // Filtered by the services selected in step 1
   useEffect(() => {
@@ -321,7 +339,7 @@ export default function PrenotaPage() {
 
   const totalPrice = useMemo(() => booking.serviceIds.reduce((sum, id) => {
     const s = services.find(sv => sv.id === id)
-    return sum + (s?.price || 0)
+    return sum + (s?.discountedPrice && s.discountedPrice > 0 ? s.discountedPrice : (s?.price || 0))
   }, 0), [booking.serviceIds, services])
   const discountAmount = couponValid && couponDiscount ? Math.min(couponDiscount, totalPrice) : 0
   const finalTotalPrice = totalPrice - discountAmount
@@ -353,7 +371,7 @@ export default function PrenotaPage() {
   // Render a single service card (reused for featured, categorized, and uncategorized lists)
   const ServiceCard = ({ service }: { service: Service }) => {
     const isSelected = booking.serviceIds.includes(service.id)
-    const hasDiscount = service.compareAtPrice && service.compareAtPrice > service.price
+    const hasDiscount = service.discountedPrice && service.discountedPrice > 0
     return (
       <motion.button
         whileTap={{ scale: 0.98 }}
@@ -375,9 +393,6 @@ export default function PrenotaPage() {
                 {isSelected && <Check className="w-3 h-3 text-white" />}
               </div>
               <span className="font-medium text-stone-900">{service.name}</span>
-              {service.featured && (
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
-              )}
             </div>
             {service.description && (
               <p className="text-stone-500 text-sm mt-1 ml-8">{service.description}</p>
@@ -385,9 +400,9 @@ export default function PrenotaPage() {
           </div>
           <div className="text-right ml-4 shrink-0">
             {hasDiscount && (
-              <div className="text-xs text-stone-400 line-through">€{service.compareAtPrice!.toFixed(2)}</div>
+              <div className="text-xs text-stone-400 line-through">€{service.price.toFixed(2)}</div>
             )}
-            <div className={`font-semibold ${hasDiscount ? 'text-green-600' : 'text-stone-900'}`}>€{service.price.toFixed(2)}</div>
+            <div className={`font-semibold ${hasDiscount ? 'text-green-600' : 'text-stone-900'}`}>€{(hasDiscount ? service.discountedPrice! : service.price).toFixed(2)}</div>
             <div className="text-stone-400 text-xs flex items-center gap-1 justify-end">
               <Clock className="w-3 h-3" />
               {service.durationMinutes} min
@@ -399,9 +414,8 @@ export default function PrenotaPage() {
   }
 
   const StepServices = () => {
-    const featured = services.filter(s => s.featured)
-    const withCategory = services.filter(s => !s.featured && s.category)
-    const uncategorized = services.filter(s => !s.featured && !s.category)
+    const withCategory = services.filter(s => s.category)
+    const uncategorized = services.filter(s => !s.category)
 
     // Group by category, preserving sort order
     const categoryMap = new Map<string, Service[]>()
@@ -411,7 +425,7 @@ export default function PrenotaPage() {
       categoryMap.get(cat)!.push(s)
     })
 
-    const hasGroups = featured.length > 0 || categoryMap.size > 0
+    const hasGroups = categoryMap.size > 0
 
     return (
       <div>
@@ -428,18 +442,6 @@ export default function PrenotaPage() {
 
         {hasGroups && (
           <div className="space-y-6">
-            {featured.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide">In evidenza</h3>
-                </div>
-                <div className="space-y-3">
-                  {featured.map(s => <ServiceCard key={s.id} service={s} />)}
-                </div>
-              </div>
-            )}
-
             {Array.from(categoryMap.entries()).map(([category, items]) => (
               <div key={category}>
                 <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3">{category}</h3>
@@ -954,10 +956,10 @@ export default function PrenotaPage() {
             <div key={s.id} className="flex justify-between items-center">
               <span className="text-stone-600">{s.name}</span>
               <div className="text-right">
-                {s.compareAtPrice && s.compareAtPrice > s.price && (
-                  <span className="text-xs text-stone-400 line-through mr-1">€{s.compareAtPrice.toFixed(2)}</span>
+                {s.discountedPrice && s.discountedPrice > 0 && (
+                  <span className="text-xs text-stone-400 line-through mr-1">€{s.price.toFixed(2)}</span>
                 )}
-                <span className="font-medium">{s.price.toFixed(2)}</span>
+                <span className="font-medium">{(s.discountedPrice && s.discountedPrice > 0 ? s.discountedPrice : s.price).toFixed(2)}</span>
               </div>
             </div>
           ))}

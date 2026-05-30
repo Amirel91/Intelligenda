@@ -35,7 +35,7 @@ export async function PUT(
         description: data.description,
         category: data.category || null,
         price: data.price,
-        compareAtPrice: data.compareAtPrice ?? null,
+        discountedPrice: data.discountedPrice ?? null,
         durationMinutes: data.durationMinutes,
         cleanupMinutes: data.cleanupMinutes,
         bufferMinutes: data.bufferMinutes,
