@@ -138,3 +138,22 @@ Stage Summary:
 - Commit 87f03a5 pushed: complete merchant coupon system
 - 11 files modified, 790 lines added, 9 lines changed
 - Zero existing logic modified — all changes are additive
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Implement secret 5-tap admin shortcut on booking header
+
+Work Log:
+- Read prenota/page.tsx header section (line 1495-1535) to locate the title element
+- Added `useRef` to React imports
+- Injected tapCountRef and tapTimerRef after shopName state declaration
+- Created handleSecretTap callback: increments counter → clears previous timeout → if count >= 5 → reset + router.push('/admin') → else set 800ms reset timeout
+- Applied onClick={handleSecretTap} + select-none to the `<h1>Prenota</h1>` header title
+- Committed as 77ba7e5 and pushed to main
+
+Stage Summary:
+- Surgical injection: 21 lines added, 0 lines of existing logic modified
+- Zero changes to booking flow, APIs, cache, coupon, timezone, or middleware
+- Feature: 5 consecutive taps within 800ms window on header title → redirect to /admin
+- Invisible to B2C customers: no visual indicator, no cursor change, select-none prevents text highlighting
