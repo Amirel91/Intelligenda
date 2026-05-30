@@ -922,6 +922,9 @@ export default function PrenotaPage() {
   // ==================== STEP 4: CUSTOMER INFO ====================
 
   const validateForm = () => {
+    // If logged in, data comes from auth profile — skip validation
+    if (customerAuth) return true
+
     const errors: Record<string, string> = {}
     if (!booking.customer.customerName.trim()) errors.customerName = 'Nome obbligatorio'
     if (!booking.customer.customerSurname.trim()) errors.customerSurname = 'Cognome obbligatorio'
@@ -934,55 +937,120 @@ export default function PrenotaPage() {
     return Object.keys(errors).length === 0
   }
 
+  // Reusable booking summary block (shared by logged-in and guest views)
+  const BookingSummaryBlock = () => (
+    <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-100">
+      <div className="text-sm font-medium text-stone-700 mb-2">Riepilogo</div>
+      <div className="space-y-1 text-sm">
+        {booking.resourceId && (
+          <div className="flex justify-between">
+            <span className="text-stone-500">Operatore</span>
+            <span className="font-medium">{selectedOperatorName}</span>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <span className="text-stone-500">Data</span>
+          <span className="font-medium">{formatDisplayDate(booking.date)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-stone-500">Ora</span>
+          <span className="font-medium">{booking.time}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-stone-500">Durata</span>
+          <span className="font-medium">{formatDuration(totalServiceDuration)}{totalCleanupInList > 0 ? ` + ${totalCleanupInList} min pulizia` : ''}</span>
+        </div>
+        <div className="border-t border-stone-200 pt-1 mt-1">
+          {selectedServices.map(s => (
+            <div key={s.id} className="flex justify-between">
+              <span className="text-stone-600">{s.name}</span>
+              <span className="font-medium">€{s.price.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-stone-200 pt-1 mt-1 flex justify-between">
+          <span className="font-semibold text-stone-900">Totale</span>
+          <span className="font-semibold text-stone-900">€{totalPrice.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  )
+
   const StepCustomerInfo = () => (
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-stone-900 mb-1">I tuoi dati</h2>
-        <p className="text-stone-500 text-sm">Inserisci i tuoi dati per confermare la prenotazione</p>
+        <p className="text-stone-500 text-sm">
+          {customerAuth ? 'Conferma la tua prenotazione' : 'Inserisci i tuoi dati per confermare la prenotazione'}
+        </p>
       </div>
 
-      {/* Login banner or welcome message */}
-      <LoginBanner />
-
-      {/* Booking summary */}
-      <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-100">
-        <div className="text-sm font-medium text-stone-700 mb-2">Riepilogo</div>
-        <div className="space-y-1 text-sm">
-          {booking.resourceId && (
-            <div className="flex justify-between">
-              <span className="text-stone-500">Operatore</span>
-              <span className="font-medium">{selectedOperatorName}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-stone-500">Data</span>
-            <span className="font-medium">{formatDisplayDate(booking.date)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-stone-500">Ora</span>
-            <span className="font-medium">{booking.time}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-stone-500">Durata</span>
-            <span className="font-medium">{formatDuration(totalServiceDuration)}{totalCleanupInList > 0 ? ` + ${totalCleanupInList} min pulizia` : ''}</span>
-          </div>
-          <div className="border-t border-stone-200 pt-1 mt-1">
-            {selectedServices.map(s => (
-              <div key={s.id} className="flex justify-between">
-                <span className="text-stone-600">{s.name}</span>
-                <span className="font-medium">€{s.price.toFixed(2)}</span>
+      {customerAuth ? (
+        /* ===== LOGGED-IN EXPERIENCE: elegant summary, no form ===== */
+        <>
+          {/* Welcome & profile data box */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-stone-50 rounded-2xl p-6 border border-stone-100"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-stone-900 flex items-center justify-center shrink-0">
+                <span className="text-sm font-semibold text-white">
+                  {customerAuth.nome?.charAt(0)?.toUpperCase() || '?'}
+                </span>
               </div>
-            ))}
-          </div>
-          <div className="border-t border-stone-200 pt-1 mt-1 flex justify-between">
-            <span className="font-semibold text-stone-900">Totale</span>
-            <span className="font-semibold text-stone-900">€{totalPrice.toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
+              <div>
+                <p className="text-base font-semibold text-stone-900">
+                  Bentornato, {customerAuth.nome?.split(' ')[0] || 'Cliente'}!
+                </p>
+                <p className="text-sm text-stone-500">
+                  Convalidiamo la tua prenotazione utilizzando i dati del tuo profilo.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2 text-stone-600">
+                <User className="w-4 h-4 text-stone-400" />
+                <span>{customerAuth.nome}</span>
+              </div>
+              {customerAuth.telefono && !customerAuth.telefono.startsWith('temp_') && (
+                <div className="flex items-center gap-2 text-stone-600">
+                  <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                  <span>{customerAuth.telefono}</span>
+                </div>
+              )}
+              {customerAuth.email && (
+                <div className="flex items-center gap-2 text-stone-600">
+                  <Mail className="w-4 h-4 text-stone-400" />
+                  <span>{customerAuth.email}</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
 
-      {/* Form */}
-      <div className="space-y-4">
+          {/* Booking summary */}
+          <BookingSummaryBlock />
+        </>
+      ) : (
+        /* ===== GUEST EXPERIENCE: form + amber banner + register link ===== */
+        <>
+          {/* Login banner (amber for guests) */}
+          <LoginBanner />
+
+          {/* Register link for guests */}
+          <p className="text-xs text-stone-400 text-center mb-5">
+            Non hai ancora un account?{' '}
+            <Link href="/register" className="text-stone-900 font-medium hover:underline">
+              Registrati qui
+            </Link>
+          </p>
+
+          {/* Booking summary */}
+          <BookingSummaryBlock />
+
+          {/* Guest form */}
+          <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-stone-700 mb-1.5">Nome *</label>
           <input
@@ -1062,8 +1130,10 @@ export default function PrenotaPage() {
             className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
           />
           <span className="text-sm text-stone-600">Ricordami per la prossima prenotazione</span>
-        </label>
-      </div>
+          </label>
+          </div>
+        </>
+      )}
     </div>
   )
 
@@ -1219,12 +1289,22 @@ export default function PrenotaPage() {
       }
 
       // Build booking payload — include resourceId if selected
+      // When logged in, use customerAuth profile data as the payload customer info
+      const customerPayload = customerAuth
+        ? {
+            customerName: customerAuth.nome?.split(' ')[0] || booking.customer.customerName,
+            customerSurname: customerAuth.nome?.split(' ').slice(1).join(' ') || booking.customer.customerSurname,
+            customerPhone: customerAuth.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (customerAuth.telefono || booking.customer.customerPhone),
+            customerEmail: customerAuth.email || booking.customer.customerEmail,
+          }
+        : booking.customer
+
       const payload = {
         serviceIds: booking.serviceIds,
         date: booking.date,
         time: booking.time,
         ...(booking.resourceId ? { resourceId: booking.resourceId } : {}),
-        customer: booking.customer,
+        customer: customerPayload,
       }
 
       const res = await fetch('/api/bookings', {
@@ -1244,17 +1324,19 @@ export default function PrenotaPage() {
 
       setStep(5) // Success step
 
-      // Save or clear localStorage based on rememberMe
-      if (rememberMe) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            customerName: booking.customer.customerName,
-            customerSurname: booking.customer.customerSurname,
-            customerPhone: booking.customer.customerPhone,
-          }))
-        } catch {}
-      } else {
-        try { localStorage.removeItem(STORAGE_KEY) } catch {}
+      // Save or clear localStorage based on rememberMe (only relevant for guests)
+      if (!customerAuth) {
+        if (rememberMe) {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+              customerName: booking.customer.customerName,
+              customerSurname: booking.customer.customerSurname,
+              customerPhone: booking.customer.customerPhone,
+            }))
+          } catch {}
+        } else {
+          try { localStorage.removeItem(STORAGE_KEY) } catch {}
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nella prenotazione')
@@ -1425,7 +1507,7 @@ export default function PrenotaPage() {
                   Prenotazione in corso...
                 </>
               ) : step === 4 ? (
-                'Finalizza Prenotazione'
+                customerAuth ? 'Conferma e Prenota' : 'Finalizza Prenotazione'
               ) : (
                 <>
                   Continua
