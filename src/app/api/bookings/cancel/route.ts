@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       include: {
         services: { include: { service: true } },
         config: { select: { shopName: true, shopEmail: true, shopPhone: true, shopAddress: true } },
+        resource: { select: { name: true } },
       },
     })
 
@@ -51,10 +52,11 @@ export async function POST(request: NextRequest) {
       include: {
         services: { include: { service: true } },
         config: { select: { shopName: true, shopEmail: true, shopPhone: true, shopAddress: true } },
+        resource: { select: { name: true } },
       },
     })
 
-    sendCancellationEmails({ customerName: updated.customerName, customerSurname: updated.customerSurname, customerEmail: updated.customerEmail, customerPhone: updated.customerPhone, startTime: updated.startTime, endTime: updated.endTime, totalPrice: updated.totalPrice, services: updated.services, resourceName: null, bookingId: updated.id }, { shopName: updated.config?.shopName || 'Negozio', shopEmail: updated.config?.shopEmail, shopPhone: updated.config?.shopPhone, shopAddress: updated.config?.shopAddress }).catch(err => console.error('[email] skip:', err))
+    sendCancellationEmails({ customerName: updated.customerName, customerSurname: updated.customerSurname, customerEmail: updated.customerEmail, customerPhone: updated.customerPhone, startTime: updated.startTime, endTime: updated.endTime, totalPrice: updated.totalPrice, services: updated.services, resourceName: updated.resource?.name || null, bookingId: updated.id }, { shopName: updated.config?.shopName || 'Negozio', shopEmail: updated.config?.shopEmail, shopPhone: updated.config?.shopPhone, shopAddress: updated.config?.shopAddress }).catch(err => console.error('[email] skip:', err))
 
     return NextResponse.json({
       success: true,

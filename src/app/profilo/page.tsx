@@ -62,15 +62,23 @@ export default function ProfiloPage() {
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm('Vuoi annullare questa prenotazione?')) return
     setCancelling(bookingId)
+    setError('')
     try {
-      const res = await fetch(`/prenota/cancella/${bookingId}`, { method: 'POST' })
+      const res = await fetch('/api/bookings/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId }),
+      })
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Errore')
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Errore nella cancellazione')
       }
-      setBookings(prev => prev.filter(b => b.id !== bookingId))
+      // Update booking status locally instead of removing it
+      setBookings(prev => prev.map(b =>
+        b.id === bookingId ? { ...b, status: 'cancelled' } : b
+      ))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore')
+      setError(err instanceof Error ? err.message : 'Errore nella cancellazione')
     } finally {
       setCancelling(null)
     }
