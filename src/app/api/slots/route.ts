@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAvailableSlots } from '@/lib/slot-algorithm'
 import { getTenantConfig } from '@/lib/tenant'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/slots?date=YYYY-MM-DD&duration=60&resourceId=xxx
 export async function GET(request: NextRequest) {
   try {

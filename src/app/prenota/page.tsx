@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
+import { createInRome } from '@/lib/timezone'
 import {
   ArrowLeft,
   ArrowRight,
@@ -1171,12 +1172,21 @@ export default function PrenotaPage() {
 
           {/* Cancellation Link */}
           {confirmedBookingId && (
-            <a
-              href={`/prenota/cancella/${confirmedBookingId}`}
+            <button
+              onClick={async () => {
+                try {
+                  await fetch(`/api/bookings/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookingId: confirmedBookingId }),
+                  })
+                  setConfirmedBookingId(null)
+                } catch { /* silent */ }
+              }}
               className="block w-full text-center px-4 py-2.5 rounded-xl text-stone-400 text-xs hover:text-stone-600 hover:bg-stone-100 transition-colors"
             >
               Annulla questa prenotazione
-            </a>
+            </button>
           )}
         </div>
 

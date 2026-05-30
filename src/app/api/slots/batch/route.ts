@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getBatchAvailability } from '@/lib/slot-algorithm'
 import { getTenantConfig } from '@/lib/tenant'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/slots/batch?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&duration=60&resourceId=xxx
  *
