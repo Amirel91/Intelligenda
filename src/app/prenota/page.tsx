@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Search,
   PartyPopper,
   CalendarX,
   Download,
@@ -414,6 +415,9 @@ export default function PrenotaPage() {
     )
   }
 
+  // Search state for Step 1 service filtering
+  const [searchQuery, setSearchQuery] = useState('')
+
   // Accordion state for service category dropdowns
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set())
 
@@ -450,15 +454,52 @@ export default function PrenotaPage() {
           <p className="text-stone-500 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
         </div>
 
-        {/* No categories — flat list (unchanged) */}
-        {!hasGroups && (
+        {/* Search bar — Apple/iOS style */}
+        <div className="relative mb-5">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Cerca un servizio..."
+            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-100 text-stone-900 placeholder-stone-400 text-sm outline-none focus:bg-stone-200/70 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 hover:text-stone-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* SEARCH MODE: flat filtered list */}
+        {searchQuery.trim() !== '' && (() => {
+          const q = searchQuery.toLowerCase().trim()
+          const filtered = services.filter(s =>
+            s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q))
+          )
+          return (
+            <div>
+              {filtered.length === 0 && (
+                <p className="text-stone-400 text-sm text-center py-6">Nessun servizio trovato per &ldquo;{searchQuery.trim()}&rdquo;</p>
+              )}
+              <div className="space-y-3">
+                {filtered.map(s => <ServiceCard key={s.id} service={s} />)}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* DEFAULT MODE: accordion groups (when search is empty) */}
+        {searchQuery.trim() === '' && !hasGroups && (
           <div className="space-y-3">
             {services.map(s => <ServiceCard key={s.id} service={s} />)}
           </div>
         )}
 
-        {/* With categories — collapsible dropdowns */}
-        {hasGroups && (
+        {searchQuery.trim() === '' && hasGroups && (
           <div className="space-y-3">
             {Array.from(categoryMap.entries()).map(([category, items]) => {
               const isOpen = openCategories.has(category)
