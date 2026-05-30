@@ -1011,7 +1011,7 @@ export default function PrenotaPage() {
           <BookingSummaryBlock />
 
           {/* Coupon code input — always visible for logged-in users */}
-          <CouponInputBlock />
+          {CouponInputBlock()}
         </>
       ) : (
         /* ===== GUEST or INCOMPLETE PROFILE: form first, then account box below ===== */
@@ -1095,7 +1095,7 @@ export default function PrenotaPage() {
         </div>
 
         {/* Coupon code input */}
-        <CouponInputBlock />
+        {CouponInputBlock()}
 
         {/* Ricordami checkbox — only for guests */}
         {!customerAuth && (
@@ -1246,12 +1246,18 @@ export default function PrenotaPage() {
             {selectedServices.map(s => (
               <div key={s.id} className="flex justify-between">
                 <span className="text-stone-600">{s.name}</span>
-                <span className="font-medium">€{s.price.toFixed(2)}</span>
+                <span className={`font-medium ${discountAmount > 0 ? 'line-through text-stone-400' : ''}`}>€{s.price.toFixed(2)}</span>
               </div>
             ))}
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-600">
+                <span className="font-medium">Sconto applicato</span>
+                <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-semibold pt-1 border-t border-stone-200">
-              <span>Totale</span>
-              <span>€{totalPrice.toFixed(2)}</span>
+              <span>{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
+              <span>€{finalTotalPrice.toFixed(2)}</span>
             </div>
           </div>
         </div>
