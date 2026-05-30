@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 import { createInRome } from '@/lib/timezone'
@@ -897,6 +898,12 @@ export default function PrenotaPage() {
                     >
                       Non ho ricevuto il codice — invia di nuovo
                     </button>
+                    <p className="text-xs text-stone-400 mt-2">
+                      Non hai ancora un account?{' '}
+                      <Link href="/register" className="text-stone-900 font-medium hover:underline" onClick={() => setShowLoginModal(false)}>
+                        Registrati qui
+                      </Link>
+                    </p>
                   </div>
                 )}
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CalendarDays, Sparkles, Phone, Mail, MapPin } from 'lucide-react'
+import { CustomerNavbar } from '@/components/CustomerNavbar'
 
 interface BusinessConfig {
   id: string
@@ -42,7 +43,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white">
-      <main className="flex-1 flex flex-col items-center px-6 py-16">
+      <CustomerNavbar />
+      <main className="flex-1 flex flex-col items-center px-6 py-16 pt-16">
 
         {/* Main Content */}
         <motion.div

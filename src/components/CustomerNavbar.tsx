@@ -1,0 +1,162 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { User, CalendarDays, LogIn, UserPlus, ClipboardList, LogOut, X } from 'lucide-react'
+
+interface CustomerData {
+  id: string
+  nome: string
+  telefono: string
+  email: string
+}
+
+export function CustomerNavbar() {
+  const [customer, setCustomer] = useState<CustomerData | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Check session on mount
+  useEffect(() => {
+    fetch('/api/auth/customer/me')
+      .then(r => r.json())
+      .then(data => {
+        if (data.authenticated && data.customer) {
+          setCustomer(data.customer)
+        }
+        setAuthChecked(true)
+      })
+      .catch(() => setAuthChecked(true))
+  }, [])
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/customer/logout', { method: 'POST' })
+      setCustomer(null)
+      setMenuOpen(false)
+      window.location.href = '/'
+    } catch { /* silent */ }
+  }
+
+  // Don't render until auth is checked (prevents flash)
+  if (!authChecked) return null
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
+      <div className="max-w-3xl mx-auto px-4 h-12 flex items-center justify-between">
+        {/* Left — nothing for now, keeps balance */}
+        <div className="w-10" />
+
+        {/* Right — User menu */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-stone-100 transition-colors"
+            aria-label="Menu utente"
+          >
+            {customer ? (
+              <>
+                <div className="w-7 h-7 rounded-full bg-stone-900 flex items-center justify-center">
+                  <span className="text-xs font-semibold text-white">
+                    {customer.nome?.charAt(0)?.toUpperCase() || '?'}
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-stone-700 max-w-[120px] truncate hidden sm:block">
+                  {customer.nome?.split(' ')[0] || 'Profilo'}
+                </span>
+              </>
+            ) : (
+              <User className="w-5 h-5 text-stone-500" />
+            )}
+          </button>
+
+          {/* Dropdown */}
+          {menuOpen && (
+            <>
+              {/* Backdrop on mobile */}
+              <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setMenuOpen(false)} />
+              <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl border border-stone-200 shadow-lg shadow-stone-200/40 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                {/* Header */}
+                <div className="px-4 py-3 border-b border-stone-100 bg-stone-50">
+                  {customer ? (
+                    <div>
+                      <p className="text-sm font-semibold text-stone-900 truncate">{customer.nome}</p>
+                      <p className="text-xs text-stone-500 truncate">{customer.email}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-stone-500">Menu utente</p>
+                  )}
+                </div>
+
+                {/* Menu items */}
+                <div className="py-1">
+                  <Link
+                    href="/prenota"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <CalendarDays className="w-4 h-4 text-stone-400" />
+                    Prenota un appuntamento
+                  </Link>
+
+                  {customer ? (
+                    <>
+                      <Link
+                        href="/profilo"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                      >
+                        <ClipboardList className="w-4 h-4 text-stone-400" />
+                        I miei appuntamenti
+                      </Link>
+                      <div className="border-t border-stone-100 mt-1 pt-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Disconnettiti
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                      >
+                        <LogIn className="w-4 h-4 text-stone-400" />
+                        Accedi
+                      </Link>
+                      <Link
+                        href="/register"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 transition-colors"
+                      >
+                        <UserPlus className="w-4 h-4 text-stone-400" />
+                        Registrati
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  )
+}
