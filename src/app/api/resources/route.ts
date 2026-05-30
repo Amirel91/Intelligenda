@@ -103,7 +103,10 @@ export async function POST(request: NextRequest) {
     if (error && typeof error === 'object' && 'issues' in error) {
       return NextResponse.json({ error: 'Dati non validi' }, { status: 400 })
     }
-    console.error('POST /api/resources error:', error)
-    return NextResponse.json({ error: 'Errore nella creazione della risorsa', debug: error instanceof Error ? error.message : String(error) }, { status: 500 })
+    // Extract Prisma error code for debugging
+    const prismaCode = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : null
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error('POST /api/resources error:', { prismaCode, message: errMsg, stack: error instanceof Error ? error.stack : undefined })
+    return NextResponse.json({ error: 'Errore nella creazione della risorsa', debug: errMsg }, { status: 500 })
   }
 }
