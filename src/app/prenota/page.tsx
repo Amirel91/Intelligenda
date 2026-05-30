@@ -304,7 +304,7 @@ export default function PrenotaPage() {
   // Duration shown to customer (service + cleanup)
   const totalDuration = totalServiceDuration + totalCleanupDuration
   // Duration used for slot calculation (includes invisible buffer)
-  const totalSlotDuration = totalDuration + totalBufferDuration
+  const totalSlotDuration = useMemo(() => totalDuration + totalBufferDuration, [totalDuration, totalBufferDuration])
 
   const totalPrice = useMemo(() => booking.serviceIds.reduce((sum, id) => {
     const s = services.find(sv => sv.id === id)
