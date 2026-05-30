@@ -313,10 +313,12 @@ export async function POST(request: NextRequest) {
     }
 
     const tenantSlug = request.cookies.get('tenant_slug')?.value || ''
+    console.log(`[booking] Email dispatch: customerEmail=${booking.customerEmail || '(empty)'}, shopEmail=${booking.config?.shopEmail || config.shopEmail || '(empty)'}, slug=${tenantSlug}`)
     try {
       await sendBookingConfirmationEmails({ customerName: booking.customerName, customerSurname: booking.customerSurname, customerEmail: booking.customerEmail, customerPhone: booking.customerPhone, startTime: booking.startTime, endTime: booking.endTime, totalPrice: booking.totalPrice, discountApplied: booking.discountApplied ?? undefined, finalPrice: booking.finalPrice ?? undefined, services: booking.services, resourceName: booking.resource?.name, bookingId: booking.id }, { shopName: booking.config?.shopName || config.shopName, shopEmail: booking.config?.shopEmail || config.shopEmail, shopPhone: booking.config?.shopPhone || config.shopPhone, shopAddress: booking.config?.shopAddress || config.shopAddress }, tenantSlug)
+      console.log('[booking] Confirmation emails dispatched successfully')
     } catch (emailErr) {
-      console.error('[email] Failed to send confirmation emails:', emailErr)
+      console.error('[booking] Failed to send confirmation emails:', emailErr)
     }
 
     return NextResponse.json({ ...booking, shopName: booking.config?.shopName || config.shopName }, { status: 201 })
