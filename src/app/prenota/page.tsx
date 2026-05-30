@@ -21,6 +21,7 @@ import {
   Download,
   X,
   ExternalLink,
+  LogIn,
   Mail,
 } from 'lucide-react'
 
@@ -112,6 +113,15 @@ export default function PrenotaPage() {
   // Customer authentication state
   const [customerAuth, setCustomerAuth] = useState<CustomerAuthData | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
+
+  // Inline OTP login flow (expanded below the form, not a modal)
+  const [showLoginFlow, setShowLoginFlow] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpSending, setOtpSending] = useState(false)
+  const [otpVerifying, setOtpVerifying] = useState(false)
+  const [otpError, setOtpError] = useState('')
 
   // Utility: split a full name into firstName / lastName.
   // Handles single-word names gracefully (e.g. "Amir" → firstName="Amir", lastName="").
@@ -729,10 +739,93 @@ export default function PrenotaPage() {
     </div>
   )
 
-  // ==================== REGISTRATION BANNER ====================
+  // ==================== INLINE OTP LOGIN ====================
 
-  const RegistrationBanner = () => {
-    // Logged in but INCOMPLETE profile — prompt to fill in the missing fields
+  const handleRequestOtp = async () => {
+    if (!loginEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail)) {
+      setOtpError('Inserisci un indirizzo email valido')
+      return
+    }
+    setOtpError('')
+    setOtpSending(true)
+    try {
+      const res = await fetch('/api/auth/customer/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Errore nell\'invio del codice')
+      }
+      setOtpSent(true)
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : 'Errore')
+    } finally {
+      setOtpSending(false)
+    }
+  }
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode.trim() || otpCode.length !== 6) {
+      setOtpError('Inserisci il codice a 6 cifre')
+      return
+    }
+    setOtpError('')
+    setOtpVerifying(true)
+    try {
+      const res = await fetch('/api/auth/customer/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, otpCode }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Codice non valido')
+      }
+      const data = await res.json()
+      setCustomerAuth(data.customer)
+      setShowLoginFlow(false)
+      setOtpSent(false)
+      setOtpCode('')
+      setLoginEmail('')
+      // Pre-fill form with customer data — useEffect sync will also handle this
+      if (data.customer) {
+        const { firstName, lastName } = splitNome(data.customer.nome)
+        const phone = data.customer.telefono?.startsWith('temp_') ? '' : (data.customer.telefono || '')
+        const email = data.customer.email || ''
+        setBooking(prev => ({
+          ...prev,
+          customer: {
+            customerName: firstName || prev.customer.customerName,
+            customerSurname: lastName || prev.customer.customerSurname,
+            customerPhone: phone || prev.customer.customerPhone,
+            customerEmail: email || prev.customer.customerEmail,
+          },
+        }))
+      }
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : 'Errore')
+    } finally {
+      setOtpVerifying(false)
+    }
+  }
+
+  const collapseLoginFlow = () => {
+    setShowLoginFlow(false)
+    setOtpSent(false)
+    setOtpCode('')
+    setOtpError('')
+    setLoginEmail('')
+  }
+
+  // ==================== ACCOUNT SECTION (below form) ====================
+
+  // SITUATION A: Guest — amber box below form with inline OTP
+  // SITUATION B: Logged-in, complete profile — hidden (welcome shown instead)
+  // SITUATION C: Logged-in, incomplete profile — blue box above form (handled separately)
+  const AccountSection = () => {
+    // Situation C: Logged in but incomplete profile — blue info box
     if (customerAuth && !hasCompleteProfile) {
       return (
         <motion.div
@@ -753,25 +846,118 @@ export default function PrenotaPage() {
       )
     }
 
-    // Not logged in — show registration prompt (non-obligatory)
+    // Situation B: Complete profile — no box needed (welcome card shown instead)
+    if (hasCompleteProfile) return null
+
+    // Situation A: Guest — amber box with optional inline OTP expansion
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-5 p-4 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center gap-3"
       >
-        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-          <User className="w-4 h-4 text-amber-600" />
+        {/* Divider line with text */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-stone-200" />
+          <span className="text-xs text-stone-400 whitespace-nowrap">oppure</span>
+          <div className="flex-1 h-px bg-stone-200" />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-amber-900">Registrati per gestire le tue prenotazioni</p>
-          <p className="text-xs text-amber-600">
-            Accedi con un codice temporaneo via email per visualizzare lo storico.{' '}
-            <Link href="/register" className="font-semibold underline underline-offset-2 decoration-amber-400 hover:decoration-amber-600 transition-colors">
-              Registrati qui
-            </Link>
-          </p>
-        </div>
+
+        {/* Amber trigger — collapsed state */}
+        {!showLoginFlow ? (
+          <button
+            onClick={() => setShowLoginFlow(true)}
+            className="w-full p-4 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center gap-3 text-left hover:bg-amber-100/60 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <LogIn className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-900">Hai gia un account?</p>
+              <p className="text-xs text-amber-600">Accedi per precompilare i tuoi dati e gestire le prenotazioni.</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
+          </button>
+        ) : (
+          /* Expanded inline OTP flow */
+          <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center">
+                  <LogIn className="w-3.5 h-3.5 text-amber-600" />
+                </div>
+                <span className="text-sm font-medium text-amber-900">Accedi al tuo account</span>
+              </div>
+              <button onClick={collapseLoginFlow} className="p-1 rounded-lg hover:bg-amber-100 transition-colors">
+                <X className="w-4 h-4 text-amber-400" />
+              </button>
+            </div>
+
+            {!otpSent ? (
+              <>
+                {/* Step 1: Email input */}
+                <p className="text-xs text-stone-500">Inserisci la tua email per ricevere un codice di accesso temporaneo.</p>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <input
+                      type="email"
+                      value={loginEmail}
+                      onChange={e => { setLoginEmail(e.target.value); setOtpError('') }}
+                      placeholder="La tua email"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-amber-400 transition-colors text-sm"
+                      onKeyDown={e => e.key === 'Enter' && handleRequestOtp()}
+                    />
+                  </div>
+                  <button
+                    onClick={handleRequestOtp}
+                    disabled={otpSending || !loginEmail.trim()}
+                    className="px-5 py-3 rounded-xl bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                  >
+                    {otpSending ? 'Invio...' : 'Invia Codice'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Step 2: OTP code input */}
+                <p className="text-xs text-stone-500 flex items-center gap-1">
+                  <Mail className="w-3.5 h-3.5" />
+                  Codice inviato a <strong className="text-stone-700">{loginEmail}</strong>
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '')); setOtpError('') }}
+                    placeholder="000000"
+                    className="flex-1 px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-amber-400 transition-colors text-center text-xl font-bold tracking-[0.15em]"
+                    onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()}
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleVerifyOtp}
+                    disabled={otpVerifying || otpCode.length !== 6}
+                    className="px-5 py-3 rounded-xl bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                  >
+                    {otpVerifying ? 'Verifica...' : 'Verifica'}
+                  </button>
+                </div>
+                <button
+                  onClick={() => { setOtpSent(false); setOtpCode(''); setOtpError('') }}
+                  className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                >
+                  Non ho ricevuto il codice — invia di nuovo
+                </button>
+              </>
+            )}
+
+            {otpError && (
+              <p className="text-sm text-red-500">{otpError}</p>
+            )}
+          </div>
+        )}
       </motion.div>
     )
   }
@@ -891,10 +1077,10 @@ export default function PrenotaPage() {
           <BookingSummaryBlock />
         </>
       ) : (
-        /* ===== GUEST or INCOMPLETE PROFILE: form + banner ===== */
+        /* ===== GUEST or INCOMPLETE PROFILE: form first, then account box below ===== */
         <>
-          {/* Registration banner (amber for guests, or blue info for logged-in with incomplete profile) */}
-          <RegistrationBanner />
+          {/* SITUATION C: Blue info box (only if logged-in but incomplete profile) */}
+          {customerAuth && !hasCompleteProfile && <AccountSection />}
 
           {/* Booking summary */}
           <BookingSummaryBlock />
@@ -984,6 +1170,9 @@ export default function PrenotaPage() {
           </label>
         )}
           </div>
+
+          {/* SITUATION A: Amber account box BELOW form fields (only for guests) */}
+          {!customerAuth && <AccountSection />}
         </>
       )}
     </div>
