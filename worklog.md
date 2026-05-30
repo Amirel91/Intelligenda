@@ -157,3 +157,25 @@ Stage Summary:
 - Zero changes to booking flow, APIs, cache, coupon, timezone, or middleware
 - Feature: 5 consecutive taps within 800ms window on header title → redirect to /admin
 - Invisible to B2C customers: no visual indicator, no cursor change, select-none prevents text highlighting
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Extend Service model with category, featured, compareAtPrice (Add-Only)
+
+Work Log:
+- Updated schema.prisma: added category (String?), featured (Boolean, default false), compareAtPrice (Float?)
+- Updated validations.ts serviceSchema with 3 new optional fields
+- Added 3 ALTER TABLE migration lines to db.ts MIGRATION_SQL
+- Regenerated Prisma client
+- Updated admin/servizi/page.tsx: Service interface, emptyForm, openEdit, handleSave, form fields (category input, featured toggle, compareAtPrice input), service list (badges + old price)
+- Updated PUT /api/services/[id] to persist all new fields
+- Rewrote prenota/page.tsx StepServices: ServiceCard component, featured section, category grouping, uncategorized fallback, compareAtPrice display (line-through + green price)
+- Updated booking summary service list to show compareAtPrice
+- Verified totalPrice logic unchanged (uses service.price = real selling price)
+
+Stage Summary:
+- Commit 7f3b592 pushed to main
+- 6 files changed, 196 insertions, 55 deletions
+- 100% backward-compatible: existing services get default values (category=null, featured=false, compareAtPrice=null)
+- Cart/coupon/booking API untouched
