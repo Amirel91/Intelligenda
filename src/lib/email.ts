@@ -180,3 +180,28 @@ export async function sendPasswordResetEmail(ownerName: string, ownerEmail: stri
     console.error('[sendPasswordResetEmail] Error:', err)
   }
 }
+
+// ============ CUSTOMER OTP EMAIL (Apple minimal style) ============
+
+function renderOtpEmail(code: string, shopName: string): string {
+  return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Il tuo codice IntelliGenda</title><style>body{margin:0;padding:0;width:100%;height:100%;background-color:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}.container{max-width:480px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}.header{background:linear-gradient(135deg,#1c1917,#292524);padding:40px 32px;text-align:center}.header h1{margin:0;font-size:20px;font-weight:600;color:#fafaf9;letter-spacing:-0.02em}.header p{margin:6px 0 0;font-size:13px;color:#a8a29e}.body{padding:40px 32px;text-align:center}.body p{margin:0 0 8px;font-size:15px;color:#44403c;line-height:1.5}.code-box{margin:28px auto;padding:20px 16px;background:#fafaf9;border:1px solid #e7e5e4;border-radius:12px;display:inline-block;min-width:200px}.code{font-size:36px;font-weight:700;color:#1c1917;letter-spacing:0.15em;font-variant-numeric:tabular-nums}.expiry{margin:24px 0 0;font-size:13px;color:#78716c}.footer{padding:24px 32px;text-align:center;font-size:12px;color:#a8a29e;border-top:1px solid #f5f5f4;background:#fafaf9}</style></head><body><div style="padding:24px 0"><div class="container"><div class="header"><h1>IntelliGenda</h1><p>${shopName}</p></div><div class="body"><p>Il tuo codice di accesso</p><div class="code-box"><div class="code">${code}</div></div><p class="expiry">Questo codice scade tra 10 minuti.</p><p style="font-size:13px;color:#78716c;margin-top:4px">Se non hai richiesto questo codice, ignora questa email.</p></div><div class="footer"><p>IntelliGenda — Prenotazioni intelligenti</p></div></div></div></body></html>`
+}
+
+export async function sendOtpEmail(email: string, code: string, shopName: string): Promise<void> {
+  const r = getResend()
+  if (!r) {
+    console.error('[sendOtpEmail] Resend not initialized')
+    return
+  }
+  try {
+    await r.emails.send({
+      from: `${getFromName()} <${getFromAddress()}>`,
+      to: email,
+      subject: `Il tuo codice di accesso IntelliGenda`,
+      html: renderOtpEmail(code, shopName),
+    })
+    console.log('[sendOtpEmail] OTP sent to', email)
+  } catch (err) {
+    console.error('[sendOtpEmail] Error:', err)
+  }
+}

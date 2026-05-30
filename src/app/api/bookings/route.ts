@@ -6,6 +6,7 @@ import { isSlotAvailable, findFreeResource } from '@/lib/slot-algorithm'
 import { getTenantConfig, requireTenantConfig } from '@/lib/tenant'
 import { createInRome } from '@/lib/timezone'
 import { sendBookingConfirmationEmails } from '@/lib/email'
+import { getCustomerSession } from '@/lib/customer-auth'
 
 // ============ RATE LIMITING (In-Memory, Anti-Spam) ============
 // Max 2 bookings per IP per configId in a 2-hour window
@@ -159,6 +160,23 @@ export async function POST(request: NextRequest) {
     // Assign resource: use client's preferred resourceId if provided, otherwise auto-assign
     const resourceId = await findFreeResource(data.date, data.time, totalDuration, config.id, data.resourceId)
 
+    // Check if customer is logged in (optional CustomerUser account)
+    const customerSession = await getCustomerSession()
+    let customerId: string | undefined
+
+    // Link booking to customer account if logged in
+    if (customerSession && customerSession.configId === config.id) {
+      customerId = customerSession.customerId
+      // Update customer profile with latest info (nome, telefono)
+      await db.customerUser.update({
+        where: { id: customerId },
+        data: {
+          nome: data.customer.customerName || '',
+          telefono: data.customer.customerPhone,
+        },
+      }).catch(() => { /* best effort — don't block booking */ })
+    }
+
     // Create booking with services
     const booking = await db.booking.create({
       data: {
@@ -172,6 +190,7 @@ export async function POST(request: NextRequest) {
         status: 'confirmed',
         configId: config.id,
         ...(resourceId && { resourceId }),
+        ...(customerId && { customerId }),
         services: {
           create: data.serviceIds.map((serviceId: string) => ({
             serviceId,

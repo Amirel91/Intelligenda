@@ -30,6 +30,7 @@ model Tenant {
 
   config          BusinessConfig?
   admins          AdminUser[]
+  customerUsers   CustomerUser[]
 }
 
 // ============ SHOP CONFIGURATION (Singleton per tenant) ============
@@ -59,9 +60,34 @@ model BusinessConfig {
   services        Service[]
   bookings        Booking[]
   resources       Resource[]
+  customerUsers    CustomerUser[]
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+}
+
+// ============ CUSTOMER USER (Optional client account — OTP-based auth) ============
+
+model CustomerUser {
+  id              String         @id @default(cuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  configId        String
+  config          BusinessConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  nome            String         @default("")
+  telefono        String         @unique
+  email           String         @unique
+  // OTP fields for passwordless authentication
+  otpCode         String?
+  otpExpires      DateTime?
+
+  bookings        Booking[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([configId])
+  @@index([tenantId])
 }
 
 // ============ SERVICES ============
@@ -131,6 +157,10 @@ model Booking {
 
   remindedAt      DateTime?
 
+  // Optional link to CustomerUser (for logged-in clients)
+  customerId      String?
+  customer        CustomerUser?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
   services        BookingService[]
 
   createdAt       DateTime        @default(now())
@@ -138,6 +168,7 @@ model Booking {
 
   @@index([configId, startTime])
   @@index([status, startTime])
+  @@index([customerId])
 }
 
 // ============ BOOKING-SERVICE PIVOT ============

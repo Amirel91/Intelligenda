@@ -20,6 +20,9 @@ import {
   Download,
   X,
   ExternalLink,
+  LogIn,
+  Mail,
+  ShieldCheck,
 } from 'lucide-react'
 
 // ==================== TYPES ====================
@@ -58,6 +61,13 @@ type AvailabilityLevel = 'high' | 'medium' | 'low' | 'none'
 interface DayAvailability {
   date: string
   availability: AvailabilityLevel
+}
+
+interface CustomerAuthData {
+  id: string
+  nome: string
+  telefono: string
+  email: string
 }
 
 // ==================== MAIN COMPONENT ====================
@@ -100,8 +110,44 @@ export default function PrenotaPage() {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [closedDates, setClosedDates] = useState<string[]>([])
 
-  // Load remembered customer data on mount
+  // Customer authentication state (optional OTP login)
+  const [customerAuth, setCustomerAuth] = useState<CustomerAuthData | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [otpCode, setOtpCode] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpSending, setOtpSending] = useState(false)
+  const [otpVerifying, setOtpVerifying] = useState(false)
+  const [otpError, setOtpError] = useState('')
+
+  // Check if customer is already logged in on mount
   useEffect(() => {
+    fetch('/api/auth/customer/me')
+      .then(r => r.json())
+      .then(data => {
+        if (data.authenticated && data.customer) {
+          setCustomerAuth(data.customer)
+          // Pre-fill form fields with saved customer data
+          setBooking(prev => ({
+            ...prev,
+            customer: {
+              ...prev.customer,
+              customerName: data.customer.nome?.split(' ')[0] || prev.customer.customerName,
+              customerSurname: data.customer.nome?.split(' ').slice(1).join(' ') || prev.customer.customerSurname,
+              customerPhone: data.customer.telefono?.startsWith('temp_') ? prev.customer.customerPhone : (data.customer.telefono || prev.customer.customerPhone),
+              customerEmail: data.customer.email || prev.customer.customerEmail,
+            },
+          }))
+        }
+        setAuthChecked(true)
+      })
+      .catch(() => setAuthChecked(true))
+  }, [])
+
+  // Load remembered customer data on mount (only if not already logged in)
+  useEffect(() => {
+    if (customerAuth) return // Don't overwrite with localStorage if logged in
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -118,7 +164,7 @@ export default function PrenotaPage() {
         setRememberMe(true)
       }
     } catch {}
-  }, [])
+  }, [customerAuth])
 
   // Fetch services on mount
   useEffect(() => {
@@ -636,6 +682,236 @@ export default function PrenotaPage() {
     </div>
   )
 
+  // ==================== OTP LOGIN FLOW ====================
+
+  const handleRequestOtp = async () => {
+    if (!loginEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail)) {
+      setOtpError('Inserisci un indirizzo email valido')
+      return
+    }
+    setOtpError('')
+    setOtpSending(true)
+    try {
+      const res = await fetch('/api/auth/customer/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Errore nell\'invio del codice')
+      }
+      setOtpSent(true)
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : 'Errore')
+    } finally {
+      setOtpSending(false)
+    }
+  }
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode.trim() || otpCode.length !== 6) {
+      setOtpError('Inserisci il codice a 6 cifre')
+      return
+    }
+    setOtpError('')
+    setOtpVerifying(true)
+    try {
+      const res = await fetch('/api/auth/customer/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, otpCode }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Codice non valido')
+      }
+      const data = await res.json()
+      // Set auth state and pre-fill form
+      setCustomerAuth(data.customer)
+      setShowLoginModal(false)
+      setOtpSent(false)
+      setOtpCode('')
+      // Pre-fill form with customer data
+      if (data.customer) {
+        const firstName = data.customer.nome?.split(' ')[0] || ''
+        const lastName = data.customer.nome?.split(' ').slice(1).join(' ') || ''
+        const phone = data.customer.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (data.customer.telefono || '')
+        setBooking(prev => ({
+          ...prev,
+          customer: {
+            ...prev.customer,
+            customerName: firstName || prev.customer.customerName,
+            customerSurname: lastName || prev.customer.customerSurname,
+            customerPhone: phone,
+            customerEmail: data.customer.email || prev.customer.customerEmail,
+          },
+        }))
+      }
+    } catch (err) {
+      setOtpError(err instanceof Error ? err.message : 'Errore')
+    } finally {
+      setOtpVerifying(false)
+    }
+  }
+
+  const closeLoginModal = () => {
+    setShowLoginModal(false)
+    setOtpSent(false)
+    setOtpCode('')
+    setOtpError('')
+    setLoginEmail('')
+  }
+
+  const LoginBanner = () => {
+    // If already logged in, show welcome message
+    if (customerAuth) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-5 p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center gap-3"
+        >
+          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-emerald-900 truncate">
+              Bentornato{customerAuth.nome ? ` ${customerAuth.nome.split(' ')[0]}` : ''}!
+            </p>
+            <p className="text-xs text-emerald-600">Account connesso — le tue prenotazioni saranno salvate nello storico.</p>
+          </div>
+        </motion.div>
+      )
+    }
+
+    // Not logged in — show login prompt
+    return (
+      <>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-5 p-4 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center gap-3"
+        >
+          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <LogIn className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-amber-900">Hai un account? Accedi per gestire le tue prenotazioni</p>
+            <p className="text-xs text-amber-600">Accedi con un codice temporaneo via email per visualizzare lo storico.</p>
+          </div>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-100 text-amber-800 text-xs font-semibold hover:bg-amber-200 transition-colors shrink-0"
+          >
+            Accedi
+          </button>
+        </motion.div>
+
+        {/* Login Modal (inline overlay) */}
+        <AnimatePresence>
+          {showLoginModal && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 z-40"
+                onClick={closeLoginModal}
+              />
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6"
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg font-semibold text-stone-900">Accedi al tuo account</h3>
+                  <button onClick={closeLoginModal} className="p-1.5 rounded-lg hover:bg-stone-100 transition-colors">
+                    <X className="w-5 h-5 text-stone-400" />
+                  </button>
+                </div>
+
+                <p className="text-sm text-stone-500 mb-4">
+                  Inserisci la tua email per ricevere un codice di accesso temporaneo a 6 cifre.
+                </p>
+
+                {/* Email input */}
+                {!otpSent && (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                        <input
+                          type="email"
+                          value={loginEmail}
+                          onChange={e => { setLoginEmail(e.target.value); setOtpError('') }}
+                          placeholder="La tua email"
+                          className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors text-sm"
+                          onKeyDown={e => e.key === 'Enter' && handleRequestOtp()}
+                        />
+                      </div>
+                      <button
+                        onClick={handleRequestOtp}
+                        disabled={otpSending || !loginEmail.trim()}
+                        className="px-5 py-3 rounded-xl bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                      >
+                        {otpSending ? 'Invio...' : 'Invia Codice'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* OTP input */}
+                {otpSent && (
+                  <div className="space-y-3">
+                    <p className="text-xs text-stone-500 flex items-center gap-1">
+                      <Mail className="w-3.5 h-3.5" />
+                      Codice inviato a <strong>{loginEmail}</strong>
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '')); setOtpError('') }}
+                        placeholder="000000"
+                        className="flex-1 px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors text-center text-xl font-bold tracking-[0.15em]"
+                        onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()}
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleVerifyOtp}
+                        disabled={otpVerifying || otpCode.length !== 6}
+                        className="px-5 py-3 rounded-xl bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                      >
+                        {otpVerifying ? 'Verifica...' : 'Verifica'}
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => { setOtpSent(false); setOtpCode(''); setOtpError('') }}
+                      className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+                    >
+                      Non ho ricevuto il codice — invia di nuovo
+                    </button>
+                  </div>
+                )}
+
+                {/* Error message */}
+                {otpError && (
+                  <p className="text-sm text-red-500 mt-2">{otpError}</p>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </>
+    )
+  }
+
   // ==================== STEP 4: CUSTOMER INFO ====================
 
   const validateForm = () => {
@@ -657,6 +933,9 @@ export default function PrenotaPage() {
         <h2 className="text-xl font-semibold text-stone-900 mb-1">I tuoi dati</h2>
         <p className="text-stone-500 text-sm">Inserisci i tuoi dati per confermare la prenotazione</p>
       </div>
+
+      {/* Login banner or welcome message */}
+      <LoginBanner />
 
       {/* Booking summary */}
       <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-100">

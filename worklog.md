@@ -103,3 +103,32 @@ Stage Summary:
 - No schema/API changes needed — all backend infrastructure was already in place
 - The client flow is now: Servizi → Operatore → Data/Ora → Dati Cliente → Confermata
 - Backward compatible: resourceId defaults to null (auto-assignment), same as before
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Customer OTP authentication system — optional login for client booking flow
+
+Work Log:
+- Added `CustomerUser` model to Prisma schema (id, tenantId, configId, nome, telefono @unique, email @unique, otpCode, otpExpires)
+- Added `customerId` field on `Booking` model (nullable, with FK → CustomerUser, onDelete: SetNull)
+- Added reverse relations on `Tenant` and `BusinessConfig` for CustomerUser
+- Added 14 DDL statements to db.ts auto-migration (CustomerUser table + FKs + indexes + Booking.customerId)
+- Created `src/lib/customer-auth.ts`: JWT-based customer session management (createToken, verifyToken, getCustomerSession, setCustomerSessionCookie, clearCustomerSessionCookie) — 30-day cookie, httpOnly
+- Created OTP email template in `email.ts` (Apple minimal style): large 6-digit code, 10-min expiry warning, stone-900 header
+- Created `POST /api/auth/customer/request-otp`: validates email, rate limits (3/email/10min), finds or creates CustomerUser, generates 6-digit OTP, sends via Resend
+- Created `POST /api/auth/customer/verify-otp`: verifies OTP + expiry, clears OTP fields, creates JWT cookie, returns customer data for pre-fill
+- Created `GET /api/auth/customer/me`: returns authenticated customer profile from cookie
+- Updated `POST /api/bookings`: reads customer_session cookie, links customerId to booking if auth'd, updates customer nome/telefono profile on each booking
+- Updated `/prenota/page.tsx` Step 4 (Customer Info):
+  - Added amber banner: "Hai un account? Accedi per gestire le tue prenotazioni" with "Accedi" button
+  - Added emerald welcome banner for logged-in users: "Bentornato [Nome]!"
+  - Added inline login modal with email input + OTP code input (6 digits, numeric keypad)
+  - On mount, checks `/api/auth/customer/me` and pre-fills form fields
+  - On successful OTP verification, pre-fills Nome, Cognome, Telefono, Email from customer profile
+- TypeScript verification: zero new errors (after prisma generate)
+
+Stage Summary:
+- Files created: src/lib/customer-auth.ts, src/app/api/auth/customer/request-otp/route.ts, src/app/api/auth/customer/verify-otp/route.ts, src/app/api/auth/customer/me/route.ts
+- Files modified: prisma/schema.prisma, src/lib/db.ts, src/lib/email.ts, src/app/api/bookings/route.ts, src/app/prenota/page.tsx
+- Fully backward compatible: customers can still book without logging in (anonymous/guest flow)

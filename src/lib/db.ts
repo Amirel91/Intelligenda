@@ -252,6 +252,44 @@ const MIGRATION_SQL = [
     END IF;
   END $$`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "_ResourceService_AB_unique" ON "_ResourceService"("A", "B")`,
+  // ============ CUSTOMER USER TABLE (OTP-based client auth) ============
+  `CREATE TABLE IF NOT EXISTS "CustomerUser" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "tenantId" TEXT NOT NULL,
+    "configId" TEXT NOT NULL,
+    "nome" TEXT NOT NULL DEFAULT '',
+    "telefono" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "otpCode" TEXT,
+    "otpExpires" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'CustomerUser_tenantId_fkey') THEN
+      ALTER TABLE "CustomerUser" ADD CONSTRAINT "CustomerUser_tenantId_fkey"
+        FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'CustomerUser_configId_fkey') THEN
+      ALTER TABLE "CustomerUser" ADD CONSTRAINT "CustomerUser_configId_fkey"
+        FOREIGN KEY ("configId") REFERENCES "BusinessConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "CustomerUser_telefono_key" ON "CustomerUser"("telefono")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "CustomerUser_email_key" ON "CustomerUser"("email")`,
+  `CREATE INDEX IF NOT EXISTS "CustomerUser_configId_idx" ON "CustomerUser"("configId")`,
+  `CREATE INDEX IF NOT EXISTS "CustomerUser_tenantId_idx" ON "CustomerUser"("tenantId")`,
+  // ============ BOOKING → CUSTOMER USER LINK ============
+  `ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "customerId" TEXT`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Booking_customerId_fkey') THEN
+      ALTER TABLE "Booking" ADD CONSTRAINT "Booking_customerId_fkey"
+        FOREIGN KEY ("customerId") REFERENCES "CustomerUser"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `CREATE INDEX IF NOT EXISTS "Booking_customerId_idx" ON "Booking"("customerId")`,
 ]
 
 /**
