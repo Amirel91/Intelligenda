@@ -234,6 +234,24 @@ const MIGRATION_SQL = [
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "BannedIP_ipAddress_key" ON "BannedIP"("ipAddress")`,
+  // ============ RESOURCE-SERVICE MANY-TO-MANY (Operator-Service Assignment) ============
+  `CREATE TABLE IF NOT EXISTS "_ResourceService" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL
+  )`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '_ResourceService_AB_fkey') THEN
+      ALTER TABLE "_ResourceService" ADD CONSTRAINT "_ResourceService_AB_fkey"
+        FOREIGN KEY ("A") REFERENCES "Resource"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '_ResourceService_BA_fkey') THEN
+      ALTER TABLE "_ResourceService" ADD CONSTRAINT "_ResourceService_BA_fkey"
+        FOREIGN KEY ("B") REFERENCES "Service"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "_ResourceService_AB_unique" ON "_ResourceService"("A", "B")`,
 ]
 
 /**

@@ -70,3 +70,36 @@ Stage Summary:
 - Files created: forgot-password/route.ts, reset-password/route.ts, forgot-password/page.tsx, reset-password/page.tsx
 - Files modified: schema.prisma, db.ts, email.ts, register/route.ts, login/page.tsx
 - Build passes cleanly with 52 routes including 4 new password reset routes
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Add operator selection step in client booking flow (/prenota)
+
+Work Log:
+- Analyzed existing architecture: M:N Resource↔Service already in Prisma, admin checkboxes already done, slot algorithm already supports resourceId
+- Verified bookingSchema already has `resourceId: z.string().optional()`
+- Verified /api/slots and /api/slots/batch already accept `resourceId` query param
+- Verified /api/bookings POST already handles resourceId in findFreeResource
+- Verified /api/resources/public filters operators by requested serviceIds
+- Modified `/src/app/prenota/page.tsx` to add operator selection:
+  - Added `resourceId` field to BookingData interface
+  - Added `ResourceOption` interface and `availableResources`/`loadingResources` state
+  - Created new StepOperator component (step 2): shows operators filtered by selected services + "Qualsiasi operatore disponibile" default option
+  - Shifted Calendar to step 3, Customer Info to step 4, Confirmation to step 5
+  - Updated stepLabels: Servizi → Operatore → Data → Dati (4 steps before confirmation)
+  - Added useEffect to fetch `/api/resources/public?serviceIds=...` when entering step 2
+  - Auto-skip operator step if no resources exist (goes straight to calendar)
+  - Reset resourceId and date/time when services change (going back to step 1)
+  - Pass `resourceId` to `/api/slots/batch` and `/api/slots` calls (filtered availability)
+  - Pass `resourceId` to booking POST payload
+  - Pass `resourceId` to slot verification before submit
+  - Show selected operator name in calendar subtitle, customer info summary, confirmation screen, and Google Calendar link
+  - Added `Users` icon import from lucide-react for operator step
+- TypeScript verification: zero new errors
+
+Stage Summary:
+- File modified: `src/app/prenota/page.tsx` (complete rewrite with operator selection)
+- No schema/API changes needed — all backend infrastructure was already in place
+- The client flow is now: Servizi → Operatore → Data/Ora → Dati Cliente → Confermata
+- Backward compatible: resourceId defaults to null (auto-assignment), same as before

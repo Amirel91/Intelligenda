@@ -143,7 +143,8 @@ export async function POST(request: NextRequest) {
     const totalPrice = services.reduce((sum, s) => sum + s.price, 0)
 
     // Double-check slot availability (prevent race conditions)
-    const available = await isSlotAvailable(data.date, data.time, totalDuration, config.id)
+    // If client specified a resourceId, check only that resource's availability
+    const available = await isSlotAvailable(data.date, data.time, totalDuration, config.id, data.resourceId)
     if (!available) {
       return NextResponse.json(
         { error: 'Lo slot selezionato non è più disponibile. Si prega di selezionarne un altro.' },
@@ -155,8 +156,8 @@ export async function POST(request: NextRequest) {
     const startTime = createInRome(data.date, data.time)
     const endTime = new Date(startTime.getTime() + totalDuration * 60 * 1000)
 
-    // Auto-assign to the first available resource
-    const resourceId = await findFreeResource(data.date, data.time, totalDuration, config.id)
+    // Assign resource: use client's preferred resourceId if provided, otherwise auto-assign
+    const resourceId = await findFreeResource(data.date, data.time, totalDuration, config.id, data.resourceId)
 
     // Create booking with services
     const booking = await db.booking.create({

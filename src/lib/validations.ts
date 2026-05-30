@@ -16,6 +16,7 @@ export const bookingSchema = z.object({
   serviceIds: z.array(z.string()).min(1, 'Seleziona almeno un servizio'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data non valida'),
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Orario non valido'),
+  resourceId: z.string().optional(),
   customer: customerInfoSchema,
 })
 

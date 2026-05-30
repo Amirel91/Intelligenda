@@ -6,15 +6,17 @@ import { z } from 'zod'
 
 const createResourceSchema = z.object({
   name: z.string().min(1, 'Nome obbligatorio').max(50, 'Massimo 50 caratteri'),
+  serviceIds: z.array(z.string()).optional(),
 })
 
 const updateResourceSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   active: z.boolean().optional(),
   sortOrder: z.number().int().min(0).optional(),
+  serviceIds: z.array(z.string()).optional(),
 })
 
-// GET /api/resources — Admin: list all resources for this tenant
+// GET /api/resources — Admin: list all resources for this tenant (with assigned services)
 export async function GET(request: NextRequest) {
   try {
     await ensureDbSchema()
@@ -35,6 +37,9 @@ export async function GET(request: NextRequest) {
               },
             },
           },
+        },
+        services: {
+          select: { id: true },
         },
       },
     })
@@ -76,6 +81,14 @@ export async function POST(request: NextRequest) {
         active: true,
         sortOrder: (maxOrder?.sortOrder ?? -1) + 1,
         configId: config.id,
+        ...(data.serviceIds && {
+          services: {
+            connect: data.serviceIds.map(id => ({ id })),
+          },
+        }),
+      },
+      include: {
+        services: { select: { id: true } },
       },
     })
 

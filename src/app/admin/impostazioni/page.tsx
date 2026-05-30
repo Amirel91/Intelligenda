@@ -49,6 +49,7 @@ interface Resource {
   active: boolean
   sortOrder: number
   _count: { bookings: number }
+  services?: { id: string }[]
 }
 
 const defaultConfig: BusinessConfig = {
@@ -81,11 +82,14 @@ export default function AdminImpostazioni() {
   const [resources, setResources] = useState<Resource[]>([])
   const [resourcesLoading, setResourcesLoading] = useState(false)
   const [newResourceName, setNewResourceName] = useState('')
+  const [newResourceServiceIds, setNewResourceServiceIds] = useState<string[]>([])
   const [addingResource, setAddingResource] = useState(false)
   const [editingResource, setEditingResource] = useState<Resource | null>(null)
   const [editName, setEditName] = useState('')
+  const [editServiceIds, setEditServiceIds] = useState<string[]>([])
   const [savingResource, setSavingResource] = useState(false)
   const [deletingResource, setDeletingResource] = useState<string | null>(null)
+  const [shopServices, setShopServices] = useState<{ id: string; name: string }[]>([])
 
   // Closed Periods state
   const [closedPeriods, setClosedPeriods] = useState<ClosedPeriod[]>([])
@@ -136,10 +140,17 @@ export default function AdminImpostazioni() {
   const fetchResources = async () => {
     setResourcesLoading(true)
     try {
-      const res = await fetch('/api/resources')
-      if (res.ok) {
-        const data = await res.json()
+      const [resRes, servRes] = await Promise.all([
+        fetch('/api/resources'),
+        fetch('/api/services?all=true'),
+      ])
+      if (resRes.ok) {
+        const data = await resRes.json()
         setResources(Array.isArray(data) ? data : [])
+      }
+      if (servRes.ok) {
+        const data = await servRes.json()
+        setShopServices(Array.isArray(data) ? data.map((s: { id: string; name: string }) => ({ id: s.id, name: s.name })) : [])
       }
     } catch { /* silent */ }
     finally { setResourcesLoading(false) }
@@ -209,7 +220,7 @@ export default function AdminImpostazioni() {
       const res = await fetch('/api/resources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newResourceName.trim() }),
+        body: JSON.stringify({ name: newResourceName.trim(), serviceIds: newResourceServiceIds }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -217,6 +228,7 @@ export default function AdminImpostazioni() {
         return
       }
       setNewResourceName('')
+      setNewResourceServiceIds([])
       fetchResources()
     } catch { alert('Errore di connessione') }
     finally { setAddingResource(false) }
@@ -229,7 +241,7 @@ export default function AdminImpostazioni() {
       const res = await fetch(`/api/resources/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim() }),
+        body: JSON.stringify({ name: editName.trim(), serviceIds: editServiceIds }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -238,6 +250,7 @@ export default function AdminImpostazioni() {
       }
       setEditingResource(null)
       setEditName('')
+      setEditServiceIds([])
       fetchResources()
     } catch { alert('Errore di connessione') }
     finally { setSavingResource(false) }
@@ -723,7 +736,7 @@ export default function AdminImpostazioni() {
                           {res.active ? 'ON' : 'OFF'}
                         </button>
                         <button
-                          onClick={() => { setEditingResource(res); setEditName(res.name) }}
+                          onClick={() => { setEditingResource(res); setEditName(res.name); setEditServiceIds(res.services?.map(s => s.id) || []) }}
                           className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors"
                           title="Modifica nome"
                         >
@@ -740,6 +753,24 @@ export default function AdminImpostazioni() {
                       </>
                     )}
                   </div>
+                  {/* Service assignment checkboxes when editing */}
+                  {editingResource?.id === res.id && (
+                    <div className="mt-3 ml-9">
+                      <p className="text-xs font-medium text-stone-500 mb-2">Servizi abilitati per questo operatore:</p>
+                      <div className="space-y-1.5">
+                        {shopServices.map(svc => {
+                          const isChecked = editServiceIds.includes(svc.id)
+                          return (
+                            <label key={svc.id} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer py-1 px-2 rounded-lg hover:bg-stone-100 transition-colors">
+                              <input type="checkbox" checked={isChecked} onChange={(e) => { setEditServiceIds(prev => e.target.checked ? [...prev, svc.id] : prev.filter(sid => sid !== svc.id)) }} className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-500" />
+                              <span className="truncate">{svc.name}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                      <p className="text-xs text-stone-400 mt-1.5">{editServiceIds.length === 0 ? 'Nessun servizio selezionato = il collaboratore potra svolgere tutti i servizi.' : `${editServiceIds.length} servizio${editServiceIds.length > 1 ? 'i selezionati' : ' selezionato'}`}</p>
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -764,6 +795,24 @@ export default function AdminImpostazioni() {
               Aggiungi
             </button>
           </div>
+
+          {/* Service selection for new resource */}
+          {shopServices.length > 0 && (
+            <div className="mt-4 p-4 rounded-xl bg-stone-50 border border-stone-100">
+              <p className="text-xs font-medium text-stone-500 mb-2">Servizi per la nuova postazione (opzionale):</p>
+              <div className="flex flex-wrap gap-2">
+                {shopServices.map(svc => {
+                  const isChecked = newResourceServiceIds.includes(svc.id)
+                  return (
+                    <button key={svc.id} onClick={() => setNewResourceServiceIds(prev => isChecked ? prev.filter(sid => sid !== svc.id) : [...prev, svc.id])} className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${isChecked ? 'bg-stone-900 text-white border-stone-900' : 'border-stone-200 text-stone-600 hover:border-stone-300'}`}>
+                      {svc.name}
+                    </button>
+                  )
+                })}
+              </div>
+              {newResourceServiceIds.length > 0 && <p className="text-xs text-stone-400 mt-2">{newResourceServiceIds.length} servizio{newResourceServiceIds.length > 1 ? 'i selezionati' : ' selezionato'}</p>}
+            </div>
+          )}
         </div>
       )}
 

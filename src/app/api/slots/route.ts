@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAvailableSlots } from '@/lib/slot-algorithm'
 import { getTenantConfig } from '@/lib/tenant'
 
-// GET /api/slots?date=YYYY-MM-DD&duration=60
+// GET /api/slots?date=YYYY-MM-DD&duration=60&resourceId=xxx
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
     const duration = searchParams.get('duration')
+    const resourceId = searchParams.get('resourceId')
 
     if (!date || !duration) {
       return NextResponse.json(
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ date, slots: [], availability: 'none' })
     }
 
-    const result = await getAvailableSlots(date, durationMinutes, config.id)
+    const result = await getAvailableSlots(date, durationMinutes, config.id, resourceId || undefined)
     return NextResponse.json(result)
   } catch (error) {
     console.error('GET /api/slots error:', error)

@@ -75,7 +75,8 @@ function isTodayRome(dateStr: string): boolean {
 export async function getAvailableSlots(
   dateStr: string,
   totalDurationMinutes: number,
-  configId?: string
+  configId?: string,
+  resourceId?: string | null
 ): Promise<SlotResult> {
   await ensureDbSchema()
   const dayOfWeek = getDayOfWeekRome(dateStr) // 1=Mon ... 7=Sun (Europe/Rome)
@@ -123,11 +124,20 @@ export async function getAvailableSlots(
   }
 
   // Get active resources for this config
-  const resources = await db.resource.findMany({
+  let resources = await db.resource.findMany({
     where: { configId: config.id, active: true },
     orderBy: { sortOrder: 'asc' },
     select: { id: true, name: true },
   })
+
+  // If a specific resourceId is requested, filter to only that resource
+  if (resourceId) {
+    resources = resources.filter(r => r.id === resourceId)
+    // If the requested resource doesn't exist or is inactive, return empty
+    if (resources.length === 0) {
+      return { date: dateStr, slots: [], availability: 'none' }
+    }
+  }
 
   // Get ALL bookings for this date (across all resources) — UTC bounds from Rome day
   const dayStart = createInRome(dateStr, '00:00')
@@ -263,13 +273,49 @@ export async function findFreeResource(
   dateStr: string,
   time: string,
   totalDurationMinutes: number,
-  configId: string
+  configId: string,
+  preferredResourceId?: string | null
 ): Promise<string | null> {
   await ensureDbSchema()
 
   const [timeH, timeM] = time.split(':').map(Number)
   const slotStart = timeH * 60 + timeM
   const slotEnd = slotStart + totalDurationMinutes
+
+  // If a specific resource was requested by the customer, try only that one
+  if (preferredResourceId) {
+    const dayStart = createInRome(dateStr, '00:00')
+    const dayEnd = createInRome(dateStr, '23:59')
+    const bookings = await db.booking.findMany({
+      where: {
+        startTime: { gte: dayStart, lte: dayEnd },
+        status: { in: ['confirmed', 'pending', 'blocked'] },
+        configId,
+      },
+      select: { startTime: true, endTime: true, resourceId: true },
+    })
+
+    // Check unassigned bookings (block all resources)
+    const unassignedBlocked = bookings
+      .filter(b => !b.resourceId)
+      .some(b => {
+        const bs = getMinutesFromMidnightRome(new Date(b.startTime))
+        const be = getMinutesFromMidnightRome(new Date(b.endTime))
+        return slotStart < be && slotEnd > bs
+      })
+    if (unassignedBlocked) return null
+
+    // Check only the preferred resource's bookings
+    const hasOverlap = bookings
+      .filter(b => b.resourceId === preferredResourceId)
+      .some(b => {
+        const bs = getMinutesFromMidnightRome(new Date(b.startTime))
+        const be = getMinutesFromMidnightRome(new Date(b.endTime))
+        return slotStart < be && slotEnd > bs
+      })
+
+    return hasOverlap ? null : preferredResourceId
+  }
 
   // Get active resources
   const resources = await db.resource.findMany({
@@ -336,7 +382,8 @@ export async function getBatchAvailability(
   startDate: string,
   endDate: string,
   totalDurationMinutes: number,
-  configId?: string
+  configId?: string,
+  resourceId?: string | null
 ): Promise<Record<string, SlotResult['availability']>> {
   await ensureDbSchema()
 
@@ -385,11 +432,16 @@ export async function getBatchAvailability(
   }
 
   // 2. Active resources (single query)
-  const resources = await db.resource.findMany({
+  let resources = await db.resource.findMany({
     where: { configId: config.id, active: true },
     orderBy: { sortOrder: 'asc' },
     select: { id: true },
   })
+
+  // If a specific resourceId is requested, filter to only that resource
+  if (resourceId) {
+    resources = resources.filter(r => r.id === resourceId)
+  }
 
   // 3. ALL bookings in the date range (single query with composite index)
   // Use Rome-aware UTC boundaries
@@ -540,9 +592,10 @@ export async function isSlotAvailable(
   dateStr: string,
   time: string,
   totalDurationMinutes: number,
-  configId?: string
+  configId?: string,
+  resourceId?: string | null
 ): Promise<boolean> {
-  const { slots } = await getAvailableSlots(dateStr, totalDurationMinutes, configId)
+  const { slots } = await getAvailableSlots(dateStr, totalDurationMinutes, configId, resourceId)
   return slots.includes(time)
 }
 

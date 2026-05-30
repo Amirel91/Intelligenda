@@ -8,6 +8,7 @@ const updateResourceSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   active: z.boolean().optional(),
   sortOrder: z.number().int().min(0).optional(),
+  serviceIds: z.array(z.string()).optional(),
 })
 
 // PUT /api/resources/[id] — Admin: update a resource
@@ -47,12 +48,34 @@ export async function PUT(
       }
     }
 
+    // Build update data
+    const updateData: Record<string, unknown> = {}
+    if (data.name !== undefined) updateData.name = data.name.trim()
+    if (data.active !== undefined) updateData.active = data.active
+    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder
+
+    // If serviceIds is provided, update the many-to-many relation
+    if (data.serviceIds !== undefined) {
+      const resource = await db.resource.update({
+        where: { id },
+        data: {
+          ...updateData,
+          services: {
+            set: data.serviceIds.map(sid => ({ id: sid })),
+          },
+        },
+        include: {
+          services: { select: { id: true } },
+        },
+      })
+      return NextResponse.json(resource)
+    }
+
     const resource = await db.resource.update({
       where: { id },
-      data: {
-        ...(data.name !== undefined && { name: data.name.trim() }),
-        ...(data.active !== undefined && { active: data.active }),
-        ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+      data: updateData,
+      include: {
+        services: { select: { id: true } },
       },
     })
 
@@ -68,7 +91,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Dati non validi' }, { status: 400 })
     }
     console.error('PUT /api/resources/[id] error:', error)
-    return NextResponse.json({ error: 'Errore nell\'aggiornamento della risorsa' }, { status: 500 })
+    return NextResponse.json({ error: "Errore nell'aggiornamento della risorsa" }, { status: 500 })
   }
 }
 
@@ -117,6 +140,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Negozio non trovato' }, { status: 404 })
     }
     console.error('DELETE /api/resources/[id] error:', error)
-    return NextResponse.json({ error: 'Errore nell\'eliminazione della risorsa' }, { status: 500 })
+    return NextResponse.json({ error: "Errore nell'eliminazione della risorsa" }, { status: 500 })
   }
 }

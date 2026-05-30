@@ -12,6 +12,7 @@ import {
   Clock,
   Calendar,
   User,
+  Users,
   ChevronLeft,
   ChevronRight,
   PartyPopper,
@@ -34,8 +35,14 @@ interface Service {
   active: boolean
 }
 
+interface ResourceOption {
+  id: string
+  name: string
+}
+
 interface BookingData {
   serviceIds: string[]
+  resourceId?: string | null
   date: string
   time: string
   customer: {
@@ -67,8 +74,13 @@ export default function PrenotaPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  // Operator / Resource selection state
+  const [availableResources, setAvailableResources] = useState<ResourceOption[]>([])
+  const [loadingResources, setLoadingResources] = useState(false)
+
   const [booking, setBooking] = useState<BookingData>({
     serviceIds: [],
+    resourceId: null,
     date: '',
     time: '',
     customer: {
@@ -119,9 +131,33 @@ export default function PrenotaPage() {
       .catch(() => setLoading(false))
   }, [])
 
-  // Fetch closed dates and closed periods when entering step 2
+  // Fetch resources when entering step 2 (operator selection)
+  // Filtered by the services selected in step 1
   useEffect(() => {
-    if (step === 2) {
+    if (step === 2 && booking.serviceIds.length > 0) {
+      setLoadingResources(true)
+      const serviceIdsParam = booking.serviceIds.join(',')
+      fetch(`/api/resources/public?serviceIds=${serviceIdsParam}`)
+        .then(res => res.json())
+        .then(data => {
+          const list = Array.isArray(data) ? data as ResourceOption[] : []
+          setAvailableResources(list)
+          setLoadingResources(false)
+          // If there are no resources at all, auto-skip to calendar (step 3)
+          if (list.length === 0) {
+            setStep(3)
+          }
+        })
+        .catch(() => {
+          setAvailableResources([])
+          setLoadingResources(false)
+        })
+    }
+  }, [step, booking.serviceIds])
+
+  // Fetch closed dates and closed periods when entering step 3 (calendar)
+  useEffect(() => {
+    if (step === 3) {
       // Fetch single closed dates
       const closedDatesPromise = fetch('/api/closed-dates')
         .then(r => r.json())
@@ -180,13 +216,21 @@ export default function PrenotaPage() {
 
   const totalCleanupInList = selectedServices.reduce((sum, s) => sum + (s.cleanupMinutes || 0), 0)
 
-  // Toggle service selection
+  // Name of the selected operator (for summaries)
+  const selectedOperatorName = booking.resourceId
+    ? availableResources.find(r => r.id === booking.resourceId)?.name || ''
+    : ''
+
+  // Toggle service selection — also resets resourceId and date/time since operator availability depends on services
   const toggleService = (id: string) => {
     setBooking(prev => ({
       ...prev,
       serviceIds: prev.serviceIds.includes(id)
         ? prev.serviceIds.filter(sid => sid !== id)
         : [...prev.serviceIds, id],
+      resourceId: null,
+      date: '',
+      time: '',
     }))
   }
 
@@ -196,7 +240,7 @@ export default function PrenotaPage() {
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli i servizi</h2>
-        <p className="text-stone-500 text-sm">Seleziona uno o più servizi per il tuo appuntamento</p>
+        <p className="text-stone-500 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
       </div>
 
       <div className="space-y-3">
@@ -267,7 +311,116 @@ export default function PrenotaPage() {
     </div>
   )
 
-  // ==================== STEP 2: CALENDAR ====================
+  // ==================== STEP 2: OPERATOR SELECTION ====================
+
+  const selectOperator = (resourceId: string | null) => {
+    setBooking(prev => ({
+      ...prev,
+      resourceId,
+      date: '',
+      time: '',
+    }))
+  }
+
+  const StepOperator = () => {
+    if (loadingResources) {
+      return (
+        <div>
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli un operatore</h2>
+            <p className="text-stone-500 text-sm">Caricamento operatori disponibili...</p>
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="p-4 rounded-xl bg-stone-200 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli un operatore</h2>
+          <p className="text-stone-500 text-sm">Seleziona chi ti assistera, oppure scegli il primo disponibile</p>
+        </div>
+
+        <div className="space-y-3">
+          {/* "Any operator" default option */}
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => selectOperator(null)}
+            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+              !booking.resourceId
+                ? 'border-stone-900 bg-stone-50'
+                : 'border-stone-200 bg-white hover:border-stone-300'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                  !booking.resourceId ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="font-medium text-stone-900">Qualsiasi operatore disponibile</div>
+                <div className="text-stone-500 text-xs mt-0.5">Verra assegnato il primo operatore libero</div>
+              </div>
+              {!booking.resourceId && <Check className="w-5 h-5 text-stone-900 shrink-0" />}
+            </div>
+          </motion.button>
+
+          {/* Individual operators */}
+          {availableResources.map(resource => {
+            const isSelected = booking.resourceId === resource.id
+            return (
+              <motion.button
+                key={resource.id}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => selectOperator(resource.id)}
+                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                  isSelected
+                    ? 'border-stone-900 bg-stone-50'
+                    : 'border-stone-200 bg-white hover:border-stone-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                      isSelected ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
+                    }`}
+                  >
+                    {resource.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-stone-900">{resource.name}</div>
+                  </div>
+                  {isSelected && <Check className="w-5 h-5 text-stone-900 shrink-0" />}
+                </div>
+              </motion.button>
+            )
+          })}
+        </div>
+
+        {/* Selected operator summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 p-3 rounded-xl bg-stone-50 border border-stone-100 text-sm text-stone-500 text-center"
+        >
+          {booking.resourceId
+            ? `Verrai affidato a ${selectedOperatorName}`
+            : `Assegnazione automatica al primo operatore disponibile`
+          }
+        </motion.div>
+      </div>
+    )
+  }
+
+  // ==================== STEP 3: CALENDAR ====================
 
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date()
@@ -283,7 +436,9 @@ export default function PrenotaPage() {
 
     try {
       // OPTIMIZED: Single batch API call instead of 30 individual calls
-      const res = await fetch(`/api/slots/batch?startDate=${from}&endDate=${to}&duration=${totalSlotDuration}`)
+      // Pass resourceId if an operator was selected, to scope availability to that operator only
+      const resourceIdParam = booking.resourceId ? `&resourceId=${booking.resourceId}` : ''
+      const res = await fetch(`/api/slots/batch?startDate=${from}&endDate=${to}&duration=${totalSlotDuration}${resourceIdParam}`)
       if (!res.ok) {
         console.error('Batch availability API returned', res.status)
         return
@@ -296,10 +451,10 @@ export default function PrenotaPage() {
     } catch (e) {
       console.error('Error fetching availability:', e)
     }
-  }, [totalSlotDuration])
+  }, [totalSlotDuration, booking.resourceId])
 
   useEffect(() => {
-    if (step === 2) {
+    if (step === 3) {
       fetchMonthAvailability(calendarMonth.getFullYear(), calendarMonth.getMonth())
     }
   }, [step, calendarMonth, fetchMonthAvailability])
@@ -308,7 +463,9 @@ export default function PrenotaPage() {
     setLoadingSlots(true)
     setBooking(prev => ({ ...prev, date: dateStr, time: '' }))
     try {
-      const res = await fetch(`/api/slots?date=${dateStr}&duration=${totalSlotDuration}`)
+      // Pass resourceId if an operator was selected
+      const resourceIdParam = booking.resourceId ? `&resourceId=${booking.resourceId}` : ''
+      const res = await fetch(`/api/slots?date=${dateStr}&duration=${totalSlotDuration}${resourceIdParam}`)
       const data = await res.json()
       setAvailableSlots(data.slots || [])
     } catch {
@@ -350,7 +507,7 @@ export default function PrenotaPage() {
     const avail = dayAvailabilities[dateStr]
     if (!avail || avail === 'none') return 'text-stone-300'
     if (avail === 'high' || avail === 'medium') return 'text-emerald-600 bg-emerald-50'
-    // 'low' = pochi posti ma ancora disponibili → giallo (NON rosso)
+    // 'low' = pochi posti ma ancora disponibili -> giallo (NON rosso)
     return 'text-amber-600 bg-amber-50'
   }
 
@@ -363,6 +520,9 @@ export default function PrenotaPage() {
         <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli data e ora</h2>
         <p className="text-stone-500 text-sm">
           Durata totale: {formatDuration(totalDuration)} · {totalPrice.toFixed(2)}€
+          {booking.resourceId && (
+            <span className="ml-1">· {selectedOperatorName}</span>
+          )}
         </p>
       </div>
 
@@ -476,7 +636,7 @@ export default function PrenotaPage() {
     </div>
   )
 
-  // ==================== STEP 3: CUSTOMER INFO ====================
+  // ==================== STEP 4: CUSTOMER INFO ====================
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
@@ -502,6 +662,12 @@ export default function PrenotaPage() {
       <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-100">
         <div className="text-sm font-medium text-stone-700 mb-2">Riepilogo</div>
         <div className="space-y-1 text-sm">
+          {booking.resourceId && (
+            <div className="flex justify-between">
+              <span className="text-stone-500">Operatore</span>
+              <span className="font-medium">{selectedOperatorName}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-stone-500">Data</span>
             <span className="font-medium">{formatDisplayDate(booking.date)}</span>
@@ -615,7 +781,7 @@ export default function PrenotaPage() {
     </div>
   )
 
-  // ==================== STEP 4: CONFIRMATION ====================
+  // ==================== STEP 5: CONFIRMATION ====================
 
   const StepConfirmation = () => (
     <div className="text-center py-8">
@@ -645,6 +811,12 @@ export default function PrenotaPage() {
             <span className="text-stone-500">Ora</span>
             <span className="font-medium">{booking.time}</span>
           </div>
+          {booking.resourceId && (
+            <div className="flex justify-between">
+              <span className="text-stone-500">Operatore</span>
+              <span className="font-medium">{selectedOperatorName}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-stone-500">Cliente</span>
             <span className="font-medium">{booking.customer.customerName} {booking.customer.customerSurname}</span>
@@ -709,7 +881,7 @@ export default function PrenotaPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors"
               >
                 <Download className="w-4 h-4" />
-                Scarica l'app sul tuo telefono
+                Scarica l&apos;app sul tuo telefono
               </button>
             ) : isIOSSafari && showIOSHint ? (
               <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-800 text-left space-y-2">
@@ -731,7 +903,7 @@ export default function PrenotaPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
               >
                 <Download className="w-4 h-4" />
-                Scarica l'app per le prossime prenotazioni
+                Scarica l&apos;app per le prossime prenotazioni
               </button>
             )}
           </motion.div>
@@ -750,18 +922,29 @@ export default function PrenotaPage() {
 
     try {
       // Re-verify slot availability before submitting
-      const slotRes = await fetch(`/api/slots?date=${booking.date}&duration=${totalSlotDuration}`)
+      // Pass resourceId if an operator was selected
+      const resourceIdParam = booking.resourceId ? `&resourceId=${booking.resourceId}` : ''
+      const slotRes = await fetch(`/api/slots?date=${booking.date}&duration=${totalSlotDuration}${resourceIdParam}`)
       const slotData = await slotRes.json()
       if (!slotData.slots || !slotData.slots.includes(booking.time)) {
-        setError('Lo slot selezionato non è più disponibile. Torna indietro e seleziona un altro orario.')
+        setError('Lo slot selezionato non e piu disponibile. Torna indietro e seleziona un altro orario.')
         setSubmitting(false)
         return
+      }
+
+      // Build booking payload — include resourceId if selected
+      const payload = {
+        serviceIds: booking.serviceIds,
+        date: booking.date,
+        time: booking.time,
+        ...(booking.resourceId ? { resourceId: booking.resourceId } : {}),
+        customer: booking.customer,
       }
 
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(booking),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
@@ -773,7 +956,7 @@ export default function PrenotaPage() {
       setConfirmedBookingId(createdBooking.id || null)
       setShopName(createdBooking.shopName || '')
 
-      setStep(4) // Success step
+      setStep(5) // Success step
 
       // Save or clear localStorage based on rememberMe
       if (rememberMe) {
@@ -796,12 +979,13 @@ export default function PrenotaPage() {
 
   const canGoNext = () => {
     if (step === 1) return booking.serviceIds.length > 0
-    if (step === 2) return booking.date && booking.time
+    if (step === 2) return true // Operator step: "Qualsiasi" is always pre-selected
+    if (step === 3) return booking.date && booking.time
     return true
   }
 
   const goNext = () => {
-    if (step === 3) {
+    if (step === 4) {
       handleSubmit()
     } else {
       setStep(prev => prev + 1)
@@ -840,8 +1024,9 @@ export default function PrenotaPage() {
     const startCal = startRome.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
     const endCal = endRome.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
 
+    const operatorLine = booking.resourceId ? `\nOperatore: ${selectedOperatorName}` : ''
     const details = encodeURIComponent(
-      `Prenotazione confermata per ${serviceName}\nTotale: €${totalPrice.toFixed(2)}\nDurata: ${formatDuration(totalDuration)}`
+      `Prenotazione confermata per ${serviceName}${operatorLine}\nTotale: €${totalPrice.toFixed(2)}\nDurata: ${formatDuration(totalDuration)}`
     )
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startCal}/${endCal}&details=${details}&ctz=Europe/Rome`
   }
@@ -850,8 +1035,9 @@ export default function PrenotaPage() {
 
   const stepLabels = [
     { num: 1, label: 'Servizi', icon: <Calendar className="w-4 h-4" /> },
-    { num: 2, label: 'Data', icon: <Clock className="w-4 h-4" /> },
-    { num: 3, label: 'Dati', icon: <User className="w-4 h-4" /> },
+    { num: 2, label: 'Operatore', icon: <Users className="w-4 h-4" /> },
+    { num: 3, label: 'Data', icon: <Clock className="w-4 h-4" /> },
+    { num: 4, label: 'Dati', icon: <User className="w-4 h-4" /> },
   ]
 
   if (loading) {
@@ -868,7 +1054,7 @@ export default function PrenotaPage() {
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-stone-200">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => step > 1 && step < 4 ? setStep(prev => prev - 1) : router.push('/')}
+            onClick={() => step > 1 && step < 5 ? setStep(prev => prev - 1) : router.push('/')}
             className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-stone-600" />
@@ -876,13 +1062,13 @@ export default function PrenotaPage() {
           <h1 className="font-semibold text-stone-900">Prenota</h1>
         </div>
 
-        {/* Steps indicator */}
-        {step < 4 && (
+        {/* Steps indicator — 4 steps (confirmation is step 5, shown separately) */}
+        {step < 5 && (
           <div className="max-w-lg mx-auto px-4 pb-3 flex gap-2">
             {stepLabels.map(s => (
               <div key={s.num} className="flex-1 flex items-center gap-2">
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors shrink-0 ${
                     step >= s.num
                       ? 'bg-stone-900 text-white'
                       : 'bg-stone-200 text-stone-500'
@@ -897,7 +1083,7 @@ export default function PrenotaPage() {
                 >
                   {s.label}
                 </span>
-                {s.num < 3 && (
+                {s.num < 4 && (
                   <div className={`flex-1 h-0.5 ${step > s.num ? 'bg-stone-900' : 'bg-stone-200'}`} />
                 )}
               </div>
@@ -917,15 +1103,16 @@ export default function PrenotaPage() {
             transition={{ duration: 0.2 }}
           >
             {step === 1 && StepServices()}
-            {step === 2 && StepCalendar()}
-            {step === 3 && StepCustomerInfo()}
-            {step === 4 && StepConfirmation()}
+            {step === 2 && StepOperator()}
+            {step === 3 && StepCalendar()}
+            {step === 4 && StepCustomerInfo()}
+            {step === 5 && StepConfirmation()}
           </motion.div>
         </AnimatePresence>
       </main>
 
       {/* Footer with Next button */}
-      {step > 0 && step < 4 && (
+      {step > 0 && step < 5 && (
         <footer className="sticky bottom-0 bg-white/80 backdrop-blur-lg border-t border-stone-200 p-4">
           <div className="max-w-lg mx-auto">
             {error && (
@@ -951,7 +1138,7 @@ export default function PrenotaPage() {
                   <div className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
                   Prenotazione in corso...
                 </>
-              ) : step === 3 ? (
+              ) : step === 4 ? (
                 'Finalizza Prenotazione'
               ) : (
                 <>

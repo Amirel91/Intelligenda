@@ -3,7 +3,7 @@ import { getBatchAvailability } from '@/lib/slot-algorithm'
 import { getTenantConfig } from '@/lib/tenant'
 
 /**
- * GET /api/slots/batch?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&duration=60
+ * GET /api/slots/batch?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&duration=60&resourceId=xxx
  *
  * OPTIMIZED: Returns availability for ALL days in a date range in a single call.
  * Replaces the old pattern of N individual /api/slots?date=... calls (one per day).
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const duration = searchParams.get('duration')
+    const resourceId = searchParams.get('resourceId')
 
     if (!startDate || !endDate || !duration) {
       return NextResponse.json(
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({})
     }
 
-    const result = await getBatchAvailability(startDate, endDate, durationMinutes, config.id)
+    const result = await getBatchAvailability(startDate, endDate, durationMinutes, config.id, resourceId || undefined)
     return NextResponse.json(result)
   } catch (error) {
     console.error('GET /api/slots/batch error:', error)
