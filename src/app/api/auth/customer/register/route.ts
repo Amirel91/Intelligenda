@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema } from '@/lib/db'
 import { getTenantConfig } from '@/lib/tenant'
-import { sendOtpEmail } from '@/lib/email'
+import { hashPassword } from '@/lib/auth'
+import { createCustomerToken, setCustomerSessionCookie } from '@/lib/customer-auth'
+import { sendWelcomeWithCredentials } from '@/lib/email'
 
 // Rate limiting
 const REGISTER_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
@@ -33,17 +35,17 @@ function checkRateLimit(email: string): boolean {
 /**
  * POST /api/auth/customer/register
  *
- * Creates a new CustomerUser with nome, telefono, email for this tenant,
- * then sends a 6-digit OTP to verify the email.
- * If a user with this email already exists under a DIFFERENT tenant, it still
- * allows registration under this tenant (email uniqueness is global, so we
- * update the existing record if it belongs to a different config).
+ * Creates a new CustomerUser with nome, telefono, email, and password,
+ * then sends a welcome email with credentials and sets a session cookie.
+ *
+ * If password is provided: password-based registration (creates account + session)
+ * If no password: falls back to OTP-based registration (legacy)
  */
 export async function POST(request: NextRequest) {
   try {
     await ensureDbSchema()
     const body = await request.json()
-    const { nome, telefono, email } = body
+    const { nome, telefono, email, password } = body
 
     if (!nome || typeof nome !== 'string' || nome.trim().length < 2) {
       return NextResponse.json({ error: 'Nome obbligatorio (almeno 2 caratteri)' }, { status: 400 })
@@ -55,6 +57,13 @@ export async function POST(request: NextRequest) {
 
     if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Email non valida' }, { status: 400 })
+    }
+
+    // Password validation (if provided)
+    if (password !== undefined && password !== null && password !== '') {
+      if (typeof password !== 'string' || password.length < 6) {
+        return NextResponse.json({ error: 'La password deve avere almeno 6 caratteri' }, { status: 400 })
+      }
     }
 
     // Rate limiting
@@ -82,14 +91,24 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       if (existing.configId === config.id) {
-        // Already registered under this tenant — just update name/phone and send OTP
-        await db.customerUser.update({
-          where: { id: existing.id },
-          data: {
-            nome: trimmedName,
-            telefono: trimmedPhone,
-          },
-        })
+        // Already registered under this tenant
+        if (password && !existing.password) {
+          // Allow setting password on OTP-only account
+          const hashedPassword = await hashPassword(password)
+          await db.customerUser.update({
+            where: { id: existing.id },
+            data: {
+              nome: trimmedName,
+              telefono: trimmedPhone,
+              password: hashedPassword,
+            },
+          })
+        } else {
+          return NextResponse.json(
+            { error: 'Questo account e gia registrato. Accedi invece.' },
+            { status: 409 }
+          )
+        }
       } else {
         // Email already used under a different tenant
         return NextResponse.json(
@@ -109,7 +128,8 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Create new CustomerUser
+      // Create new CustomerUser with password (bcrypt hashed)
+      const hashedPassword = password ? await hashPassword(password) : null
       await db.customerUser.create({
         data: {
           tenantId: config.tenantId,
@@ -117,15 +137,12 @@ export async function POST(request: NextRequest) {
           email: normalizedEmail,
           telefono: trimmedPhone,
           nome: trimmedName,
+          password: hashedPassword,
         },
       })
     }
 
-    // Generate 6-digit OTP
-    const otpCode = String(Math.floor(100000 + Math.random() * 900000))
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-
-    // Find the user (might be the existing one we just updated)
+    // Find the user (might be existing one we just updated)
     const customer = await db.customerUser.findUnique({
       where: { email: normalizedEmail },
     })
@@ -134,19 +151,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Errore nella creazione dell\'account' }, { status: 500 })
     }
 
-    // Save OTP to database
+    if (password && customer.password) {
+      // Password-based registration: create session + send welcome email
+      const token = await createCustomerToken({
+        customerId: customer.id,
+        email: customer.email,
+        nome: customer.nome,
+        telefono: customer.telefono,
+        configId: customer.configId,
+        tenantId: customer.tenantId,
+      })
+      await setCustomerSessionCookie(token)
+
+      // Fire welcome email with credentials (async, non-blocking)
+      const tenantSlug = request.cookies.get('tenant_slug')?.value || ''
+      sendWelcomeWithCredentials(
+        customer.nome,
+        customer.email,
+        password,
+        { shopName: config.shopName },
+        tenantSlug
+      ).catch(err => console.error('[register] welcome email skip:', err))
+
+      return NextResponse.json({
+        success: true,
+        email: normalizedEmail,
+        customer: {
+          id: customer.id,
+          nome: customer.nome,
+          telefono: customer.telefono,
+          email: customer.email,
+        },
+      })
+    }
+
+    // Legacy OTP path (no password provided) — for backward compatibility
+    const { sendOtpEmail } = await import('@/lib/email')
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000))
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000)
+
     await db.customerUser.update({
       where: { id: customer.id },
       data: { otpCode, otpExpires },
     })
 
-    // Send OTP email via Resend
     await sendOtpEmail(normalizedEmail, otpCode, config.shopName)
 
     return NextResponse.json({ success: true, email: normalizedEmail })
   } catch (error: unknown) {
     console.error('POST /api/auth/customer/register error:', error)
-    // Handle Prisma unique constraint violations gracefully
     const msg = error instanceof Error ? error.message : String(error)
     if (msg.includes('Unique') || msg.includes('unique') || msg.includes('duplicate')) {
       return NextResponse.json(

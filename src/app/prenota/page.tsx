@@ -172,7 +172,7 @@ export default function PrenotaPage() {
       .catch(() => setAuthChecked(true))
   }, [])
 
-  // Keep form fields in sync whenever customerAuth changes (e.g. after OTP login mid-flow)
+  // Keep form fields in sync whenever customerAuth changes (e.g. after login redirect)
   useEffect(() => {
     if (!customerAuth) return
     const { firstName, lastName } = splitNome(customerAuth.nome)
