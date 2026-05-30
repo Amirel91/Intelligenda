@@ -31,6 +31,17 @@ export default function ProfiloPage() {
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const loadBookings = async () => {
+    try {
+      const bookRes = await fetch('/api/customer/bookings')
+      if (bookRes.ok) {
+        const bookData = await bookRes.json()
+        setBookings(Array.isArray(bookData) ? bookData : [])
+      }
+    } catch { /* silent */ }
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -45,11 +56,7 @@ export default function ProfiloPage() {
         setCustomer(meData.customer)
 
         // Load bookings
-        const bookRes = await fetch('/api/customer/bookings')
-        if (bookRes.ok) {
-          const bookData = await bookRes.json()
-          setBookings(Array.isArray(bookData) ? bookData : [])
-        }
+        await loadBookings()
       } catch {
         setError('Errore nel caricamento dei dati')
       } finally {
@@ -63,6 +70,7 @@ export default function ProfiloPage() {
     if (!confirm('Vuoi annullare questa prenotazione?')) return
     setCancelling(bookingId)
     setError('')
+    setSuccess('')
     try {
       const res = await fetch('/api/bookings/cancel', {
         method: 'POST',
@@ -73,10 +81,10 @@ export default function ProfiloPage() {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Errore nella cancellazione')
       }
-      // Update booking status locally instead of removing it
-      setBookings(prev => prev.map(b =>
-        b.id === bookingId ? { ...b, status: 'cancelled' } : b
-      ))
+      // Re-fetch bookings from server to ensure data is fresh
+      await loadBookings()
+      setSuccess('Prenotazione annullata con successo')
+      setTimeout(() => setSuccess(''), 4000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nella cancellazione')
     } finally {
@@ -163,6 +171,13 @@ export default function ProfiloPage() {
               </Link>
             </div>
           </div>
+
+          {success && (
+            <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-sm text-emerald-600 flex items-center gap-2">
+              <Check className="w-4 h-4 shrink-0" />
+              {success}
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 flex items-center gap-2">

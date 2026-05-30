@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema } from '@/lib/db'
 import { sendCancellationEmails } from '@/lib/email'
 
+// Force dynamic — never cache this route handler
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/bookings/cancel
  * Public endpoint: allows a customer to cancel their own booking.
@@ -45,7 +48,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Impossibile annullare un blocco orario' }, { status: 400 })
     }
 
+    // Verify the status is actually 'confirmed' or 'pending' before updating
+    if (booking.status !== 'confirmed' && booking.status !== 'pending') {
+      return NextResponse.json({ error: 'Questa prenotazione non puo essere annullata' }, { status: 400 })
+    }
+
     // Update status to cancelled
+    console.log(`[cancel] Cancelling booking ${bookingId}, current status: ${booking.status}`)
     const updated = await db.booking.update({
       where: { id: bookingId },
       data: { status: 'cancelled' },
@@ -55,6 +64,8 @@ export async function POST(request: NextRequest) {
         resource: { select: { name: true } },
       },
     })
+
+    console.log(`[cancel] Booking ${bookingId} updated, new status: ${updated.status}`)
 
     sendCancellationEmails({ customerName: updated.customerName, customerSurname: updated.customerSurname, customerEmail: updated.customerEmail, customerPhone: updated.customerPhone, startTime: updated.startTime, endTime: updated.endTime, totalPrice: updated.totalPrice, services: updated.services, resourceName: updated.resource?.name || null, bookingId: updated.id }, { shopName: updated.config?.shopName || 'Negozio', shopEmail: updated.config?.shopEmail, shopPhone: updated.config?.shopPhone, shopAddress: updated.config?.shopAddress }).catch(err => console.error('[email] skip:', err))
 

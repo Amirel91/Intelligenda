@@ -3,6 +3,9 @@ import { db, ensureDbSchema } from '@/lib/db'
 import { getCustomerSession } from '@/lib/customer-auth'
 import { getTenantConfig } from '@/lib/tenant'
 
+// Force dynamic — never cache bookings list
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/customer/bookings
  *
