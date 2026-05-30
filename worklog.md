@@ -113,3 +113,28 @@ Stage Summary:
 - Calendar availability: `force-dynamic` added to slots APIs + `ensureDbSchema()` for robustness
 - Cancel link on success page FIXED: now uses proper API call instead of dead page route
 - All commits pushed to origin/main, Vercel will auto-deploy
+---
+Task ID: coupon-system
+Agent: main
+Task: Implement merchant coupon system (per-negozio discount codes)
+
+Work Log:
+- Added MerchantCoupon model to Prisma schema (code, discountAmount, maxUses, usedCount, isActive, expiresAt)
+- Added couponId, discountApplied, finalPrice nullable fields to Booking model
+- Added auto-migration DDL in db.ts for Neon production (CREATE TABLE, ALTER TABLE, FK, indexes)
+- Created GET /api/coupon/validate public endpoint for client-side coupon verification
+- Created GET/POST /api/coupon/admin and PATCH/DELETE /api/coupon/admin/[id] for admin CRUD
+- Modified POST /api/bookings: conditional coupon validation, discountApplied/finalPrice on create, usedCount increment
+- Added coupon input block in prenota/page.tsx Step 4 (under email field)
+- Updated BookingSummaryBlock to show discount line and "Totale scontato"
+- Updated email templates (customer + admin) with green discount line
+- Added discount badge in admin booking detail modal, mobile list, and bottom sheet
+- Created /admin/coupon/page.tsx with Apple-style management table
+- Added "Codici Sconto" entry to admin sidebar with Tag icon
+- Updated BookingWithServices interface with discountApplied/finalPrice fields
+- Build verified successfully, pushed to origin/main
+
+Stage Summary:
+- Commit 87f03a5 pushed: complete merchant coupon system
+- 11 files modified, 790 lines added, 9 lines changed
+- Zero existing logic modified — all changes are additive
