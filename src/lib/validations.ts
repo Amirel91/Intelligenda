@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 export const customerInfoSchema = z.object({
   customerName: z.string().min(2, 'Il nome deve avere almeno 2 caratteri'),
-  customerSurname: z.string().min(2, 'Il cognome deve avere almeno 2 caratteri'),
+  customerSurname: z.string().optional().or(z.literal('')),
   customerPhone: z
     .string()
     .min(8, 'Il telefono deve avere almeno 8 cifre')

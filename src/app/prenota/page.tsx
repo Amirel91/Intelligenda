@@ -133,15 +133,14 @@ export default function PrenotaPage() {
 
   // Derive whether the logged-in user has a complete profile that will pass
   // BOTH the Zod server-side validation AND the UI logic.
-  // Requirements: firstName >= 2 chars, lastName >= 2 chars, phone >= 8 digits (no temp).
-  // Single-word names (e.g. "Amir") are NOT considered complete because Zod requires customerSurname.
+  // Requirements: firstName >= 2 chars, phone >= 8 digits (no temp).
+  // Surname is optional in Zod (not all cultures use surnames).
   const hasCompleteProfile = !!(
     customerAuth &&
     (() => {
-      const { firstName, lastName } = splitNome(customerAuth.nome)
+      const { firstName } = splitNome(customerAuth.nome)
       return (
         firstName.length >= 2 &&
-        lastName.length >= 2 &&
         customerAuth.telefono &&
         !customerAuth.telefono.startsWith('temp_') &&
         customerAuth.telefono.replace(/\s/g, '').length >= 8
@@ -983,7 +982,7 @@ export default function PrenotaPage() {
 
     const errors: Record<string, string> = {}
     if (!booking.customer.customerName.trim()) errors.customerName = 'Nome obbligatorio'
-    if (!booking.customer.customerSurname.trim()) errors.customerSurname = 'Cognome obbligatorio'
+    // customerSurname is optional (not all cultures use surnames)
     if (!booking.customer.customerPhone.trim()) errors.customerPhone = 'Telefono obbligatorio'
     else if (!/^[+]?[\d\s()-]{8,}$/.test(booking.customer.customerPhone)) errors.customerPhone = 'Telefono non valido'
     if (booking.customer.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(booking.customer.customerEmail)) {
@@ -1349,14 +1348,14 @@ export default function PrenotaPage() {
       }
 
       // Build booking payload — include resourceId if selected.
-      // For logged-in users: ALWAYS construct from customerAuth (the server-verified source)
-      // to avoid stale/empty React state. For guests: use form state as-is.
-      const customerPayload = customerAuth
+      // When hasCompleteProfile: construct from customerAuth (server-verified source).
+      // Otherwise (guest or incomplete profile): use booking.customer (form state).
+      const customerPayload = hasCompleteProfile
         ? {
-            customerName: splitNome(customerAuth.nome).firstName,
-            customerSurname: splitNome(customerAuth.nome).lastName,
-            customerPhone: customerAuth.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (customerAuth.telefono || ''),
-            customerEmail: customerAuth.email || '',
+            customerName: splitNome(customerAuth!.nome).firstName,
+            customerSurname: splitNome(customerAuth!.nome).lastName,
+            customerPhone: customerAuth!.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (customerAuth!.telefono || ''),
+            customerEmail: customerAuth!.email || '',
           }
         : booking.customer
 
