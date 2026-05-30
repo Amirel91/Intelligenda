@@ -122,6 +122,18 @@ export default function PrenotaPage() {
   const [otpVerifying, setOtpVerifying] = useState(false)
   const [otpError, setOtpError] = useState('')
 
+  // Derive whether the logged-in user has a complete profile
+  // (nome >= 2 chars and telefono >= 8 chars, not a temp phone)
+  // This drives the dual-state UX in Step 4.
+  const hasCompleteProfile = !!(
+    customerAuth &&
+    customerAuth.nome &&
+    customerAuth.nome.trim().length >= 2 &&
+    customerAuth.telefono &&
+    !customerAuth.telefono.startsWith('temp_') &&
+    customerAuth.telefono.replace(/\s/g, '').length >= 8
+  )
+
   // Check if customer is already logged in on mount
   useEffect(() => {
     fetch('/api/auth/customer/me')
@@ -130,14 +142,18 @@ export default function PrenotaPage() {
         if (data.authenticated && data.customer) {
           setCustomerAuth(data.customer)
           // Pre-fill form fields with saved customer data
+          const firstName = data.customer.nome?.split(' ')[0] || ''
+          const lastName = data.customer.nome?.split(' ').slice(1).join(' ') || ''
+          const phone = data.customer.telefono?.startsWith('temp_') ? '' : (data.customer.telefono || '')
+          const email = data.customer.email || ''
           setBooking(prev => ({
             ...prev,
             customer: {
               ...prev.customer,
-              customerName: data.customer.nome?.split(' ')[0] || prev.customer.customerName,
-              customerSurname: data.customer.nome?.split(' ').slice(1).join(' ') || prev.customer.customerSurname,
-              customerPhone: data.customer.telefono?.startsWith('temp_') ? prev.customer.customerPhone : (data.customer.telefono || prev.customer.customerPhone),
-              customerEmail: data.customer.email || prev.customer.customerEmail,
+              customerName: firstName,
+              customerSurname: lastName,
+              customerPhone: phone,
+              customerEmail: email,
             },
           }))
         }
@@ -145,6 +161,33 @@ export default function PrenotaPage() {
       })
       .catch(() => setAuthChecked(true))
   }, [])
+
+  // Keep form fields in sync whenever customerAuth changes (e.g. after OTP login mid-flow)
+  useEffect(() => {
+    if (!customerAuth) return
+    const firstName = customerAuth.nome?.split(' ')[0] || ''
+    const lastName = customerAuth.nome?.split(' ').slice(1).join(' ') || ''
+    const phone = customerAuth.telefono?.startsWith('temp_') ? '' : (customerAuth.telefono || '')
+    const email = customerAuth.email || ''
+    setBooking(prev => {
+      // Only update if the new values are non-empty (don't overwrite user edits with blanks)
+      if (
+        prev.customer.customerName === firstName &&
+        prev.customer.customerSurname === lastName &&
+        prev.customer.customerPhone === phone &&
+        prev.customer.customerEmail === email
+      ) return prev
+      return {
+        ...prev,
+        customer: {
+          customerName: firstName || prev.customer.customerName,
+          customerSurname: lastName || prev.customer.customerSurname,
+          customerPhone: phone || prev.customer.customerPhone,
+          customerEmail: email || prev.customer.customerEmail,
+        },
+      }
+    })
+  }, [customerAuth])
 
   // Load remembered customer data on mount (only if not already logged in)
   useEffect(() => {
@@ -733,19 +776,19 @@ export default function PrenotaPage() {
       setShowLoginModal(false)
       setOtpSent(false)
       setOtpCode('')
-      // Pre-fill form with customer data
+      // Pre-fill form with customer data — useEffect above will also sync this
       if (data.customer) {
         const firstName = data.customer.nome?.split(' ')[0] || ''
         const lastName = data.customer.nome?.split(' ').slice(1).join(' ') || ''
-        const phone = data.customer.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (data.customer.telefono || '')
+        const phone = data.customer.telefono?.startsWith('temp_') ? '' : (data.customer.telefono || '')
+        const email = data.customer.email || ''
         setBooking(prev => ({
           ...prev,
           customer: {
-            ...prev.customer,
             customerName: firstName || prev.customer.customerName,
             customerSurname: lastName || prev.customer.customerSurname,
-            customerPhone: phone,
-            customerEmail: data.customer.email || prev.customer.customerEmail,
+            customerPhone: phone || prev.customer.customerPhone,
+            customerEmail: email || prev.customer.customerEmail,
           },
         }))
       }
@@ -765,22 +808,22 @@ export default function PrenotaPage() {
   }
 
   const LoginBanner = () => {
-    // If already logged in, show welcome message
-    if (customerAuth) {
+    // Logged in but INCOMPLETE profile — prompt to fill in the missing fields
+    if (customerAuth && !hasCompleteProfile) {
       return (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-5 p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center gap-3"
+          className="mb-5 p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center gap-3"
         >
-          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+            <User className="w-4 h-4 text-blue-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-emerald-900 truncate">
-              Bentornato{customerAuth.nome ? ` ${customerAuth.nome.split(' ')[0]}` : ''}!
+            <p className="text-sm font-medium text-blue-900 truncate">
+              Account connesso{customerAuth.email ? ` — ${customerAuth.email}` : ''}
             </p>
-            <p className="text-xs text-emerald-600">Account connesso — le tue prenotazioni saranno salvate nello storico.</p>
+            <p className="text-xs text-blue-600">Completa i dati qui sotto per confermare la prenotazione.</p>
           </div>
         </motion.div>
       )
@@ -922,8 +965,8 @@ export default function PrenotaPage() {
   // ==================== STEP 4: CUSTOMER INFO ====================
 
   const validateForm = () => {
-    // If logged in, data comes from auth profile — skip validation
-    if (customerAuth) return true
+    // If logged in with a COMPLETE profile, form is hidden — data is guaranteed valid
+    if (hasCompleteProfile) return true
 
     const errors: Record<string, string> = {}
     if (!booking.customer.customerName.trim()) errors.customerName = 'Nome obbligatorio'
@@ -981,12 +1024,12 @@ export default function PrenotaPage() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-stone-900 mb-1">I tuoi dati</h2>
         <p className="text-stone-500 text-sm">
-          {customerAuth ? 'Conferma la tua prenotazione' : 'Inserisci i tuoi dati per confermare la prenotazione'}
+          {hasCompleteProfile ? 'Conferma la tua prenotazione' : 'Inserisci i tuoi dati per confermare la prenotazione'}
         </p>
       </div>
 
-      {customerAuth ? (
-        /* ===== LOGGED-IN EXPERIENCE: elegant summary, no form ===== */
+      {hasCompleteProfile ? (
+        /* ===== LOGGED-IN + COMPLETE PROFILE: elegant summary, no form ===== */
         <>
           {/* Welcome & profile data box */}
           <motion.div
@@ -1033,18 +1076,20 @@ export default function PrenotaPage() {
           <BookingSummaryBlock />
         </>
       ) : (
-        /* ===== GUEST EXPERIENCE: form + amber banner + register link ===== */
+        /* ===== GUEST or INCOMPLETE PROFILE: form + banner ===== */
         <>
-          {/* Login banner (amber for guests) */}
+          {/* Login banner (amber for guests, or blue info for logged-in with incomplete profile) */}
           <LoginBanner />
 
-          {/* Register link for guests */}
-          <p className="text-xs text-stone-400 text-center mb-5">
-            Non hai ancora un account?{' '}
-            <Link href="/register" className="text-stone-900 font-medium hover:underline">
-              Registrati qui
-            </Link>
-          </p>
+          {/* Register link — only for guests (not when logged in) */}
+          {!customerAuth && (
+            <p className="text-xs text-stone-400 text-center mb-5">
+              Non hai ancora un account?{' '}
+              <Link href="/register" className="text-stone-900 font-medium hover:underline">
+                Registrati qui
+              </Link>
+            </p>
+          )}
 
           {/* Booking summary */}
           <BookingSummaryBlock />
@@ -1121,16 +1166,18 @@ export default function PrenotaPage() {
           {formErrors.customerEmail && <p className="text-red-500 text-xs mt-1">{formErrors.customerEmail}</p>}
         </div>
 
-        {/* Ricordami checkbox */}
-        <label className="flex items-center gap-2 cursor-pointer pt-2">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={e => setRememberMe(e.target.checked)}
-            className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
-          />
-          <span className="text-sm text-stone-600">Ricordami per la prossima prenotazione</span>
+        {/* Ricordami checkbox — only for guests */}
+        {!customerAuth && (
+          <label className="flex items-center gap-2 cursor-pointer pt-2">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={e => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
+            />
+            <span className="text-sm text-stone-600">Ricordami per la prossima prenotazione</span>
           </label>
+        )}
           </div>
         </>
       )}
@@ -1289,15 +1336,10 @@ export default function PrenotaPage() {
       }
 
       // Build booking payload — include resourceId if selected
-      // When logged in, use customerAuth profile data as the payload customer info
-      const customerPayload = customerAuth
-        ? {
-            customerName: customerAuth.nome?.split(' ')[0] || booking.customer.customerName,
-            customerSurname: customerAuth.nome?.split(' ').slice(1).join(' ') || booking.customer.customerSurname,
-            customerPhone: customerAuth.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (customerAuth.telefono || booking.customer.customerPhone),
-            customerEmail: customerAuth.email || booking.customer.customerEmail,
-          }
-        : booking.customer
+      // CRITICAL: always use booking.customer (the form state) which is kept in sync
+      // by the useEffect monitoring customerAuth. This guarantees the payload always
+      // contains the actual values the user sees (or the auth pre-fill), never blanks.
+      const customerPayload = booking.customer
 
       const payload = {
         serviceIds: booking.serviceIds,
@@ -1507,7 +1549,7 @@ export default function PrenotaPage() {
                   Prenotazione in corso...
                 </>
               ) : step === 4 ? (
-                customerAuth ? 'Conferma e Prenota' : 'Finalizza Prenotazione'
+                hasCompleteProfile ? 'Conferma e Prenota' : 'Finalizza Prenotazione'
               ) : (
                 <>
                   Continua
