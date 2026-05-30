@@ -189,10 +189,6 @@ export default function HomePage() {
           )}
         </motion.div>
       </main>
-
-      <footer className="text-center pb-6">
-        <Link href="/admin/login" className="text-xs text-stone-300 hover:text-stone-500 transition-colors">Area Admin</Link>
-      </footer>
     </div>
   )
 }
