@@ -179,3 +179,22 @@ Stage Summary:
 - 6 files changed, 196 insertions, 55 deletions
 - 100% backward-compatible: existing services get default values (category=null, featured=false, compareAtPrice=null)
 - Cart/coupon/booking API untouched
+---
+Task ID: middleware-slimming
+Agent: main
+Task: Intervento A (Middleware Slimming) + Intervento B (ensureApiLogTable Health-Check)
+
+Work Log:
+- Created src/lib/neon-http.ts with Edge-compatible Neon HTTP utilities (neonRawQuery + neonQueryRows)
+- Rewrote src/middleware.ts: replaced 2 fetch() calls to internal APIs with single Neon HTTP query using json_agg + COALESCE
+- Removed dead /api/internal/maintenance-status and /api/internal/banned-ips routes
+- Updated src/lib/db.ts: imported neonRawQuery/neonQueryRows from neon-http.ts
+- Applied health-check pattern to ensureApiLogTable() (information_schema.tables query)
+- Refactored isSchemaUpToDate() to use neonQueryRows
+- Build passed, committed as 7fa2d10, pushed to main
+
+Stage Summary:
+- Cold start reduction estimate: -300-500ms (middleware cascade eliminated) + -80ms (ApiLog health-check)
+- The middleware no longer triggers any Next.js serverless function cold starts
+- Single Neon HTTP query replaces 2 internal API calls that each spanned a full cold start lifecycle
+- 5 files changed: +153, -146 lines
