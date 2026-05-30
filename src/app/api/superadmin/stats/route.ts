@@ -12,18 +12,25 @@ export async function GET(request: NextRequest) {
     await requireSuperAdmin(request)
     await ensureDbSchema()
 
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
     const [
       totalTenants,
       activeTenants,
       totalBookings,
       suspendedTenants,
       cancellingTenants,
+      bookingsLast30Days,
+      couponAggregate,
     ] = await Promise.all([
       db.tenant.count(),
       db.tenant.count({ where: { active: true } }),
       db.booking.count(),
       db.tenant.count({ where: { active: false } }),
       db.tenant.count({ where: { subscriptionStatus: 'cancelling' } }),
+      db.booking.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      db.merchantCoupon.aggregate({ _sum: { usedCount: true }, _count: true }),
     ])
 
     // Only count tenants that are actually paying (active subscription, not trial)
@@ -39,8 +46,11 @@ export async function GET(request: NextRequest) {
       suspendedTenants,
       cancellingTenants,
       totalBookings,
+      bookingsLast30Days,
       monthlyRevenue,
       payingTenants,
+      couponTotalUsed: couponAggregate._sum.usedCount || 0,
+      couponCount: couponAggregate._count || 0,
     })
   } catch (error: unknown) {
     if (error instanceof Error && error.message === 'SuperAdminUnauthorized') {

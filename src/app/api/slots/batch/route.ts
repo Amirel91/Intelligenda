@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, ensureDbSchema } from '@/lib/db'
+import { db, ensureDbSchema, ensureApiLogTable, logApiPerformance } from '@/lib/db'
 import { getBatchAvailability } from '@/lib/slot-algorithm'
 import { getTenantConfig } from '@/lib/tenant'
 
@@ -14,8 +14,11 @@ export const dynamic = 'force-dynamic'
  * Response: { "YYYY-MM-DD": "high"|"medium"|"low"|"none", ... }
  */
 export async function GET(request: NextRequest) {
+  const startMs = Date.now()
+  let _configId: string | undefined
   try {
     await ensureDbSchema()
+    await ensureApiLogTable()
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
@@ -50,10 +53,13 @@ export async function GET(request: NextRequest) {
     if (!config) {
       return NextResponse.json({})
     }
+    _configId = config.id
 
     const result = await getBatchAvailability(startDate, endDate, durationMinutes, config.id, resourceId || undefined)
+    logApiPerformance('/api/slots/batch', Date.now() - startMs, config.id)
     return NextResponse.json(result)
   } catch (error) {
+    logApiPerformance('/api/slots/batch', Date.now() - startMs, _configId)
     console.error('GET /api/slots/batch error:', error)
     return NextResponse.json({ error: 'Errore nel calcolo della disponibilita' }, { status: 500 })
   }

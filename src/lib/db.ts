@@ -402,6 +402,41 @@ export async function ensureLeadTable(): Promise<void> {
   console.log('[ensureLeadTable] Lead table ready')
 }
 
+// ============ API LOG TABLE (independent, created on demand) ============
+
+let _apiLogTableEnsured = false
+
+export async function ensureApiLogTable(): Promise<void> {
+  if (_apiLogTableEnsured) return
+
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) return
+
+  await neonRawQuery(connectionString, `CREATE TABLE IF NOT EXISTS "ApiLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "endpoint" TEXT NOT NULL,
+    "responseTime" INTEGER NOT NULL,
+    "configId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`)
+
+  await neonRawQuery(connectionString, `CREATE INDEX IF NOT EXISTS "ApiLog_endpoint_idx" ON "ApiLog"("endpoint", "createdAt" DESC)`)
+
+  _apiLogTableEnsured = true
+}
+
+/** Non-blocking: insert a performance log entry (fire-and-forget) */
+export function logApiPerformance(endpoint: string, responseTime: number, configId?: string): void {
+  const id = crypto.randomUUID()
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) return
+  const safeConfig = configId ? `'${configId.replace(/'/g, "''")}'` : 'NULL'
+  neonRawQuery(
+    connectionString,
+    `INSERT INTO "ApiLog" ("id", "endpoint", "responseTime", "configId") VALUES ('${id.replace(/'/g, "''")}', '${endpoint.replace(/'/g, "''")}', ${responseTime}, ${safeConfig})`
+  ).catch(() => { /* fire-and-forget */ })
+}
+
 // ============ MAIN SCHEMA ENSURE ============
 
 // Reset schema cache so the new _ResourceServices table gets created on next request

@@ -27,6 +27,8 @@ import {
   Ticket,
   LayoutDashboard,
   Wrench,
+  Zap,
+  Activity,
 } from 'lucide-react'
 import Link from 'next/link'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
@@ -82,8 +84,11 @@ interface Stats {
   activeTenants: number
   suspendedTenants: number
   totalBookings: number
+  bookingsLast30Days: number
   monthlyRevenue: number
   payingTenants?: number
+  couponTotalUsed: number
+  couponCount: number
 }
 
 // ==================== SUBSCRIPTION BADGE ====================
@@ -161,6 +166,16 @@ export default function SuperAdminDashboard() {
 
   // ===== TAB STATE =====
   const [activeTab, setActiveTab] = useState<'dashboard' | 'coupon' | 'security' | 'churn'>('dashboard')
+
+  // ===== PERFORMANCE LOG STATE =====
+  const [perfLogs, setPerfLogs] = useState<any[]>([])
+
+  const fetchPerfLogs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/superadmin/performance', { headers: authHeaders() })
+      if (res.ok) setPerfLogs(await res.json())
+    } catch { /* ignore */ }
+  }, [])
 
   // ===== MAINTENANCE MODE STATE =====
   const [maintenanceMode, setMaintenanceMode] = useState(false)
@@ -371,7 +386,8 @@ export default function SuperAdminDashboard() {
     fetchData()
     fetchEmailSettings()
     fetchMaintenance()
-  }, [fetchData, fetchEmailSettings, fetchMaintenance])
+    fetchPerfLogs()
+  }, [fetchData, fetchEmailSettings, fetchMaintenance, fetchPerfLogs])
 
   useEffect(() => {
     if (activeTab === 'coupon') fetchCoupons()
@@ -658,26 +674,13 @@ export default function SuperAdminDashboard() {
           <>
             {/* STATS CARDS */}
             {stats && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                <div className="bg-white rounded-2xl border border-stone-200 p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <span className="text-sm text-stone-500">Attività iscritte</span>
-                  </div>
-                  <p className="text-3xl font-bold text-stone-900">{stats.totalTenants}</p>
-                  <p className="text-xs text-stone-400 mt-1">
-                    <span className="text-emerald-600">{stats.activeTenants} attive</span> · <span className="text-orange-600">{stats.suspendedTenants} sospese</span>
-                  </p>
-                </div>
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white rounded-2xl border border-stone-200 p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                       <CreditCard className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <span className="text-sm text-stone-500">Ricavi mensili stimati</span>
+                    <span className="text-sm text-stone-500">MRR Stimato</span>
                   </div>
                   <p className="text-3xl font-bold text-stone-900">{stats.monthlyRevenue}€</p>
                   <p className="text-xs text-stone-400 mt-1">{stats.payingTenants ?? stats.activeTenants} abbonamenti paganti x 40€/mese</p>
@@ -685,13 +688,37 @@ export default function SuperAdminDashboard() {
 
                 <div className="bg-white rounded-2xl border border-stone-200 p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                      <CalendarCheck className="w-5 h-5 text-purple-600" />
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                      <CalendarCheck className="w-5 h-5 text-blue-600" />
                     </div>
-                    <span className="text-sm text-stone-500">Prenotazioni totali</span>
+                    <span className="text-sm text-stone-500">Prenotazioni (30gg)</span>
                   </div>
-                  <p className="text-3xl font-bold text-stone-900">{stats.totalBookings}</p>
-                  <p className="text-xs text-stone-400 mt-1">Gestite dall&apos;intera piattaforma</p>
+                  <p className="text-3xl font-bold text-stone-900">{stats.bookingsLast30Days}</p>
+                  <p className="text-xs text-stone-400 mt-1">{stats.totalBookings} totali dalla piattaforma</p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-stone-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                      <Ticket className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-sm text-stone-500">Utilizzo Coupon</span>
+                  </div>
+                  <p className="text-3xl font-bold text-stone-900">{stats.couponTotalUsed}</p>
+                  <p className="text-xs text-stone-400 mt-1">{stats.couponCount} coupon creati</p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-stone-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="text-sm text-stone-500">Tenant Attivi</span>
+                  </div>
+                  <p className="text-3xl font-bold text-stone-900">{stats.activeTenants}</p>
+                  <p className="text-xs text-stone-400 mt-1">
+                    <span className="text-emerald-600">{stats.activeTenants} attivi</span> · <span className="text-orange-600">{stats.suspendedTenants} sospesi</span>
+                  </p>
                 </div>
               </div>
             )}
@@ -894,6 +921,84 @@ export default function SuperAdminDashboard() {
               <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-400">
                 {filtered.length} di {tenants.length} attività
               </div>
+            </div>
+
+            {/* API PERFORMANCE LOG */}
+            <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden mt-8">
+              <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center">
+                    <Activity className="w-5 h-5 text-stone-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-medium text-stone-900">Performance API</h2>
+                    <p className="text-xs text-stone-400">
+                      {perfLogs.length > 0
+                        ? `Avg /api/slots/batch: ${(perfLogs.reduce((s: number, l: any) => s + l.responseTime, 0) / perfLogs.length).toFixed(0)}ms · ${perfLogs.length} chiamate`
+                        : 'Monitoraggio cold start e latenza'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => fetchPerfLogs()}
+                  className="p-2 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors"
+                  title="Aggiorna log"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-stone-50 text-left">
+                      <th className="px-4 py-3 font-medium text-stone-500">Endpoint</th>
+                      <th className="px-4 py-3 font-medium text-stone-500">Risposta</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden sm:table-cell">ConfigId</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 hidden md:table-cell">Data/Ora</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {perfLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-10 text-center text-stone-400">
+                          <Zap className="w-5 h-5 mx-auto mb-2 text-stone-300" />
+                          <p>Nessun log disponibile. I dati appariranno dopo le prime chiamate API.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      perfLogs.slice(0, 50).map((log: any) => (
+                        <tr key={log.id} className="hover:bg-stone-50/50 transition-colors">
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-xs text-stone-600">{log.endpoint}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              log.responseTime < 200
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : log.responseTime < 500
+                                ? 'bg-amber-50 text-amber-700'
+                                : 'bg-red-50 text-red-700'
+                            }`}>
+                              {log.responseTime}ms
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 hidden sm:table-cell">
+                            <span className="font-mono text-xs text-stone-400">{log.configId?.slice(0, 8)}...</span>
+                          </td>
+                          <td className="px-4 py-3 hidden md:table-cell text-stone-400 text-xs">
+                            {log.createdAt ? formatDateTime(log.createdAt) : '—'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {perfLogs.length > 0 && (
+                <div className="px-4 py-3 border-t border-stone-100 text-xs text-stone-400">
+                  Ultime {Math.min(perfLogs.length, 50)} di {perfLogs.length} chiamate registrate
+                </div>
+              )}
             </div>
           </>
         )}
