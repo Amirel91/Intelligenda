@@ -68,13 +68,18 @@ function renderReminder(b: EmailBookingData, s: ShopData, cancelUrl: string): st
 }
 
 export async function sendBookingConfirmationEmails(b: EmailBookingData, s: ShopData, slug: string): Promise<void> {
-  const r = getResend(); if (!r) return
+  const r = getResend(); if (!r) { console.error('[email] RESEND_API_KEY not set — cannot send confirmation emails'); return }
   const fromAddr = `${getFromName()} <${getFromAddress()}>`
+  console.log(`[email] Sending confirmation: customer=${b.customerEmail || '(none)'}, shop=${s.shopEmail || '(none)'}, slug=${slug}`)
   const cu = slug ? `https://${slug}.intelligenda.it/prenota/cancella/${b.bookingId}` : `${process.env.NEXT_PUBLIC_BASE_URL || 'https://intelligenda.it'}/prenota/cancella/${b.bookingId}`
   const p: Promise<unknown>[] = []
   if (b.customerEmail) p.push(r.emails.send({ from: fromAddr, to: b.customerEmail, subject: `Prenotazione confermata — ${s.shopName}`, html: renderBookingConfirmationCustomer(b, s, cu), headers: EMAIL_HEADERS }))
   if (s.shopEmail) p.push(r.emails.send({ from: fromAddr, to: s.shopEmail, subject: `Nuova prenotazione — ${b.customerName} ${b.customerSurname}`, html: renderBookingConfirmationAdmin(b, s) }))
-  await Promise.allSettled(p)
+  const results = await Promise.allSettled(p)
+  for (const [i, result] of results.entries()) {
+    if (result.status === 'rejected') console.error(`[email] Confirmation email ${i} failed:`, result.reason)
+    else console.log(`[email] Confirmation email ${i} sent:`, result.value)
+  }
 }
 
 export async function sendCancellationEmails(b: EmailBookingData, s: ShopData): Promise<void> {
