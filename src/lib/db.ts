@@ -235,23 +235,25 @@ const MIGRATION_SQL = [
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "BannedIP_ipAddress_key" ON "BannedIP"("ipAddress")`,
   // ============ RESOURCE-SERVICE MANY-TO-MANY (Operator-Service Assignment) ============
-  `CREATE TABLE IF NOT EXISTS "_ResourceService" (
+  // Table name MUST match Prisma's implicit M2M convention: _{RelationName}
+  // Relation name = "ResourceServices" → table = "_ResourceServices"
+  `CREATE TABLE IF NOT EXISTS "_ResourceServices" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL
   )`,
   `DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '_ResourceService_AB_fkey') THEN
-      ALTER TABLE "_ResourceService" ADD CONSTRAINT "_ResourceService_AB_fkey"
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '_ResourceServices_AB_fkey') THEN
+      ALTER TABLE "_ResourceServices" ADD CONSTRAINT "_ResourceServices_AB_fkey"
         FOREIGN KEY ("A") REFERENCES "Resource"("id") ON DELETE CASCADE ON UPDATE CASCADE;
     END IF;
   END $$`,
   `DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '_ResourceService_BA_fkey') THEN
-      ALTER TABLE "_ResourceService" ADD CONSTRAINT "_ResourceService_BA_fkey"
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '_ResourceServices_BA_fkey') THEN
+      ALTER TABLE "_ResourceServices" ADD CONSTRAINT "_ResourceServices_BA_fkey"
         FOREIGN KEY ("B") REFERENCES "Service"("id") ON DELETE CASCADE ON UPDATE CASCADE;
     END IF;
   END $$`,
-  `CREATE UNIQUE INDEX IF NOT EXISTS "_ResourceService_AB_unique" ON "_ResourceService"("A", "B")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "_ResourceServices_AB_unique" ON "_ResourceServices"("A", "B")`,
   // ============ CUSTOMER USER TABLE (OTP-based client auth) ============
   `CREATE TABLE IF NOT EXISTS "CustomerUser" (
     "id" TEXT NOT NULL PRIMARY KEY,
@@ -365,6 +367,7 @@ export async function ensureLeadTable(): Promise<void> {
 
 // ============ MAIN SCHEMA ENSURE ============
 
+// Reset schema cache so the new _ResourceServices table gets created on next request
 let _schemaEnsured = false
 
 export async function ensureDbSchema(): Promise<{ ok: boolean; results: string[] }> {
