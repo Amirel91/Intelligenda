@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
-import { createInRome } from '@/lib/timezone'
 import {
   ArrowLeft,
   ArrowRight,
@@ -287,31 +286,32 @@ export default function PrenotaPage() {
     }
   }, [step])
 
-  const isDayClosed = (dateStr: string) => closedDates.includes(dateStr)
+  const closedDatesSet = useMemo(() => new Set(closedDates), [closedDates])
+  const isDayClosed = useCallback((dateStr: string) => closedDatesSet.has(dateStr), [closedDatesSet])
 
-  const totalServiceDuration = booking.serviceIds.reduce((sum, id) => {
+  const totalServiceDuration = useMemo(() => booking.serviceIds.reduce((sum, id) => {
     const s = services.find(sv => sv.id === id)
     return sum + (s?.durationMinutes || 0)
-  }, 0)
-  const totalCleanupDuration = booking.serviceIds.reduce((sum, id) => {
+  }, 0), [booking.serviceIds, services])
+  const totalCleanupDuration = useMemo(() => booking.serviceIds.reduce((sum, id) => {
     const s = services.find(sv => sv.id === id)
     return sum + ((s as Service)?.cleanupMinutes || 0)
-  }, 0)
-  const totalBufferDuration = booking.serviceIds.reduce((sum, id) => {
+  }, 0), [booking.serviceIds, services])
+  const totalBufferDuration = useMemo(() => booking.serviceIds.reduce((sum, id) => {
     const s = services.find(sv => sv.id === id)
     return sum + ((s as Service)?.bufferMinutes || 0)
-  }, 0)
+  }, 0), [booking.serviceIds, services])
   // Duration shown to customer (service + cleanup)
   const totalDuration = totalServiceDuration + totalCleanupDuration
   // Duration used for slot calculation (includes invisible buffer)
   const totalSlotDuration = totalDuration + totalBufferDuration
 
-  const totalPrice = booking.serviceIds.reduce((sum, id) => {
+  const totalPrice = useMemo(() => booking.serviceIds.reduce((sum, id) => {
     const s = services.find(sv => sv.id === id)
     return sum + (s?.price || 0)
-  }, 0)
+  }, 0), [booking.serviceIds, services])
 
-  const selectedServices = booking.serviceIds.map(id => services.find(s => s.id === id)).filter(Boolean) as Service[]
+  const selectedServices = useMemo(() => booking.serviceIds.map(id => services.find(s => s.id === id)).filter(Boolean) as Service[], [booking.serviceIds, services])
 
   const totalCleanupInList = selectedServices.reduce((sum, s) => sum + (s.cleanupMinutes || 0), 0)
 
@@ -573,7 +573,7 @@ export default function PrenotaPage() {
     setLoadingSlots(false)
   }
 
-  const calendarDays = () => {
+  const calendarDays = useMemo(() => {
     const year = calendarMonth.getFullYear()
     const month = calendarMonth.getMonth()
     const firstDay = new Date(year, month, 1).getDay()
@@ -598,7 +598,7 @@ export default function PrenotaPage() {
       })
     }
     return days
-  }
+  }, [calendarMonth])
 
   const getDayColor = (dateStr: string, isPast: boolean) => {
     if (isPast) return 'text-stone-300'
@@ -665,7 +665,7 @@ export default function PrenotaPage() {
 
         {/* Days */}
         <div className="grid grid-cols-7 gap-1">
-          {calendarDays().map((day, i) => (
+          {calendarDays.map((day, i) => (
             <button
               key={i}
               disabled={day.isPast || isDayClosed(day.dateStr) || (dayAvailabilities[day.dateStr] === 'none' && !day.isPast && day.date > 0)}
@@ -1241,17 +1241,6 @@ export default function PrenotaPage() {
     setError('')
 
     try {
-      // Re-verify slot availability before submitting
-      // Pass resourceId if an operator was selected
-      const resourceIdParam = booking.resourceId ? `&resourceId=${booking.resourceId}` : ''
-      const slotRes = await fetch(`/api/slots?date=${booking.date}&duration=${totalSlotDuration}${resourceIdParam}`)
-      const slotData = await slotRes.json()
-      if (!slotData.slots || !slotData.slots.includes(booking.time)) {
-        setError('Lo slot selezionato non e piu disponibile. Torna indietro e seleziona un altro orario.')
-        setSubmitting(false)
-        return
-      }
-
       // Build booking payload — include resourceId if selected.
       // When hasCompleteProfile: construct from customerAuth (server-verified source).
       // Otherwise (guest or incomplete profile): use booking.customer (form state).

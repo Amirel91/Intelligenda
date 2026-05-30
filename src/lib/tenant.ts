@@ -1,4 +1,4 @@
-import { db, ensureDbSchema } from './db'
+import { db } from './db'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
@@ -51,7 +51,6 @@ export function isMainDomain(request: NextRequest): boolean {
  * Resolve tenant from slug (with full billing data)
  */
 export async function getTenantBySlug(slug: string) {
-  await ensureDbSchema()
   return db.tenant.findUnique({
     where: { slug, active: true },
     include: { config: true },
@@ -129,7 +128,6 @@ export async function requireTenantConfig(request: NextRequest) {
  * Used by billing API routes that need to operate on suspended tenants too.
  */
 export async function getTenantBySlugUnchecked(slug: string) {
-  await ensureDbSchema()
   return db.tenant.findUnique({
     where: { slug },
     include: { config: true },

@@ -12,7 +12,7 @@ function isExcludedPath(pathname: string): boolean {
 // Simple in-memory cache (per-edge-instance, ~30s TTL)
 let maintenanceCache: { enabled: boolean; ts: number } | null = null
 let bannedIPsCache: { ips: string[]; ts: number } | null = null
-const CACHE_TTL = 30_000 // 30 seconds
+const CACHE_TTL = 120_000 // 120 seconds
 
 async function checkMaintenanceStatus(): Promise<boolean> {
   const now = Date.now()

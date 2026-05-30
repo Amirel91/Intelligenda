@@ -69,13 +69,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tenant non trovato' }, { status: 404 })
     }
 
-    if (tenant.slug === 'default') {
-      return NextResponse.json(
-        { error: 'Non puoi eliminare il tenant di default' },
-        { status: 400 }
-      )
-    }
-
     await db.tenant.delete({ where: { id } })
 
     return NextResponse.json({

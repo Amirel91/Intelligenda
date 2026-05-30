@@ -294,6 +294,10 @@ const MIGRATION_SQL = [
     END IF;
   END $$`,
   `CREATE INDEX IF NOT EXISTS "Booking_customerId_idx" ON "Booking"("customerId")`,
+  // ============ PERFORMANCE: Composite index for slot queries ============
+  `CREATE INDEX IF NOT EXISTS "Booking_configId_status_startTime_idx" ON "Booking"("configId", "status", "startTime")`,
+  // ============ ONE-TIME: REMOVE DEFAULT TEST TENANT ============
+  `DELETE FROM "Tenant" WHERE "slug" = 'default'`,
 ]
 
 /**
