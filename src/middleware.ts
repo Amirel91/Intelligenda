@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { neonQueryRows } from '@/lib/neon-http'
 
 const MAIN_DOMAINS = ['localhost:3000', 'localhost', 'intelligenda.it', 'www.intelligenda.it']
 
@@ -9,52 +10,52 @@ function isExcludedPath(pathname: string): boolean {
   return EXCLUDED_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))
 }
 
-// Simple in-memory cache (per-edge-instance, ~30s TTL)
-let maintenanceCache: { enabled: boolean; ts: number } | null = null
-let bannedIPsCache: { ips: string[]; ts: number } | null = null
+// Combined security cache — avoids hitting Neon on every request
+let securityCache: { maintenance: boolean; bannedIps: string[]; ts: number } | null = null
 const CACHE_TTL = 120_000 // 120 seconds
 
-async function checkMaintenanceStatus(): Promise<boolean> {
+/**
+ * Load maintenance mode + banned IPs in a SINGLE Neon HTTP query.
+ * No internal API calls — no cold start cascade!
+ * Uses json_agg to return both values in one row.
+ */
+async function loadSecurityData(): Promise<{ maintenance: boolean; bannedIps: string[] }> {
   const now = Date.now()
-  if (maintenanceCache && now - maintenanceCache.ts < CACHE_TTL) {
-    return maintenanceCache.enabled
+  if (securityCache && now - securityCache.ts < CACHE_TTL) {
+    return { maintenance: securityCache.maintenance, bannedIps: securityCache.bannedIps }
   }
-  try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/internal/maintenance-status`, {
-      headers: { 'x-internal-check': 'true' },
-    })
-    if (res.ok) {
-      const data = await res.json()
-      maintenanceCache = { enabled: data.maintenance === true, ts: now }
-      return maintenanceCache.enabled
-    }
-  } catch { /* fallback to cached value */ }
-  return maintenanceCache?.enabled ?? false
-}
 
-async function checkIPBanned(ip: string): Promise<boolean> {
-  if (!ip || ip === 'unknown') return false
-  const now = Date.now()
-  if (bannedIPsCache && now - bannedIPsCache.ts < CACHE_TTL) {
-    return bannedIPsCache.ips.includes(ip)
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) {
+    return { maintenance: false, bannedIps: [] }
   }
+
   try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/internal/banned-ips`, {
-      headers: { 'x-internal-check': 'true' },
-    })
-    if (res.ok) {
-      const data = await res.json()
-      bannedIPsCache = { ips: Array.isArray(data.ips) ? data.ips : [], ts: now }
-      return bannedIPsCache.ips.includes(ip)
-    }
-  } catch { /* fallback */ }
-  return bannedIPsCache?.ips.includes(ip) ?? false
+    const rows = await neonQueryRows<{ maintenance: string; banned_ips: string[] }>(
+      connectionString,
+      `SELECT
+        COALESCE(
+          (SELECT value FROM "SystemSetting" WHERE key = 'maintenance_mode'),
+          'false'
+        ) AS maintenance,
+        COALESCE(
+          (SELECT json_agg("ipAddress") FROM "BannedIP"),
+          '[]'::json
+        ) AS banned_ips`
+    )
+
+    const row = rows?.[0]
+    const maintenance = row?.maintenance === 'true'
+    const bannedIps: string[] = Array.isArray(row?.banned_ips) ? row.banned_ips : []
+
+    securityCache = { maintenance, bannedIps, ts: now }
+    return { maintenance, bannedIps }
+  } catch {
+    // On error (tables might not exist yet), fall back to cached values or defaults
+    return securityCache
+      ? { maintenance: securityCache.maintenance, bannedIps: securityCache.bannedIps }
+      : { maintenance: false, bannedIps: [] }
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -68,16 +69,13 @@ export async function middleware(request: NextRequest) {
     || request.headers.get('x-real-ip')
     || ''
 
-  // Run IP ban and maintenance checks in parallel (skip for excluded paths)
+  // Single call replaces the old two fetch() calls to internal APIs
   let banned = false
   let maintenance = false
   if (!isExcludedPath(url.pathname)) {
-    const checks = await Promise.all([
-      clientIP ? checkIPBanned(clientIP) : Promise.resolve(false),
-      checkMaintenanceStatus(),
-    ])
-    banned = checks[0]
-    maintenance = checks[1]
+    const data = await loadSecurityData()
+    maintenance = data.maintenance
+    if (clientIP) banned = data.bannedIps.includes(clientIP)
   }
 
   if (banned) {
@@ -137,5 +135,5 @@ export async function middleware(request: NextRequest) {
   return response
 }
 
-// Exclude /api/internal/* from middleware to avoid infinite recursion
+// Exclude static assets and internal APIs from middleware
 export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|api/internal).*)'] }

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { neonRawQuery, neonQueryRows } from './neon-http'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -335,51 +336,6 @@ const MIGRATION_SQL = [
   `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "featured" BOOLEAN NOT NULL DEFAULT false`,
 ]
 
-/**
- * Execute a single DDL statement via the Neon HTTP SQL API.
- * Uses raw fetch() — zero libraries, zero parameterization.
- */
-async function neonRawQuery(connectionString: string, sql: string): Promise<{ ok: boolean; msg: string }> {
-  // Parse host from connection string
-  // Format: postgresql://user:pass@host/db?params
-  try {
-    const asHttp = connectionString
-      .replace(/^postgresql:\/\//, 'http://')
-      .replace(/^postgres:\/\//, 'http://')
-    const parsed = new URL(asHttp)
-    const host = parsed.hostname // e.g. "epic-xyz.us-east-2.aws.neon.tech"
-
-    const response = await fetch(`https://${host}/sql`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Neon-Connection-String': connectionString,
-      },
-      body: JSON.stringify({ query: sql }),
-    })
-
-    const text = await response.text()
-    let data: Record<string, unknown>
-
-    try {
-      data = JSON.parse(text)
-    } catch {
-      return { ok: response.ok, msg: `HTTP ${response.status}: ${text.substring(0, 100)}` }
-    }
-
-    // Neon HTTP API returns errors in various fields
-    const errorMsg = (data.error || data.message || data.detail || '') as string
-    if (typeof errorMsg === 'string' && errorMsg.length > 0 && !response.ok) {
-      return { ok: false, msg: errorMsg.substring(0, 150) }
-    }
-
-    return { ok: true, msg: 'OK' }
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return { ok: false, msg: msg.substring(0, 150) }
-  }
-}
-
 // ============ LEAD TABLE (independent, created on demand) ============
 
 let _leadTableEnsured = false
@@ -416,6 +372,18 @@ export async function ensureApiLogTable(): Promise<void> {
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) return
 
+  // INTERVENTO B: Fast path — single health-check instead of 2 DDL queries (~160ms saved)
+  const rows = await neonQueryRows(
+    connectionString,
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ApiLog' LIMIT 1`
+  )
+  if (rows.length > 0) {
+    _apiLogTableEnsured = true
+    console.log('[ensureApiLogTable] ApiLog table up-to-date (health-check passed)')
+    return
+  }
+
+  // Table missing — run full creation
   await neonRawQuery(connectionString, `CREATE TABLE IF NOT EXISTS "ApiLog" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "endpoint" TEXT NOT NULL,
@@ -427,6 +395,7 @@ export async function ensureApiLogTable(): Promise<void> {
   await neonRawQuery(connectionString, `CREATE INDEX IF NOT EXISTS "ApiLog_endpoint_idx" ON "ApiLog"("endpoint", "createdAt" DESC)`)
 
   _apiLogTableEnsured = true
+  console.log('[ensureApiLogTable] ApiLog table created')
 }
 
 /** Non-blocking: insert a performance log entry (fire-and-forget) */
@@ -454,20 +423,11 @@ let _schemaEnsured = false
  */
 async function isSchemaUpToDate(connectionString: string): Promise<boolean> {
   try {
-    const response = await fetch(`https://${new URL(connectionString.replace(/^postgresql:\/\//, 'http://')).hostname}/sql`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Neon-Connection-String': connectionString,
-      },
-      body: JSON.stringify({
-        query: `SELECT 1 FROM information_schema.columns WHERE table_name = 'Service' AND column_name = 'featured' LIMIT 1`
-      }),
-    })
-    if (!response.ok) return false
-    const text = await response.text()
-    const data = JSON.parse(text)
-    return Array.isArray(data.rows) && data.rows.length > 0
+    const rows = await neonQueryRows(
+      connectionString,
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'Service' AND column_name = 'featured' LIMIT 1`
+    )
+    return rows.length > 0
   } catch {
     return false
   }
