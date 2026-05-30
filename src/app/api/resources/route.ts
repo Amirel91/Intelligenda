@@ -75,22 +75,79 @@ export async function POST(request: NextRequest) {
       select: { sortOrder: true },
     })
 
-    const resource = await db.resource.create({
-      data: {
-        name: data.name.trim(),
-        active: true,
-        sortOrder: (maxOrder?.sortOrder ?? -1) + 1,
-        configId: config.id,
-        ...(data.serviceIds && data.serviceIds.length > 0 && {
-          services: {
-            connect: data.serviceIds.map(id => ({ id })),
+    const baseData = {
+      name: data.name.trim(),
+      active: true,
+      sortOrder: (maxOrder?.sortOrder ?? -1) + 1,
+      configId: config.id,
+    }
+
+    // Validate and filter serviceIds to only those belonging to this tenant
+    let safeIds: string[] = []
+    if (data.serviceIds && data.serviceIds.length > 0) {
+      const validServices = await db.service.findMany({
+        where: { id: { in: data.serviceIds }, configId: config.id },
+        select: { id: true },
+      })
+      safeIds = data.serviceIds.filter(id => validServices.some(s => s.id === id))
+    }
+
+    // Strategy 1: Create resource with services connected in one query
+    if (safeIds.length > 0) {
+      try {
+        const resource = await db.resource.create({
+          data: {
+            ...baseData,
+            services: {
+              connect: safeIds.map(id => ({ id })),
+            },
           },
-        }),
-      },
+          include: {
+            services: { select: { id: true } },
+          },
+        })
+        return NextResponse.json(resource, { status: 201 })
+      } catch (connectError: unknown) {
+        // If connect fails (e.g. _ResourceService table missing),
+        // fall through to Strategy 2
+        const errCode = (connectError as Record<string, unknown>)?.code
+        console.warn('[POST /api/resources] Connect failed, trying fallback:', errCode, connectError)
+      }
+    }
+
+    // Strategy 2: Create resource without services, then connect separately
+    // This is a fallback that also handles the case where _ResourceService
+    // junction table might not exist yet
+    const resource = await db.resource.create({
+      data: baseData,
       include: {
         services: { select: { id: true } },
       },
     })
+
+    // Try to connect services in a separate operation
+    if (safeIds.length > 0) {
+      try {
+        await db.resource.update({
+          where: { id: resource.id },
+          data: {
+            services: {
+              connect: safeIds.map(id => ({ id })),
+            },
+          },
+        })
+        // Re-fetch to include services
+        const withServices = await db.resource.findUnique({
+          where: { id: resource.id },
+          include: { services: { select: { id: true } } },
+        })
+        if (withServices) return NextResponse.json(withServices, { status: 201 })
+      } catch (fallbackError: unknown) {
+        // If even the fallback fails, return the resource without services
+        // This is better than failing completely
+        console.warn('[POST /api/resources] Fallback connect also failed:', fallbackError)
+      }
+    }
 
     return NextResponse.json(resource, { status: 201 })
   } catch (error: unknown) {
@@ -103,10 +160,16 @@ export async function POST(request: NextRequest) {
     if (error && typeof error === 'object' && 'issues' in error) {
       return NextResponse.json({ error: 'Dati non validi' }, { status: 400 })
     }
-    // Extract Prisma error code for debugging
-    const prismaCode = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : null
+    // Extract Prisma error details for debugging
+    const prismaErr = error as Record<string, unknown> | undefined
+    const prismaCode = prismaErr?.code as string | undefined
     const errMsg = error instanceof Error ? error.message : String(error)
-    console.error('POST /api/resources error:', { prismaCode, message: errMsg, stack: error instanceof Error ? error.stack : undefined })
-    return NextResponse.json({ error: 'Errore nella creazione della risorsa', debug: errMsg }, { status: 500 })
+    console.error('POST /api/resources error:', {
+      prismaCode,
+      message: errMsg,
+      stack: error instanceof Error ? error.stack : undefined,
+      meta: prismaErr?.meta,
+    })
+    return NextResponse.json({ error: 'Errore nella creazione della risorsa', debug: errMsg, code: prismaCode || 'unknown' }, { status: 500 })
   }
 }

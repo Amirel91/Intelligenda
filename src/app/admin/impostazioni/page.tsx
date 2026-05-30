@@ -224,7 +224,10 @@ export default function AdminImpostazioni() {
       })
       if (!res.ok) {
         const data = await res.json()
-        alert(data.error || 'Errore nella creazione')
+        const details = data.debug ? `\n\nDettaglio: ${data.debug}` : ''
+        const code = data.code && data.code !== 'unknown' ? `\nCodice: ${data.code}` : ''
+        alert(`${data.error || 'Errore nella creazione'}${code}${details}`)
+        console.error('[handleAddResource] Error:', data)
         return
       }
       setNewResourceName('')
