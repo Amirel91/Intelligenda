@@ -122,16 +122,31 @@ export default function PrenotaPage() {
   const [otpVerifying, setOtpVerifying] = useState(false)
   const [otpError, setOtpError] = useState('')
 
-  // Derive whether the logged-in user has a complete profile
-  // (nome >= 2 chars and telefono >= 8 chars, not a temp phone)
-  // This drives the dual-state UX in Step 4.
+  // Utility: split a full name into firstName / lastName.
+  // Handles single-word names gracefully (e.g. "Amir" → firstName="Amir", lastName="").
+  // Handles multi-word names (e.g. "Mario Rossi" → firstName="Mario", lastName="Rossi").
+  const splitNome = (nome: string | undefined | null): { firstName: string; lastName: string } => {
+    if (!nome || !nome.trim()) return { firstName: '', lastName: '' }
+    const parts = nome.trim().split(/\s+/)
+    return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') }
+  }
+
+  // Derive whether the logged-in user has a complete profile that will pass
+  // BOTH the Zod server-side validation AND the UI logic.
+  // Requirements: firstName >= 2 chars, lastName >= 2 chars, phone >= 8 digits (no temp).
+  // Single-word names (e.g. "Amir") are NOT considered complete because Zod requires customerSurname.
   const hasCompleteProfile = !!(
     customerAuth &&
-    customerAuth.nome &&
-    customerAuth.nome.trim().length >= 2 &&
-    customerAuth.telefono &&
-    !customerAuth.telefono.startsWith('temp_') &&
-    customerAuth.telefono.replace(/\s/g, '').length >= 8
+    (() => {
+      const { firstName, lastName } = splitNome(customerAuth.nome)
+      return (
+        firstName.length >= 2 &&
+        lastName.length >= 2 &&
+        customerAuth.telefono &&
+        !customerAuth.telefono.startsWith('temp_') &&
+        customerAuth.telefono.replace(/\s/g, '').length >= 8
+      )
+    })()
   )
 
   // Check if customer is already logged in on mount
@@ -142,8 +157,7 @@ export default function PrenotaPage() {
         if (data.authenticated && data.customer) {
           setCustomerAuth(data.customer)
           // Pre-fill form fields with saved customer data
-          const firstName = data.customer.nome?.split(' ')[0] || ''
-          const lastName = data.customer.nome?.split(' ').slice(1).join(' ') || ''
+          const { firstName, lastName } = splitNome(data.customer.nome)
           const phone = data.customer.telefono?.startsWith('temp_') ? '' : (data.customer.telefono || '')
           const email = data.customer.email || ''
           setBooking(prev => ({
@@ -165,8 +179,7 @@ export default function PrenotaPage() {
   // Keep form fields in sync whenever customerAuth changes (e.g. after OTP login mid-flow)
   useEffect(() => {
     if (!customerAuth) return
-    const firstName = customerAuth.nome?.split(' ')[0] || ''
-    const lastName = customerAuth.nome?.split(' ').slice(1).join(' ') || ''
+    const { firstName, lastName } = splitNome(customerAuth.nome)
     const phone = customerAuth.telefono?.startsWith('temp_') ? '' : (customerAuth.telefono || '')
     const email = customerAuth.email || ''
     setBooking(prev => {
@@ -778,8 +791,7 @@ export default function PrenotaPage() {
       setOtpCode('')
       // Pre-fill form with customer data — useEffect above will also sync this
       if (data.customer) {
-        const firstName = data.customer.nome?.split(' ')[0] || ''
-        const lastName = data.customer.nome?.split(' ').slice(1).join(' ') || ''
+        const { firstName, lastName } = splitNome(data.customer.nome)
         const phone = data.customer.telefono?.startsWith('temp_') ? '' : (data.customer.telefono || '')
         const email = data.customer.email || ''
         setBooking(prev => ({
@@ -965,7 +977,8 @@ export default function PrenotaPage() {
   // ==================== STEP 4: CUSTOMER INFO ====================
 
   const validateForm = () => {
-    // If logged in with a COMPLETE profile, form is hidden — data is guaranteed valid
+    // If logged in with a COMPLETE profile (verified by hasCompleteProfile),
+    // the form is hidden — data comes directly from customerAuth in handleSubmit.
     if (hasCompleteProfile) return true
 
     const errors: Record<string, string> = {}
@@ -1335,11 +1348,17 @@ export default function PrenotaPage() {
         return
       }
 
-      // Build booking payload — include resourceId if selected
-      // CRITICAL: always use booking.customer (the form state) which is kept in sync
-      // by the useEffect monitoring customerAuth. This guarantees the payload always
-      // contains the actual values the user sees (or the auth pre-fill), never blanks.
-      const customerPayload = booking.customer
+      // Build booking payload — include resourceId if selected.
+      // For logged-in users: ALWAYS construct from customerAuth (the server-verified source)
+      // to avoid stale/empty React state. For guests: use form state as-is.
+      const customerPayload = customerAuth
+        ? {
+            customerName: splitNome(customerAuth.nome).firstName,
+            customerSurname: splitNome(customerAuth.nome).lastName,
+            customerPhone: customerAuth.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (customerAuth.telefono || ''),
+            customerEmail: customerAuth.email || '',
+          }
+        : booking.customer
 
       const payload = {
         serviceIds: booking.serviceIds,
