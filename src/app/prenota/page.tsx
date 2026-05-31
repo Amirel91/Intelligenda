@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 import { createInRome } from '@/lib/timezone'
+import { CalendarSkeleton, SlotsSkeleton } from '@/components/ui/calendar-skeleton'
 import {
   ArrowLeft,
   ArrowRight,
@@ -723,9 +724,11 @@ export default function PrenotaPage() {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
   })
+  const [calendarLoading, setCalendarLoading] = useState(false)
 
   const fetchMonthAvailability = useCallback(async (year: number, month: number) => {
     if (totalSlotDuration === 0) return
+    setCalendarLoading(true)
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
     const from = formatDate(firstDay)
@@ -747,6 +750,8 @@ export default function PrenotaPage() {
       }
     } catch (e) {
       console.error('Error fetching availability:', e)
+    } finally {
+      setCalendarLoading(false)
     }
   }, [totalSlotDuration, booking.resourceId])
 
@@ -832,6 +837,9 @@ export default function PrenotaPage() {
       </div>
 
       {/* Calendar */}
+      {calendarLoading ? (
+        <CalendarSkeleton />
+      ) : (
       <div className="bg-white rounded-xl border border-stone-200 p-4">
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-4">
@@ -886,6 +894,7 @@ export default function PrenotaPage() {
           ))}
         </div>
       </div>
+      )}
 
       {/* Time slots */}
       {booking.date && (
@@ -899,15 +908,7 @@ export default function PrenotaPage() {
           </h3>
 
           {loadingSlots ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="py-3 rounded-xl bg-stone-200 animate-pulse"
-                  style={{ animationDelay: `${i * 75}ms` }}
-                />
-              ))}
-            </div>
+            <SlotsSkeleton />
           ) : availableSlots.length === 0 ? (
             <p className="text-stone-400 text-sm">Nessun orario disponibile per questa data</p>
           ) : (

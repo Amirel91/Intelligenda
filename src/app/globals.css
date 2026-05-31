@@ -254,3 +254,21 @@ html {
     margin-bottom: 1mm !important;
   }
 }
+
+/* ============ SHIMMER SKELETON ANIMATION ============ */
+/* Pure CSS — no JS, zero layout shift, GPU-accelerated via transform */
+@keyframes shimmer-slide {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-box {
+  background: linear-gradient(
+    90deg,
+    oklch(0.955 0 0) 25%,
+    oklch(0.925 0.005 0) 50%,
+    oklch(0.955 0 0) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-slide 1.8s ease-in-out infinite;
+}
