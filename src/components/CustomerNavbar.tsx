@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { User, CalendarDays, LogIn, UserPlus, ClipboardList, LogOut, X } from 'lucide-react'
 
 interface CustomerData {
@@ -56,8 +57,10 @@ export function CustomerNavbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
       <div className="max-w-3xl mx-auto px-4 h-12 flex items-center justify-between">
-        {/* Left — nothing for now, keeps balance */}
-        <div className="w-10" />
+        {/* Left — Logo */}
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo.png" alt="IntelliGenda" width={32} height={32} className="object-contain" priority />
+        </Link>
 
         {/* Right — User menu */}
         <div className="relative" ref={menuRef}>
