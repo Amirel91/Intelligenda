@@ -57,9 +57,7 @@ export function CustomerNavbar() {
     <nav className="fixed top-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-b border-stone-200/60">
       <div className="max-w-3xl mx-auto px-4 h-12 flex items-center justify-between">
         {/* Left — Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-stone-900 tracking-tight">IntelliGenda</span>
-        </Link>
+        <Link href="/" aria-label="Home" />
 
         {/* Right — User menu */}
         <div className="relative" ref={menuRef}>
