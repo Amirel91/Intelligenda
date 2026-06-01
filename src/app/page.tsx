@@ -2,12 +2,111 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { CalendarDays, Phone, Mail, MapPin, Star } from 'lucide-react'
+import { CalendarDays, Sparkles, Phone, Mail, MapPin, Star } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { CustomerNavbar } from '@/components/CustomerNavbar'
+
+interface BusinessConfig {
+  id: string
+  shopName: string
+  shopDescription: string
+  shopPhone?: string
+  shopEmail?: string
+  shopAddress?: string
+  features?: string[]
+}
+
+interface Service {
+  id: string
+  name: string
+  price: number
+  discountedPrice?: number
+  durationMinutes: number
+  featured?: boolean
+}
+
+export default function HomePage() {
+  const router = useRouter()
+  const [config, setConfig] = useState<BusinessConfig | null>(null)
+  const [featuredServices, setFeaturedServices] = useState<Service[]>([])
+
+  // Secret admin access: 5 consecutive taps on shop logo
+  const tapCountRef = useRef(0)
+  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleSecretTap = useCallback(() => {
+    tapCountRef.current += 1
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current)
+    if (tapCountRef.current >= 5) {
+      tapCountRef.current = 0
+      tapTimerRef.current = null
+      router.push('/admin')
+    } else {
+      tapTimerRef.current = setTimeout(() => {
+        tapCountRef.current = 0
+        tapTimerRef.current = null
+      }, 800)
+    }
+  }, [router])
+
+  useEffect(() => {
+    const fetchConfig = () => {
+      fetch('/api/config')
+        .then(res => {
+          if (!res.ok) {
+            window.location.href = '/landing'
+            return null
+          }
+          return res.json()
+        })
+        .then(data => { if (data && typeof data === 'object') setConfig(data) })
+        .catch(() => {
+          window.location.href = '/landing'
+        })
+    }
+    fetchConfig()
+    const interval = setInterval(fetchConfig, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/services')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const featured = data.filter((s: Service) => s.featured).slice(0, 3)
+          setFeaturedServices(featured)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleFeaturedClick = (service: Service) => {
+    const prefillData = JSON.stringify({ serviceId: service.id })
+    document.cookie = `ig_prefill_service=${encodeURIComponent(prefillData)};path=/prenota;max-age=300;samesite=lax`
+    router.push('/prenota')
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white">
+      <CustomerNavbar />
+      <main className="flex-1 flex flex-col items-center px-6 py-16 pt-16">
+
+        {/* Main Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="text-center max-w-md w-full"
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mx-auto mb-8 w-20 h-20 rounded-2xl bg-gradient-to-br from-stone-900 to-stone-700 flex items-center justify-center shadow-lg select-none cursor-default"
             onClick={handleSecretTap}
           >
-            <Image src="/logo.png" alt="Logo" width={80} height={80} className="w-full h-full object-contain" priority />
+            <Sparkles className="w-10 h-10 text-white" />
           </motion.div>
 
           <h1 className="text-3xl font-semibold tracking-tight text-stone-900 mb-3">
