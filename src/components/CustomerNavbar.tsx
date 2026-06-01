@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { User, CalendarDays, LogIn, UserPlus, ClipboardList, LogOut, X, Sparkles } from 'lucide-react'
+import { User, CalendarDays, LogIn, UserPlus, ClipboardList, LogOut, X } from 'lucide-react'
 
 interface CustomerData {
   id: string
@@ -58,9 +58,7 @@ export function CustomerNavbar() {
       <div className="max-w-3xl mx-auto px-4 h-12 flex items-center justify-between">
         {/* Left — Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-stone-900 to-stone-700 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
+          <span className="text-sm font-semibold text-stone-900 tracking-tight">IntelliGenda</span>
         </Link>
 
         {/* Right — User menu */}
