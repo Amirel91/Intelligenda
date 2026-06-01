@@ -198,3 +198,23 @@ Stage Summary:
 - The middleware no longer triggers any Next.js serverless function cold starts
 - Single Neon HTTP query replaces 2 internal API calls that each spanned a full cold start lifecycle
 - 5 files changed: +153, -146 lines
+
+---
+Task ID: fix-vercel-build
+Agent: main
+Task: Fix Vercel build errors (tailwindcss-animate + truncated page.tsx) + restructure logo placement
+
+Work Log:
+- Deleted vestigial tailwind.config.ts: Tailwind v3 config file imported non-existent `tailwindcss-animate` module. Project uses Tailwind v4 with CSS-based config (globals.css + tw-animate-css).
+- Restored src/app/page.tsx from commit 8dea46e: previous bad merge truncated ~100 lines, causing motion.div JSX parse errors. Restored version has Sparkles icon + 5-tap admin.
+- Updated CustomerNavbar.tsx: replaced logo.png Image with Sparkles icon in a rounded-lg gradient container (matching page.tsx style). Removed unused next/image import.
+- Logo placement architecture:
+  - www.intelligenda.it (landing page) → IntelliGendaLogo component with logo.png ✅
+  - Tenant pages (prova.intelligenda.it) → Sparkles icon in CustomerNavbar + page.tsx ✅
+  - 5-tap secret admin preserved on Sparkles icon in page.tsx ✅
+
+Stage Summary:
+- Commit 3670e96 pushed to main
+- 3 files changed: +106, -70 lines (deleted tailwind.config.ts)
+- Build errors resolved: no more tailwindcss-animate import, no more truncated JSX
+- Clear logo separation: brand image only on marketing site, Sparkling icon on all tenant customer pages
