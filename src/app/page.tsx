@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Sparkles, Phone, Mail, MapPin, Star } from 'lucide-react'
+import { CalendarDays, Phone, Mail, MapPin, Star } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { CustomerNavbar } from '@/components/CustomerNavbar'
 
@@ -103,10 +104,10 @@ export default function HomePage() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mx-auto mb-8 w-20 h-20 rounded-2xl bg-gradient-to-br from-stone-900 to-stone-700 flex items-center justify-center shadow-lg select-none cursor-default"
+            className="mx-auto mb-8 w-20 h-20 rounded-2xl overflow-hidden shadow-lg select-none cursor-default"
             onClick={handleSecretTap}
           >
-            <Sparkles className="w-10 h-10 text-white" />
+            <Image src="/admin-icon.png" alt="Logo" width={80} height={80} className="w-full h-full object-contain" priority />
           </motion.div>
 
           <h1 className="text-3xl font-semibold tracking-tight text-stone-900 mb-3">

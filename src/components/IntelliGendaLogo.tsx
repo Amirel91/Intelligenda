@@ -9,8 +9,8 @@ interface IntelliGendaLogoProps {
   textClassName?: string
 }
 
-const SIZE_PX = { sm: 28, md: 44, lg: 56, xl: 80 } as const
-const TEXT_SIZE = { sm: 'text-base', md: 'text-lg', lg: 'text-xl', xl: 'text-3xl' } as const
+const SIZE_PX = { sm: 32, md: 52, lg: 68, xl: 96 } as const
+const TEXT_SIZE = { sm: 'text-base', md: 'text-xl', lg: 'text-2xl', xl: 'text-3xl' } as const
 
 export function IntelliGendaLogo({ size = 'md', showText = true, className = '', textClassName = '' }: IntelliGendaLogoProps) {
   const px = SIZE_PX[size]
