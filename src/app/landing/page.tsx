@@ -212,7 +212,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           {/* Logo */}
           <a href="/landing" className="text-stone-900 hover:opacity-80 transition-opacity">
-            <IntelliGendaLogo size="xl" />
+            <IntelliGendaLogo size="xl" textClassName="!text-sm" />
           </a>
 
           {/* Desktop links */}
