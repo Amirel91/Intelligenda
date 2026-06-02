@@ -1457,27 +1457,6 @@ export default function PrenotaPage() {
           </div>
         </div>
 
-        {/* Feedback Rating */}
-        {confirmedBookingId && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6 mx-auto max-w-sm"
-          >
-            <RatingInteraction
-              onChange={(rating) => {
-                // Fire-and-forget: save feedback without blocking UI
-                fetch('/api/feedback', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ bookingId: confirmedBookingId, rating }),
-                }).catch(() => { /* silent */ })
-              }}
-            />
-          </motion.div>
-        )}
-
         {/* Action Buttons: Google Calendar + Cancel Link */}
         <div className="mt-6 mx-auto max-w-sm space-y-3 print:hidden">
           {/* Google Calendar Link */}
@@ -1511,6 +1490,26 @@ export default function PrenotaPage() {
             </button>
           )}
         </div>
+
+        {/* Feedback Rating */}
+        {confirmedBookingId && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-4 mx-auto max-w-sm"
+          >
+            <RatingInteraction
+              onChange={(rating) => {
+                fetch('/api/feedback', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ bookingId: confirmedBookingId, rating }),
+                }).catch(() => { /* silent */ })
+              }}
+            />
+          </motion.div>
+        )}
 
         <button
           onClick={() => router.push('/')}
