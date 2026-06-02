@@ -334,6 +334,20 @@ const MIGRATION_SQL = [
   `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "category" TEXT`,
   `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "discountedPrice" DOUBLE PRECISION`,
   `ALTER TABLE "Service" ADD COLUMN IF NOT EXISTS "featured" BOOLEAN NOT NULL DEFAULT false`,
+  // ============ FEEDBACK / RATING ============
+  `CREATE TABLE IF NOT EXISTS "Feedback" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "rating" INTEGER NOT NULL,
+    "bookingId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Feedback_bookingId_fkey') THEN
+      ALTER TABLE "Feedback" ADD CONSTRAINT "Feedback_bookingId_fkey"
+        FOREIGN KEY ("bookingId") REFERENCES "Booking"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Feedback_bookingId_key" ON "Feedback"("bookingId")`,
 ]
 
 // ============ LEAD TABLE (independent, created on demand) ============
@@ -425,7 +439,7 @@ async function isSchemaUpToDate(connectionString: string): Promise<boolean> {
   try {
     const rows = await neonQueryRows(
       connectionString,
-      `SELECT 1 FROM information_schema.columns WHERE table_name = 'Service' AND column_name = 'featured' LIMIT 1`
+      `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'Feedback' LIMIT 1`
     )
     return rows.length > 0
   } catch {

@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const todayStart = new Date(romeNow)
     todayStart.setHours(0, 0, 0, 0)
 
-    // Run all 3 queries in parallel
-    const [todayBookings, totalBookings, allRevenue] = await Promise.all([
+    // Run all queries in parallel
+    const [todayBookings, totalBookings, allRevenue, ratingStats] = await Promise.all([
       db.booking.findMany({
         where: {
           configId: config.id,
@@ -31,6 +31,14 @@ export async function GET(request: NextRequest) {
       db.booking.aggregate({
         where: { configId: config.id, status: { in: ['confirmed', 'pending'] } },
         _sum: { totalPrice: true },
+      }),
+      // Rating: average + total count for this tenant
+      db.feedback.aggregate({
+        where: {
+          booking: { configId: config.id },
+        },
+        _avg: { rating: true },
+        _count: true,
       }),
     ])
 
@@ -55,6 +63,8 @@ export async function GET(request: NextRequest) {
       totalBookings,
       totalRevenue: allRevenue._sum.totalPrice || 0,
       topServices,
+      ratingAverage: ratingStats._avg.rating ? Math.round(ratingStats._avg.rating * 10) / 10 : null,
+      ratingCount: ratingStats._count,
     })
   } catch (error: unknown) {
     if (error instanceof Error && error.message === 'Unauthorized') {

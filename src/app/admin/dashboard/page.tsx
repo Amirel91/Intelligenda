@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CalendarCheck, Euro, TrendingUp, Clock } from 'lucide-react'
+import { CalendarCheck, Euro, TrendingUp, Clock, Star } from 'lucide-react'
 
 interface Stats {
   bookingsCount: number
@@ -9,6 +9,8 @@ interface Stats {
   totalBookings: number
   totalRevenue: number
   topServices: { name: string; count: number; revenue: number }[]
+  ratingAverage: number | null
+  ratingCount: number
 }
 
 export default function AdminDashboard() {
@@ -42,7 +44,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <StatCard
           icon={<CalendarCheck className="w-5 h-5" />}
           label="Prenotazioni Oggi"
@@ -66,6 +68,12 @@ export default function AdminDashboard() {
           label="Ricavi Totali"
           value={`€${(stats?.totalRevenue ?? 0).toFixed(2)}`}
           color="bg-amber-50 text-amber-600"
+        />
+        <StatCard
+          icon={<Star className="w-5 h-5" />}
+          label="Voto Medio"
+          value={stats?.ratingAverage ? `${stats.ratingAverage}/5` : '-'}
+          color="bg-yellow-50 text-yellow-600"
         />
       </div>
 
