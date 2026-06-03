@@ -57,6 +57,8 @@ model BusinessConfig {
   shortDescription    String       @default("")
   // Location visibility toggle (show address on customer pages)
   showAddress        Boolean      @default(true)
+  // Working hours visibility toggle
+  showHours          Boolean      @default(true)
 
   // Billing & Subscription
   plan               String       @default("free")

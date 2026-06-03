@@ -13,6 +13,7 @@ interface BusinessConfig {
   shopEmail?: string
   shopAddress?: string
   showAddress: boolean
+  showHours: boolean
   lunchBreakEnabled: boolean
   lunchBreakStart: string
   lunchBreakEnd: string
@@ -54,6 +55,7 @@ const defaultConfig: BusinessConfig = {
   shopEmail: '',
   shopAddress: '',
   showAddress: true,
+  showHours: true,
   lunchBreakEnabled: false,
   lunchBreakStart: '12:30',
   lunchBreakEnd: '14:00',
@@ -97,6 +99,7 @@ export default function AdminImpostazioni() {
             shopEmail: data.shopEmail || '',
             shopAddress: data.shopAddress || '',
             showAddress: data.showAddress !== undefined ? data.showAddress : true,
+            showHours: data.showHours !== undefined ? data.showHours : true,
             lunchBreakEnabled: data.lunchBreakEnabled || false,
             lunchBreakStart: data.lunchBreakStart || '12:30',
             lunchBreakEnd: data.lunchBreakEnd || '14:00',
@@ -308,12 +311,6 @@ export default function AdminImpostazioni() {
               <p className={`text-xs mt-0.5 ${config.shortDescription.length > 180 ? 'text-amber-500' : 'text-stone-300'}`}>{config.shortDescription.length}/200</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Descrizione</label>
-              <textarea value={config.shopDescription} onChange={e => updateConfigField('shopDescription', e.target.value)} rows={3} placeholder="Descrivi la tua attivita..." className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors resize-none" />
-              <p className="text-xs text-stone-400 mt-1">Appare sulla homepage del cliente</p>
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1.5">Telefono</label>
@@ -334,6 +331,17 @@ export default function AdminImpostazioni() {
                 </div>
                 <span className="text-xs text-stone-500">Mostra l&apos;indirizzo nella pagina del cliente e nel riepilogo prenotazione</span>
               </div>
+            </div>
+
+            {/* Mostra Orari in Home */}
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-stone-700">Mostra Orari</label>
+                <div onClick={() => updateConfigField('showHours', !config.showHours)} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${config.showHours ? 'bg-stone-900' : 'bg-stone-300'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${config.showHours ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+              <p className="text-xs text-stone-400 mt-1">Mostra gli orari di apertura nella pagina principale del cliente</p>
             </div>
 
             {/* Punti di Forza */}

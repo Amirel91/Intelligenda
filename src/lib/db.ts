@@ -352,6 +352,7 @@ const MIGRATION_SQL = [
   // ============ SHORT DESCRIPTION & ADDRESS VISIBILITY ============
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "shortDescription" TEXT NOT NULL DEFAULT ''`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "showAddress" BOOLEAN NOT NULL DEFAULT true`,
+  `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "showHours" BOOLEAN NOT NULL DEFAULT true`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "plan" TEXT NOT NULL DEFAULT 'free'`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "stripeCustomerId" TEXT`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "stripeSubscriptionId" TEXT`,
@@ -439,7 +440,7 @@ let _schemaEnsured = false
 
 /**
  * INTERVENTO 3: Health-check query to detect if schema is already up-to-date.
- * Tests the existence of the most recently added column ("showAddress" on "BusinessConfig").
+ * Tests the existence of the most recently added column ("showHours" on "BusinessConfig").
  * If the column exists, we can safely skip all DDL statements.
  * This turns a 400-1200ms cold-start penalty into a ~80ms single query.
  */
@@ -447,7 +448,7 @@ async function isSchemaUpToDate(connectionString: string): Promise<boolean> {
   try {
     const rows = await neonQueryRows(
       connectionString,
-      `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'BusinessConfig' AND column_name = 'showAddress' LIMIT 1`
+      `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'BusinessConfig' AND column_name = 'showHours' LIMIT 1`
     )
     return rows.length > 0
   } catch {
