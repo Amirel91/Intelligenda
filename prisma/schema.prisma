@@ -54,6 +54,12 @@ model BusinessConfig {
   minNoticeHours     Int          @default(1)
   features           String[]     @default([])
 
+  // Billing & Subscription
+  plan               String       @default("free")
+  stripeCustomerId?  String
+  stripeSubscriptionId? String
+  planExpiresAt?     DateTime
+
   workingHours    WorkingHours[]
   closedDates     ClosedDate[]
   closedPeriods   ClosedPeriod[]
