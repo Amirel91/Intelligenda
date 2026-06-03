@@ -56,9 +56,9 @@ model BusinessConfig {
 
   // Billing & Subscription
   plan               String       @default("free")
-  stripeCustomerId?  String
-  stripeSubscriptionId? String
-  planExpiresAt?     DateTime
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  planExpiresAt       DateTime?
 
   workingHours    WorkingHours[]
   closedDates     ClosedDate[]
