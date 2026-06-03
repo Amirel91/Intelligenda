@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CalendarCheck, Euro, TrendingUp, Clock, Star } from 'lucide-react'
+import { CalendarCheck, Euro, TrendingUp, Clock, Star, ArrowRight } from 'lucide-react'
 
 interface Stats {
   bookingsCount: number
@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+        <div className="animate-spin w-6 h-6 border-2 border-stone-300 border-t-stone-900 rounded-full" />
       </div>
     )
   }
@@ -44,75 +44,75 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
         <StatCard
-          icon={<CalendarCheck className="w-5 h-5" />}
+          icon={<CalendarCheck className="w-4 h-4" />}
           label="Prenotazioni Oggi"
           value={stats?.bookingsCount ?? 0}
-          color="bg-blue-50 text-blue-600"
         />
         <StatCard
-          icon={<Euro className="w-5 h-5" />}
+          icon={<Euro className="w-4 h-4" />}
           label="Ricavi Oggi"
-          value={`€${(stats?.revenue ?? 0).toFixed(2)}`}
-          color="bg-emerald-50 text-emerald-600"
+          value={`\u20AC${(stats?.revenue ?? 0).toFixed(2)}`}
         />
         <StatCard
-          icon={<TrendingUp className="w-5 h-5" />}
+          icon={<TrendingUp className="w-4 h-4" />}
           label="Prenotazioni Totali"
           value={stats?.totalBookings ?? 0}
-          color="bg-purple-50 text-purple-600"
         />
         <StatCard
-          icon={<Clock className="w-5 h-5" />}
+          icon={<Clock className="w-4 h-4" />}
           label="Ricavi Totali"
-          value={`€${(stats?.totalRevenue ?? 0).toFixed(2)}`}
-          color="bg-amber-50 text-amber-600"
+          value={`\u20AC${(stats?.totalRevenue ?? 0).toFixed(2)}`}
         />
         <StatCard
-          icon={<Star className="w-5 h-5" />}
+          icon={<Star className="w-4 h-4" />}
           label="Voto Medio"
           value={stats?.ratingAverage ? `${stats.ratingAverage}/5` : '-'}
-          color="bg-yellow-50 text-yellow-600"
         />
       </div>
 
       {/* Top Services */}
-      <div className="bg-white rounded-xl border border-stone-200 p-6">
-        <h2 className="font-semibold text-stone-900 mb-4">Servizi più richiesti (oggi)</h2>
+      <div className="bg-white rounded-xl border border-stone-200 p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-stone-900 text-sm">Servizi piu richiesti (oggi)</h2>
+          <a href="/admin/servizi" className="text-xs text-stone-400 hover:text-stone-600 transition-colors flex items-center gap-1">
+            Vedi tutti <ArrowRight className="w-3 h-3" />
+          </a>
+        </div>
         {stats?.topServices && stats.topServices.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {stats.topServices.map((s, i) => (
-              <div key={s.name} className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-sm font-semibold text-stone-600">
+              <div key={s.name} className="flex items-center gap-3 py-1">
+                <div className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-xs font-semibold text-stone-500">
                   {i + 1}
                 </div>
-                <div className="flex-1">
-                  <div className="font-medium text-stone-900">{s.name}</div>
-                  <div className="text-sm text-stone-500">{s.count} prenotazioni</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-stone-800 truncate">{s.name}</p>
+                  <p className="text-xs text-stone-400">{s.count} prenotazioni</p>
                 </div>
-                <div className="font-semibold text-stone-900">€{s.revenue.toFixed(2)}</div>
+                <p className="text-sm font-semibold text-stone-900">\u20AC{s.revenue.toFixed(2)}</p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-stone-400 text-sm">Nessuna prenotazione oggi</p>
+          <p className="text-stone-400 text-sm py-4 text-center">Nessuna prenotazione oggi</p>
         )}
       </div>
     </div>
   )
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
-    <div className="bg-white rounded-xl border border-stone-200 p-5">
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+    <div className="bg-white rounded-xl border border-stone-200 p-4">
+      <div className="flex items-center gap-2 mb-2.5">
+        <div className="w-8 h-8 rounded-lg bg-stone-50 flex items-center justify-center text-stone-500">
           {icon}
         </div>
-        <span className="text-sm text-stone-500">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-stone-900">{value}</div>
+      <p className="text-xl font-bold text-stone-900">{value}</p>
+      <p className="text-xs text-stone-400 mt-0.5">{label}</p>
     </div>
   )
 }
