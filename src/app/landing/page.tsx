@@ -21,9 +21,12 @@ import {
   LogIn,
   Menu,
   ChevronDown,
+  Users,
+  MessageCircle,
 } from 'lucide-react'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 import { ACTIVITY_TYPES, ACTIVITY_GROUPS } from '@/lib/activity-types'
+import { motion } from 'framer-motion'
 
 // ==================== FORM STATE ====================
 
@@ -377,38 +380,174 @@ export default function LandingPage() {
 
       {/* ==================== PREZZO ==================== */}
       <section className="py-24 md:py-32 px-6">
-        <div className="max-w-lg mx-auto text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-stone-400 mb-4">
-            Un unico piano. Nessuna sorpresa.
-          </p>
-          <div className="mb-10">
-            <span className="text-7xl font-extrabold text-stone-900 tracking-tight">40€</span>
-            <span className="text-xl text-stone-400 font-normal"> / mese</span>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-4">
+            <p className="text-sm font-semibold uppercase tracking-wider text-stone-400">
+              Piani semplici. Nessuna sorpresa.
+            </p>
           </div>
-          <ul className="space-y-4 text-left text-stone-600 max-w-xs mx-auto">
-            <li className="flex items-start gap-3 text-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-stone-400 mt-2 shrink-0" />
-              Sottodominio dedicato
-            </li>
-            <li className="flex items-start gap-3 text-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-stone-400 mt-2 shrink-0" />
-              Assistenza locale inclusa
-            </li>
-            <li className="flex items-start gap-3 text-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-stone-400 mt-2 shrink-0" />
-              Zero commissioni sulle prenotazioni
-            </li>
-            <li className="flex items-start gap-3 text-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-stone-400 mt-2 shrink-0" />
-              Disdici quando vuoi
-            </li>
-          </ul>
-          <a
-            href="#registrati"
-            className="mt-10 inline-flex items-center justify-center px-8 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 transition-all shadow-lg shadow-stone-900/15"
-          >
-            Inizia la prova gratuita
-          </a>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-stone-900 tracking-tight text-center mb-3">
+            Scegli il piano giusto per te
+          </h2>
+          <p className="text-stone-500 text-center mb-4 max-w-lg mx-auto">
+            Tutte le funzionalita sono incluse in ogni piano. La differenza e solo nel numero di postazioni.
+          </p>
+          <div className="flex items-center justify-center gap-2 mb-14">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-medium">
+              <Sparkles className="w-3 h-3" />
+              30 giorni di prova gratuita
+            </span>
+            <span className="text-xs text-stone-400">Nessuna carta di credito</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {/* Starter */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, delay: 0 }}
+              className="relative bg-white rounded-2xl border border-stone-200 p-7 flex flex-col hover:shadow-lg hover:shadow-stone-900/5 hover:border-stone-300 transition-all duration-300"
+            >
+              <div className="mb-5">
+                <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center mb-3">
+                  <Users className="w-5 h-5 text-stone-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-stone-900">Starter</h3>
+                <p className="text-xs text-stone-400 mt-1">Fino a 2 postazioni</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-stone-900 tracking-tight">39</span>
+                <span className="text-lg text-stone-400 font-normal">€/mese</span>
+              </div>
+              <ul className="space-y-2.5 mb-7 flex-1">
+                {['Sottodominio dedicato', 'Assistenza locale inclusa', 'Zero commissioni', 'Disdici quando vuoi'].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-stone-600">
+                    <Check className="w-4 h-4 text-stone-400 mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="#registrati"
+                className="w-full py-3 rounded-xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 transition-colors text-center block"
+              >
+                Inizia gratis
+              </a>
+            </motion.div>
+
+            {/* Pro — highlighted */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="relative bg-stone-900 rounded-2xl p-7 flex flex-col text-white shadow-xl shadow-stone-900/20 ring-2 ring-stone-900 lg:-mt-3 lg:mb-[-12px]"
+            >
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white text-stone-900 text-[11px] font-semibold uppercase tracking-wide">
+                Più scelto
+              </span>
+              <div className="mb-5">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-3">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Pro</h3>
+                <p className="text-xs text-stone-400 mt-1">Fino a 4 postazioni</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-white tracking-tight">49</span>
+                <span className="text-lg text-stone-400 font-normal">€/mese</span>
+              </div>
+              <ul className="space-y-2.5 mb-7 flex-1">
+                {['Sottodominio dedicato', 'Assistenza locale inclusa', 'Zero commissioni', 'Disdici quando vuoi'].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-stone-300">
+                    <Check className="w-4 h-4 text-stone-500 mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="#registrati"
+                className="w-full py-3 rounded-xl bg-white text-stone-900 text-sm font-medium hover:bg-stone-100 transition-colors text-center block"
+              >
+                Inizia gratis
+              </a>
+            </motion.div>
+
+            {/* Enterprise */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="relative bg-white rounded-2xl border border-stone-200 p-7 flex flex-col hover:shadow-lg hover:shadow-stone-900/5 hover:border-stone-300 transition-all duration-300"
+            >
+              <div className="mb-5">
+                <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center mb-3">
+                  <Users className="w-5 h-5 text-stone-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-stone-900">Enterprise</h3>
+                <p className="text-xs text-stone-400 mt-1">Fino a 8 postazioni</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-stone-900 tracking-tight">59</span>
+                <span className="text-lg text-stone-400 font-normal">€/mese</span>
+              </div>
+              <ul className="space-y-2.5 mb-7 flex-1">
+                {['Sottodominio dedicato', 'Assistenza locale inclusa', 'Zero commissioni', 'Disdici quando vuoi'].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-stone-600">
+                    <Check className="w-4 h-4 text-stone-400 mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="#registrati"
+                className="w-full py-3 rounded-xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 transition-colors text-center block"
+              >
+                Inizia gratis
+              </a>
+            </motion.div>
+
+            {/* Custom */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="relative bg-stone-50 rounded-2xl border border-dashed border-stone-300 p-7 flex flex-col hover:border-stone-400 transition-colors duration-300"
+            >
+              <div className="mb-5">
+                <div className="w-10 h-10 rounded-xl bg-white border border-stone-200 flex items-center justify-center mb-3">
+                  <Sparkles className="w-5 h-5 text-stone-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-stone-900">Custom</h3>
+                <p className="text-xs text-stone-400 mt-1">Postazioni illimitate</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-extrabold text-stone-900 tracking-tight">Su misura</span>
+              </div>
+              <ul className="space-y-2.5 mb-7 flex-1">
+                {['Tutto dei piani precedenti', 'Integrazioni personalizzate', 'Supporto prioritario dedicato'].map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-stone-500">
+                    <Check className="w-4 h-4 text-stone-400 mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="mailto:info@intelligenda.it?subject=Richiesta%20piano%20Custom%20IntelliGenda"
+                className="w-full py-3 rounded-xl bg-white text-stone-700 text-sm font-medium border border-stone-200 hover:bg-stone-100 hover:border-stone-300 transition-all text-center flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Contattaci
+              </a>
+            </motion.div>
+          </div>
+
+          <p className="text-xs text-stone-400 text-center mt-8">
+            I prezzi sono IVA esclusa. Puoi cambiare piano o disdire in qualsiasi momento.
+          </p>
         </div>
       </section>
 

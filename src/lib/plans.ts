@@ -4,16 +4,25 @@
  * Plans are based on the number of workstations (postazioni/collaboratori).
  * Trial: 30 days free, no credit card.
  * After trial expires → tenant site blocked until payment.
+ *
+ * Feature list is the same across all plans — only the workstation limit differs.
  */
 
 export interface PlanTier {
-  id: string           // 'trial' | 'piccola' | 'media' | 'grande'
+  id: string           // 'trial' | 'starter' | 'pro' | 'enterprise'
   name: string
   price: number        // monthly price in EUR (0 for trial)
   maxPostazioni: number
-  maxCollaboratori: number
   features: string[]
 }
+
+// Shared features (identical for every plan)
+const SHARED_FEATURES: string[] = [
+  'Sottodominio dedicato',
+  'Assistenza locale inclusa',
+  'Zero commissioni sulle prenotazioni',
+  'Disdici quando vuoi',
+]
 
 export const PLANS: Record<string, PlanTier> = {
   trial: {
@@ -21,56 +30,42 @@ export const PLANS: Record<string, PlanTier> = {
     name: 'Prova Gratuita',
     price: 0,
     maxPostazioni: 2,    // Can create up to 2 during trial
-    maxCollaboratori: 1,
     features: [
       '30 giorni di prova gratuita',
       'Tutte le funzionalita incluse',
       'Fino a 2 postazioni',
     ],
   },
-  piccola: {
-    id: 'piccola',
-    name: 'Piccola',
+  starter: {
+    id: 'starter',
+    name: 'Starter',
     price: 39,
     maxPostazioni: 2,
-    maxCollaboratori: 2,
     features: [
-      'Fino a 2 postazioni / collaboratori',
-      'Prenotazioni online illimitate',
-      'Calendario e gestione appuntamenti',
-      'Notifiche automatiche',
-      'QR Code vetrina',
-      'Codici sconto',
-      'Statistiche',
+      ...SHARED_FEATURES,
     ],
   },
-  media: {
-    id: 'media',
-    name: 'Media',
+  pro: {
+    id: 'pro',
+    name: 'Pro',
     price: 49,
     maxPostazioni: 4,
-    maxCollaboratori: 4,
     features: [
-      'Fino a 4 postazioni / collaboratori',
-      'Tutto del piano Piccola',
-      'Tutte le funzionalita incluse',
+      ...SHARED_FEATURES,
     ],
   },
-  grande: {
-    id: 'grande',
-    name: 'Grande',
+  enterprise: {
+    id: 'enterprise',
+    name: 'Enterprise',
     price: 59,
     maxPostazioni: 8,
-    maxCollaboratori: 8,
     features: [
-      'Fino a 8 postazioni / collaboratori',
-      'Tutto del piano Media',
-      'Tutte le funzionalita incluse',
+      ...SHARED_FEATURES,
     ],
   },
 }
 
-export const PAID_PLANS = [PLANS.piccola, PLANS.media, PLANS.grande]
+export const PAID_PLANS = [PLANS.starter, PLANS.pro, PLANS.enterprise]
 export const TRIAL_DURATION_DAYS = 30
 
 /**
