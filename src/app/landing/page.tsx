@@ -221,7 +221,7 @@ export default function LandingPage() {
               Registrati
             </a>
             <a
-              href="/login"
+              href="/accedi"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-stone-700 border border-stone-200 rounded-xl hover:bg-stone-50 hover:border-stone-300 transition-all"
             >
               <LogIn className="w-4 h-4" />
@@ -250,7 +250,7 @@ export default function LandingPage() {
               Registrati
             </a>
             <a
-              href="/login"
+              href="/accedi"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-stone-700 border border-stone-200 rounded-xl hover:bg-stone-50 transition-all"
             >
