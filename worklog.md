@@ -244,3 +244,23 @@ Stage Summary:
 - Pagina Piano con 3 cards (Gratuito/Pro/Business), piano attuale, data scadenza
 - Dashboard stile compatto con cards piu piccole, link "Vedi tutti" servizi
 - Commit: 92ea278 "feat: Step 3 - sidebar unificata + pagina Piano"
+
+---
+Task ID: 3-fix
+Agent: Main Agent
+Task: Fix login "Negozio non trovato" da landing + registrazione senza nome negozio
+
+Work Log:
+- Analizzato screenshot: errore "Negozio non trovato" su www.intelligenda.it/login
+- Identificato causa: /login usa /api/auth/customer/login che richiede tenant_slug cookie (assente sul dominio principale)
+- Creato /api/auth/resolve-tenant per lookup tenant da ownerEmail
+- Riscritto /login page: business login con email lookup, mostra link redirect al subdomain admin
+- Riscritto /register page: form completo business (nome, negozio, slug, tipo attivita, email, password)
+- Verificato build e push
+
+Stage Summary:
+- Fix: Login da landing page non da piu "Negozio non trovato"
+- Nuovo: /login cerca tenant da email e mostra "Vai al pannello -> {slug}.intelligenda.it/admin/login"
+- Nuovo: /register ha campo Nome Negozio + Slug (.intelligenda.it) + Tipo Attivita
+- Endpoint: GET /api/auth/resolve-tenant?email=xxx → restituisce slug, businessName, adminUrl
+- Commit: bd7c95a
