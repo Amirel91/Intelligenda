@@ -8,9 +8,11 @@ interface BusinessConfig {
   id: string
   shopName: string
   shopDescription: string
+  shortDescription: string
   shopPhone?: string
   shopEmail?: string
   shopAddress?: string
+  showAddress: boolean
   lunchBreakEnabled: boolean
   lunchBreakStart: string
   lunchBreakEnd: string
@@ -47,9 +49,11 @@ const defaultConfig: BusinessConfig = {
   id: '',
   shopName: '',
   shopDescription: '',
+  shortDescription: '',
   shopPhone: '',
   shopEmail: '',
   shopAddress: '',
+  showAddress: true,
   lunchBreakEnabled: false,
   lunchBreakStart: '12:30',
   lunchBreakEnd: '14:00',
@@ -88,9 +92,11 @@ export default function AdminImpostazioni() {
             id: data.id || '',
             shopName: data.shopName || '',
             shopDescription: data.shopDescription || '',
+            shortDescription: data.shortDescription || '',
             shopPhone: data.shopPhone || '',
             shopEmail: data.shopEmail || '',
             shopAddress: data.shopAddress || '',
+            showAddress: data.showAddress !== undefined ? data.showAddress : true,
             lunchBreakEnabled: data.lunchBreakEnabled || false,
             lunchBreakStart: data.lunchBreakStart || '12:30',
             lunchBreakEnd: data.lunchBreakEnd || '14:00',
@@ -286,6 +292,23 @@ export default function AdminImpostazioni() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                Descrizione Breve
+              </label>
+              <textarea
+                value={config.shortDescription}
+                onChange={e => {
+                  if (e.target.value.length <= 200) updateConfigField('shortDescription', e.target.value)
+                }}
+                rows={2}
+                placeholder="Una frase breve che descrive la tua attivita (max 200 caratteri)..."
+                className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors resize-none"
+              />
+              <p className="text-xs text-stone-400 mt-1">Appare sotto il nome del negozio nella pagina del cliente. Massimo 200 caratteri.</p>
+              <p className={`text-xs mt-0.5 ${config.shortDescription.length > 180 ? 'text-amber-500' : 'text-stone-300'}`}>{config.shortDescription.length}/200</p>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Descrizione</label>
               <textarea value={config.shopDescription} onChange={e => updateConfigField('shopDescription', e.target.value)} rows={3} placeholder="Descrivi la tua attivita..." className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors resize-none" />
               <p className="text-xs text-stone-400 mt-1">Appare sulla homepage del cliente</p>
@@ -305,6 +328,12 @@ export default function AdminImpostazioni() {
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Indirizzo</label>
               <input type="text" value={config.shopAddress || ''} onChange={e => updateConfigField('shopAddress', e.target.value)} placeholder="Via Roma 42, Milano" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+              <div className="flex items-center gap-3 mt-2">
+                <div onClick={() => updateConfigField('showAddress', !config.showAddress)} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${config.showAddress ? 'bg-stone-900' : 'bg-stone-300'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${config.showAddress ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                </div>
+                <span className="text-xs text-stone-500">Mostra l&apos;indirizzo nella pagina del cliente e nel riepilogo prenotazione</span>
+              </div>
             </div>
 
             {/* Punti di Forza */}

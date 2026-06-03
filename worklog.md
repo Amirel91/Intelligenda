@@ -264,3 +264,29 @@ Stage Summary:
 - Nuovo: /register ha campo Nome Negozio + Slug (.intelligenda.it) + Tipo Attivita
 - Endpoint: GET /api/auth/resolve-tenant?email=xxx → restituisce slug, businessName, adminUrl
 - Commit: bd7c95a
+---
+Task ID: 1
+Agent: main
+Task: Aggiungere "Powered by IntelliGenda", descrizione breve, posizione/indirizzo con toggle visibilità
+
+Work Log:
+- Esplorato il codebase: homepage (page.tsx), prenota/page.tsx, admin/impostazioni, Prisma schema, db.ts, validations.ts, api/config, api/bookings
+- Aggiunto "Powered by IntelliGenda" in basso-centro nella homepage (src/app/page.tsx)
+- Aggiunto "Powered by IntelliGenda" in basso nella pagina di prenotazione Step 5 (src/app/prenota/page.tsx)
+- Aggiunto "Powered by IntelliGenda" nella pagina di cancellazione prenotazione
+- Aggiunto campo `shortDescription` (String, max 200 char) in Prisma schema + DDL migration + Zod validation
+- Aggiunto campo `showAddress` (Boolean, default true) in Prisma schema + DDL migration + Zod validation
+- Aggiunto textarea "Descrizione Breve" con counter 200 char nella sezione Negozio delle impostazioni admin
+- Aggiunto toggle "Mostra indirizzo" sotto il campo Indirizzo nelle impostazioni admin
+- Aggiunto `shortDescription` mostrato sotto il nome del negozio nella homepage cliente (corsivo, grigio chiaro)
+- Aggioranto la condizione di visibilità dell'indirizzo nella homepage (rispetta `showAddress`)
+- Aggiunto box "Ti aspettiamo il [data] alle [ora] - [indirizzo]" nel riepilogo Step 5 della prenotazione
+- Aggiornato API /api/bookings POST per restituire shopAddress e showAddress
+- Aggiornato health-check db.ts da `plan` a `showAddress`
+- Build Next.js superata senza errori
+
+Stage Summary:
+- 3 funzionalità implementate: branding "Powered by", descrizione breve, posizione con toggle
+- File modificati: page.tsx, prenota/page.tsx, cancella/page.tsx, impostazioni/page.tsx, prisma/schema.prisma, db.ts, validations.ts, api/bookings/route.ts
+- Prisma generate eseguito con successo
+- Tutti i campi hanno validazione (Zod max 200 char per shortDescription) e migrazione DDL automatica

@@ -12,9 +12,11 @@ interface BusinessConfig {
   id: string
   shopName: string
   shopDescription: string
+  shortDescription?: string
   shopPhone?: string
   shopEmail?: string
   shopAddress?: string
+  showAddress?: boolean
   features?: string[]
 }
 
@@ -115,15 +117,20 @@ export default function HomePage() {
           </h1>
 
           {config?.shopDescription && (
-            <p className="text-stone-500 text-base leading-relaxed mb-8">{config.shopDescription}</p>
+            <p className="text-stone-500 text-base leading-relaxed mb-4">{config.shopDescription}</p>
+          )}
+
+          {/* Short description (max 200 chars, under shop name) */}
+          {config?.shortDescription && (
+            <p className="text-stone-400 text-sm leading-relaxed mb-8 italic">{config.shortDescription}</p>
           )}
 
           {/* Contact Info */}
-          {(config?.shopPhone || config?.shopEmail || config?.shopAddress) && (
+          {(config?.shopPhone || config?.shopEmail || (config?.shopAddress && config?.showAddress !== false)) && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mb-8 space-y-2">
               {config?.shopPhone && (<a href={`tel:${config.shopPhone}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"><Phone className="w-4 h-4" />{config.shopPhone}</a>)}
               {config?.shopEmail && (<a href={`mailto:${config.shopEmail}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"><Mail className="w-4 h-4" />{config.shopEmail}</a>)}
-              {config?.shopAddress && (<div className="flex items-center justify-center gap-2 text-sm text-stone-500"><MapPin className="w-4 h-4 shrink-0" />{config.shopAddress}</div>)}
+              {config?.shopAddress && config?.showAddress !== false && (<div className="flex items-center justify-center gap-2 text-sm text-stone-500"><MapPin className="w-4 h-4 shrink-0" />{config.shopAddress}</div>)}
             </motion.div>
           )}
 
@@ -169,6 +176,16 @@ export default function HomePage() {
               </div>
             </motion.div>
           )}
+
+          {/* Powered by IntelliGenda */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            className="mt-16 text-center"
+          >
+            <p className="text-xs text-stone-300 select-none">Powered by IntelliGenda</p>
+          </motion.div>
 
           {/* Punti di Forza */}
           {config?.features?.filter(Boolean).length > 0 && (

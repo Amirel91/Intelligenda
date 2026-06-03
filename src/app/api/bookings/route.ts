@@ -321,7 +321,12 @@ export async function POST(request: NextRequest) {
       console.error('[booking] Failed to send confirmation emails:', emailErr)
     }
 
-    return NextResponse.json({ ...booking, shopName: booking.config?.shopName || config.shopName }, { status: 201 })
+    return NextResponse.json({
+      ...booking,
+      shopName: booking.config?.shopName || config.shopName,
+      shopAddress: booking.config?.shopAddress || config.shopAddress || '',
+      showAddress: booking.config?.showAddress !== undefined ? booking.config.showAddress : (config.showAddress !== undefined ? config.showAddress : true),
+    }, { status: 201 })
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'issues' in error) {
       return NextResponse.json({ error: 'Dati non validi', details: error }, { status: 400 })
