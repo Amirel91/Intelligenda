@@ -1,6 +1,7 @@
 import { db } from './db'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { isTenantBlocked } from './plans'
 
 const MAIN_DOMAINS = ['localhost', 'intelligenda.it', 'www.intelligenda.it']
 
@@ -69,19 +70,10 @@ export async function getTenantConfig(request: NextRequest) {
   if (!tenant) return null
 
   // ============ BILLING SUSPENSION CHECK ============
-  // If the tenant is in "cancelling" state and planEndDate has passed,
-  // treat as suspended — the public site and admin should be blocked.
-  const now = new Date()
-  const isSubscriptionExpired =
-    tenant.subscriptionStatus === 'cancelling' &&
-    tenant.planEndDate &&
-    new Date(tenant.planEndDate) <= now
-
-  const isSuspended =
-    tenant.subscriptionStatus === 'suspended' || isSubscriptionExpired
-
-  if (isSuspended) {
-    return null // Effectively blocks access
+  // Blocks access if: suspended, trial expired, or cancelling with expired plan.
+  // Uses centralized isTenantBlocked() from plans.ts
+  if (isTenantBlocked(tenant.subscriptionStatus, tenant.planEndDate)) {
+    return null
   }
 
   return tenant.config || null
@@ -105,17 +97,7 @@ export async function getTenantConfigWithCalendarIncludes(request: NextRequest) 
   })
   if (!tenant) return null
 
-  // Same suspension check as getTenantConfig
-  const now = new Date()
-  const isSubscriptionExpired =
-    tenant.subscriptionStatus === 'cancelling' &&
-    tenant.planEndDate &&
-    new Date(tenant.planEndDate) <= now
-
-  const isSuspended =
-    tenant.subscriptionStatus === 'suspended' || isSubscriptionExpired
-
-  if (isSuspended) return null
+  if (isTenantBlocked(tenant.subscriptionStatus, tenant.planEndDate)) return null
 
   return tenant.config || null
 }
@@ -130,19 +112,7 @@ export async function getTenantConfigFromCookies() {
   const tenant = await getTenantBySlug(slug)
   if (!tenant) return null
 
-  // Same suspension check as getTenantConfig
-  const now = new Date()
-  const isSubscriptionExpired =
-    tenant.subscriptionStatus === 'cancelling' &&
-    tenant.planEndDate &&
-    new Date(tenant.planEndDate) <= now
-
-  const isSuspended =
-    tenant.subscriptionStatus === 'suspended' || isSubscriptionExpired
-
-  if (isSuspended) {
-    return null
-  }
+  if (isTenantBlocked(tenant.subscriptionStatus, tenant.planEndDate)) return null
 
   return tenant.config || null
 }
@@ -165,4 +135,50 @@ export async function getTenantBySlugUnchecked(slug: string) {
     where: { slug },
     include: { config: true },
   })
+}
+
+/**
+ * Get tenant billing status for suspension checks in middleware.
+ * Returns { blocked, reason, plan, planEndDate, subscriptionStatus, slug }.
+ * Lightweight query — only selects needed fields.
+ */
+export async function getTenantBillingStatus(slug: string): Promise<{
+  blocked: boolean
+  reason: string
+  plan: string
+  planEndDate: string | null
+  subscriptionStatus: string
+  slug: string
+} | null> {
+  if (!slug) return null
+  try {
+    const tenant = await db.tenant.findUnique({
+      where: { slug, active: true },
+      select: {
+        slug: true,
+        subscriptionStatus: true,
+        planEndDate: true,
+        config: { select: { plan: true } },
+      },
+    })
+    if (!tenant) return null
+
+    const blocked = isTenantBlocked(tenant.subscriptionStatus, tenant.planEndDate)
+    let reason = ''
+    if (blocked) {
+      const { getBlockReason } = await import('./plans')
+      reason = getBlockReason(tenant.subscriptionStatus, tenant.planEndDate)
+    }
+
+    return {
+      blocked,
+      reason,
+      plan: tenant.config?.plan || 'free',
+      planEndDate: tenant.planEndDate?.toISOString() || null,
+      subscriptionStatus: tenant.subscriptionStatus,
+      slug: tenant.slug,
+    }
+  } catch {
+    return null
+  }
 }

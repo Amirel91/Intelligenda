@@ -167,6 +167,33 @@ export async function middleware(request: NextRequest) {
   // Subdomain: protect admin pages with JWT before serving
   const adminCheck = await protectAdminRoutes(request, url)
   if (adminCheck) return adminCheck
+
+  // ============ TENANT BILLING SUSPENSION CHECK ============
+  // Check if tenant trial is expired or subscription is suspended.
+  // Blocked tenants get their site replaced with a "suspended" page.
+  // Admin and API paths are exempt — admin can still access /admin/piano to upgrade.
+  if (!url.pathname.startsWith('/admin') && !url.pathname.startsWith('/api/')) {
+    try {
+      const { isTenantBlocked } = await import('@/lib/plans')
+      const billingRows = await neonQueryRows<{
+        status: string; plan_end: string | null
+      }>(
+        process.env.DATABASE_URL || '',
+        `SELECT "subscriptionStatus" AS status, "planEndDate" AS plan_end
+         FROM "Tenant" WHERE slug = '${slug.replace(/'/g, "''")}' AND active = true LIMIT 1`
+      )
+      const tenant = billingRows?.[0]
+      if (tenant && isTenantBlocked(tenant.status, tenant.plan_end)) {
+        // Tenant is blocked — rewrite to suspended page
+        const response = NextResponse.rewrite(new URL('/suspended', request.url))
+        response.cookies.set('tenant_slug', slug, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', httpOnly: false })
+        return response
+      }
+    } catch {
+      // On error, let the request through — don't block for middleware failures
+    }
+  }
+
   const response = NextResponse.next()
   response.cookies.set('tenant_slug', slug, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', httpOnly: false })
   return response

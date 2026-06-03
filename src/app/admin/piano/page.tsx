@@ -1,84 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, Crown, Zap, CreditCard, CalendarClock, ArrowRight } from 'lucide-react'
-
-interface PlanInfo {
-  plan: string
-  planExpiresAt: string | null
-  stripeCustomerId: string | null
-}
-
-const PLANS = [
-  {
-    id: 'free',
-    name: 'Gratuito',
-    price: '0\u20AC',
-    period: '/mese',
-    description: 'Perfetto per iniziare',
-    icon: Zap,
-    color: 'bg-stone-100 text-stone-600',
-    features: [
-      'Prenotazioni online illimitate',
-      'Calendario gestione',
-      'Notifiche automatiche',
-      'QR Code vetrina',
-      'Fino a 5 servizi',
-      '1 utente admin',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: '19\u20AC',
-    period: '/mese',
-    description: 'Per professionisti in crescita',
-    icon: Crown,
-    color: 'bg-amber-50 text-amber-600',
-    popular: true,
-    features: [
-      'Tutto del piano Gratuito',
-      'Servizi illimitati',
-      'Postazioni multipla',
-      'Codici sconto',
-      'Statistiche avanzate',
-      'Supporto prioritario',
-    ],
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    price: '39\u20AC',
-    period: '/mese',
-    description: 'Per strutture che scalano',
-    icon: CreditCard,
-    color: 'bg-blue-50 text-blue-600',
-    features: [
-      'Tutto del piano Pro',
-      'Utenti admin multipli',
-      'API personalizzate',
-      'Integrazioni avanzate',
-      'Brand personalizzato',
-      'Account manager dedicato',
-    ],
-  },
-] as const
+import { Check, Crown, Users, ArrowRight, AlertTriangle } from 'lucide-react'
+import { PLANS, PAID_PLANS, getMaxPostazioni, getTrialDaysRemaining } from '@/lib/plans'
 
 export default function PianoPage() {
-  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null)
+  const [planInfo, setPlanInfo] = useState<{
+    plan: string
+    subscriptionStatus: string
+    blocked: boolean
+    blockReason: string
+    trialDaysRemaining: number
+    planEndDate: string | null
+    maxPostazioni: number
+  } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/config')
+    fetch('/api/billing/status')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data) {
-          setPlanInfo({
-            plan: data.plan || 'free',
-            planExpiresAt: data.planExpiresAt || null,
-            stripeCustomerId: data.stripeCustomerId || null,
-          })
-        }
+        if (data) setPlanInfo(data)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -92,6 +34,9 @@ export default function PianoPage() {
     )
   }
 
+  const isOnTrial = planInfo?.subscriptionStatus === 'trial'
+  const isBlocked = planInfo?.blocked
+
   return (
     <div>
       <div className="mb-8">
@@ -99,7 +44,35 @@ export default function PianoPage() {
         <p className="text-stone-500 text-sm mt-1">Gestisci il tuo abbonamento</p>
       </div>
 
-      {/* Current plan summary */}
+      {/* Trial warning banner */}
+      {isOnTrial && !isBlocked && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">
+              Prova gratuita: {planInfo?.trialDaysRemaining} giorni rimanenti
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Scegli un piano prima della scadenza per non interrompere il servizio.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Blocked warning */}
+      {isBlocked && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-red-800">{planInfo?.blockReason}</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              Il tuo sito e bloccato. Seleziona un piano per riattivarlo.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Current plan */}
       {planInfo && (
         <div className="bg-white rounded-xl border border-stone-200 p-5 mb-8 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center">
@@ -108,28 +81,25 @@ export default function PianoPage() {
           <div className="flex-1 min-w-0">
             <p className="text-sm text-stone-500">Piano attuale</p>
             <p className="font-semibold text-stone-900 capitalize">
-              {planInfo.plan === 'free' ? 'Gratuito' : planInfo.plan}
+              {planInfo.plan === 'free' || planInfo.plan === 'trial' ? 'Prova Gratuita' : planInfo.plan}
             </p>
           </div>
-          {planInfo.planExpiresAt && (
-            <div className="text-right">
-              <div className="flex items-center gap-1.5 text-xs text-stone-500">
-                <CalendarClock className="w-3.5 h-3.5" />
-                Scade
-              </div>
-              <p className="text-sm font-medium text-stone-700">
-                {new Date(planInfo.planExpiresAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
+          <div className="text-right">
+            <div className="flex items-center gap-1.5 text-xs text-stone-500">
+              <Users className="w-3.5 h-3.5" />
+              Postazioni
             </div>
-          )}
+            <p className="text-sm font-medium text-stone-700">
+              fino a {planInfo.maxPostazioni}
+            </p>
+          </div>
         </div>
       )}
 
       {/* Plans grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {PLANS.map(plan => {
+        {PAID_PLANS.map(plan => {
           const isCurrent = planInfo?.plan === plan.id
-          const Icon = plan.icon
 
           return (
             <div
@@ -137,28 +107,22 @@ export default function PianoPage() {
               className={`relative bg-white rounded-xl border p-6 flex flex-col transition-shadow hover:shadow-sm ${
                 isCurrent
                   ? 'border-stone-900 ring-1 ring-stone-900'
-                  : plan.popular
-                  ? 'border-stone-300'
                   : 'border-stone-200'
               }`}
             >
-              {plan.popular && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-stone-900 text-white text-[10px] font-semibold uppercase tracking-wider rounded-full">
-                  Popolare
-                </div>
-              )}
-
               <div className="mb-4">
-                <div className={`w-9 h-9 rounded-lg ${plan.color} flex items-center justify-center mb-3`}>
-                  <Icon className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-lg bg-stone-100 flex items-center justify-center mb-3">
+                  <Users className="w-4 h-4 text-stone-600" />
                 </div>
                 <h3 className="font-semibold text-stone-900">{plan.name}</h3>
-                <p className="text-xs text-stone-500 mt-0.5">{plan.description}</p>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Fino a {plan.maxPostazioni} postazioni / collaboratori
+                </p>
               </div>
 
               <div className="mb-5">
-                <span className="text-2xl font-bold text-stone-900">{plan.price}</span>
-                <span className="text-sm text-stone-500">{plan.period}</span>
+                <span className="text-2xl font-bold text-stone-900">{plan.price}&euro;</span>
+                <span className="text-sm text-stone-500"> / mese</span>
               </div>
 
               <ul className="space-y-2 mb-6 flex-1">
@@ -171,19 +135,15 @@ export default function PianoPage() {
               </ul>
 
               <button
-                disabled={isCurrent || plan.id !== 'pro'}
+                disabled={isCurrent}
                 className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
                   isCurrent
                     ? 'bg-stone-100 text-stone-500 cursor-default'
-                    : plan.id === 'pro'
-                    ? 'bg-stone-900 text-white hover:bg-stone-800'
-                    : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                    : 'bg-stone-900 text-white hover:bg-stone-800'
                 }`}
               >
-                {isCurrent ? 'Piano attuale' : plan.id === 'pro' ? (
-                  <>Inizia ora <ArrowRight className="w-3.5 h-3.5" /></>
-                ) : (
-                  'In arrivo'
+                {isCurrent ? 'Piano attuale' : (
+                  <>Scegli questo piano <ArrowRight className="w-3.5 h-3.5" /></>
                 )}
               </button>
             </div>
@@ -191,9 +151,8 @@ export default function PianoPage() {
         })}
       </div>
 
-      {/* Info note */}
       <p className="text-xs text-stone-400 text-center mt-6">
-        I piani Pro e Business saranno disponibili a breve. Contattaci per accesso anticipato.
+        Tutte le funzionalita sono incluse in ogni piano. Nessuna commissione sulle prenotazioni. Disdici quando vuoi.
       </p>
     </div>
   )

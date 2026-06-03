@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { requireTenantConfig } from '@/lib/tenant'
+import { requireTenantConfig, getTenantBySlug } from '@/lib/tenant'
+import { getMaxPostazioni } from '@/lib/plans'
 import { z } from 'zod'
 
 const createResourceSchema = z.object({
@@ -67,6 +68,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const data = createResourceSchema.parse(body)
+
+    // ============ PLAN LIMIT ENFORCEMENT ============
+    // Check if tenant can create more postazioni based on their plan
+    const slug = new URL(request.url).searchParams.get('slug') || request.cookies.get('tenant_slug')?.value
+    let plan = 'free'
+    if (slug) {
+      const tenant = await getTenantBySlug(slug)
+      if (tenant?.config?.plan) plan = tenant.config.plan
+    }
+    const maxPostazioni = getMaxPostazioni(plan)
+    const currentCount = await db.resource.count({ where: { configId: config.id } })
+    if (currentCount >= maxPostazioni) {
+      return NextResponse.json(
+        { error: `Hai raggiunto il limite di ${maxPostazioni} postazioni per il tuo piano. Aggiorna il tuo abbonamento per aggiungerne altre.`, limitReached: true, maxPostazioni },
+        { status: 403 }
+      )
+    }
 
     // Get next sort order
     const maxOrder = await db.resource.findFirst({

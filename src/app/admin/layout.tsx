@@ -21,6 +21,7 @@ import {
   CreditCard,
   Sparkles,
   ChevronRight,
+  AlertTriangle,
 } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 
@@ -29,9 +30,11 @@ interface AuthContextType {
   loading: boolean
   shopName: string
   plan: string
+  trialDays: number
+  blocked: boolean
 }
 
-const AuthContext = createContext<AuthContextType>({ username: null, loading: true, shopName: '', plan: 'free' })
+const AuthContext = createContext<AuthContextType>({ username: null, loading: true, shopName: '', plan: 'free', trialDays: 0, blocked: false })
 
 export const useAuth = () => useContext(AuthContext)
 
@@ -72,6 +75,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [showIOSHint, setShowIOSHint] = useState(false)
   const [shopName, setShopName] = useState<string>('')
   const [plan, setPlan] = useState<string>('free')
+  const [trialDays, setTrialDays] = useState(0)
+  const [blocked, setBlocked] = useState(false)
   const { canInstall: canInstallPWA, isIOS: isIOSSafari, promptInstall: promptPWAInstall, dismiss: dismissPWAInstall } = usePWAInstall()
 
   const isPublicPage = pathname === '/admin/login' || pathname === '/admin/forgot-password' || pathname === '/admin/reset-password'
@@ -91,11 +96,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return res.json()
       }),
       fetch('/api/config').then(res => res.ok ? res.json() : null).catch(() => null),
+      fetch('/api/billing/status').then(res => res.ok ? res.json() : null).catch(() => null),
     ])
-      .then(([authData, configData]) => {
+      .then(([authData, configData, billingData]) => {
         if (authData?.username) setUsername(authData.username)
         if (configData?.shopName) setShopName(configData.shopName)
         if (configData?.plan) setPlan(configData.plan)
+        if (billingData) {
+          setTrialDays(billingData.trialDaysRemaining || 0)
+          setBlocked(billingData.blocked || false)
+        }
         setLoading(false)
       })
       .catch(() => {
@@ -137,7 +147,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!username) return null
 
   return (
-    <AuthContext.Provider value={{ username, loading: false, shopName, plan }}>
+    <AuthContext.Provider value={{ username, loading: false, shopName, plan, trialDays, blocked }}>
       <div className="min-h-screen bg-stone-50 flex">
 
         {/* ---- Mobile overlay ---- */}
@@ -280,6 +290,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Page content */}
           <main className="p-4 lg:p-8 max-w-[1400px]">
+            {/* Trial expiry warning */}
+            {(plan === 'free' || plan === 'trial') && trialDays > 0 && !blocked && (
+              <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-sm text-amber-800 flex-1">
+                  <span className="font-medium">Prova gratuita:</span> {trialDays} giorni rimanenti.{' '}
+                  <Link href="/admin/piano" className="underline font-medium hover:text-amber-900 transition-colors">
+                    Scegli un piano
+                  </Link>
+                </p>
+              </div>
+            )}
+            {/* Blocked warning */}
+            {blocked && (
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-3.5 flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <p className="text-sm text-red-800 flex-1">
+                  <span className="font-medium">Abbonamento scaduto.</span> Il tuo sito e bloccato.{' '}
+                  <Link href="/admin/piano" className="underline font-medium hover:text-red-900 transition-colors">
+                    Rinnova ora
+                  </Link>
+                </p>
+              </div>
+            )}
             {children}
           </main>
         </div>
