@@ -290,3 +290,32 @@ Stage Summary:
 - File modificati: page.tsx, prenota/page.tsx, cancella/page.tsx, impostazioni/page.tsx, prisma/schema.prisma, db.ts, validations.ts, api/bookings/route.ts
 - Prisma generate eseguito con successo
 - Tutti i campi hanno validazione (Zod max 200 char per shortDescription) e migrazione DDL automatica
+
+---
+Task ID: custom-dropdown
+Agent: main
+Task: Replace native select with custom in-page grouped dropdown for activity type on landing page
+
+Work Log:
+- Analyzed current landing page (src/app/landing/page.tsx) — native <select> with <optgroup> for activity type at lines 664-685
+- Read activity-types.ts to understand data structure (ACTIVITY_GROUPS with emojis, ACTIVITY_TYPES with group mapping)
+- Added state: activityDropdownOpen, expandedGroup, activityDropdownRef for click-outside detection
+- Added useEffect for mousedown click-outside handler (closes dropdown + resets expanded group)
+- Added computed values: selectedActivity, selectedGroupEmoji for trigger display
+- Replaced native <select> with custom dropdown component:
+  - Trigger button: shows emoji + activity name, border highlights on open, chevron rotates
+  - Dropdown panel: absolute positioned, rounded, border, shadow, max-h-72 with scroll
+  - Group headers: clickable + hoverable, emoji + group name, check mark if contains selected item, chevron rotates on expand
+  - Group items: nested with pl-10 indent, selected item highlighted with bg-stone-100 + font-medium
+  - All groups start collapsed, expand on click/hover
+- Clicking an item: updates form.activityType, closes dropdown, resets expanded group
+- Added ChevronRight to lucide imports
+- Build verified: no errors, compiled successfully
+
+Stage Summary:
+- Custom dropdown replaces native <select> — no more browser popup on mobile
+- Groups collapsed by default, expand on click/hover with smooth CSS transition
+- Emojis preserved on both trigger button and group headers
+- Style matches site aesthetic: stone-200 borders, rounded-xl, clean typography
+- Minimal/clean: no unnecessary animations, consistent with existing form fields
+- File modified: src/app/landing/page.tsx only

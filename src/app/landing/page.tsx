@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   ArrowRight,
   Brain,
@@ -21,6 +21,7 @@ import {
   LogIn,
   Menu,
   ChevronDown,
+  ChevronRight,
   Users,
   MessageCircle,
 } from 'lucide-react'
@@ -64,6 +65,11 @@ export default function LandingPage() {
   const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState('')
 
+  // Activity dropdown state
+  const [activityDropdownOpen, setActivityDropdownOpen] = useState(false)
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+  const activityDropdownRef = useRef<HTMLDivElement>(null)
+
   // Lead form state
   const [leadEmail, setLeadEmail] = useState('')
   const [leadSubmitting, setLeadSubmitting] = useState(false)
@@ -106,6 +112,24 @@ export default function LandingPage() {
       if (slugTimerRef.current) clearTimeout(slugTimerRef.current)
     }
   }, [form.slug])
+
+  // Click outside handler for activity dropdown
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (activityDropdownRef.current && !activityDropdownRef.current.contains(e.target as Node)) {
+        setActivityDropdownOpen(false)
+        setExpandedGroup(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Get selected activity display info
+  const selectedActivity = ACTIVITY_TYPES.find(a => a.id === form.activityType)
+  const selectedGroupEmoji = selectedActivity
+    ? ACTIVITY_GROUPS.find(g => g.id === selectedActivity.group)?.name.split(' ')[0] || ''
+    : ''
 
   // ==================== FORM HANDLING ====================
 
@@ -661,26 +685,82 @@ export default function LandingPage() {
               {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug}</p>}
             </div>
 
-            {/* Tipo di Attività */}
+            {/* Tipo di Attività — Custom Grouped Dropdown */}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">
                 Tipo di Attività
               </label>
-              <div className="relative">
-                <select
-                  value={form.activityType}
-                  onChange={e => updateField('activityType', e.target.value)}
-                  className="w-full appearance-none pl-4 pr-10 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors cursor-pointer"
+              <div className="relative" ref={activityDropdownRef}>
+                {/* Trigger button */}
+                <button
+                  type="button"
+                  onClick={() => { setActivityDropdownOpen(!activityDropdownOpen); if (!activityDropdownOpen) setExpandedGroup(null) }}
+                  className={`w-full pl-4 pr-10 py-3 rounded-xl border-2 bg-white text-stone-900 outline-none transition-colors cursor-pointer text-left flex items-center gap-2 ${
+                    activityDropdownOpen ? 'border-stone-900' : 'border-stone-200 hover:border-stone-300'
+                  }`}
                 >
-                  {ACTIVITY_GROUPS.map(group => (
-                    <optgroup key={group.id} label={group.name}>
-                      {ACTIVITY_TYPES.filter(a => a.group === group.id || (group.id === 'ALTRO' && a.id === 'ALTRO')).map(t => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                  <span className="text-lg leading-none">{selectedGroupEmoji}</span>
+                  <span className={`flex-1 truncate ${!selectedActivity ? 'text-stone-400' : ''}`}>
+                    {selectedActivity?.name || 'Seleziona il tipo di attività...'}
+                  </span>
+                </button>
+                <ChevronDown className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none transition-transform duration-200 ${activityDropdownOpen ? 'rotate-180' : ''}`} />
+
+                {/* Dropdown panel */}
+                {activityDropdownOpen && (
+                  <div className="absolute z-50 mt-1.5 w-full bg-white rounded-xl border-2 border-stone-200 shadow-lg shadow-stone-900/8 max-h-72 overflow-y-auto">
+                    {ACTIVITY_GROUPS.map(group => {
+                      const groupActivities = ACTIVITY_TYPES.filter(a => a.group === group.id || (group.id === 'ALTRO' && a.id === 'ALTRO'))
+                      const isExpanded = expandedGroup === group.id
+                      const hasSelected = groupActivities.some(a => a.id === form.activityType)
+
+                      return (
+                        <div key={group.id} className="border-b border-stone-100 last:border-b-0">
+                          {/* Group header */}
+                          <button
+                            type="button"
+                            onClick={() => setExpandedGroup(isExpanded ? null : group.id)}
+                            onMouseEnter={() => setExpandedGroup(group.id)}
+                            className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-sm transition-colors ${
+                              isExpanded ? 'bg-stone-50 text-stone-900' : 'text-stone-600 hover:bg-stone-50'
+                            }`}
+                          >
+                            <span className="text-base leading-none">{group.name.split(' ')[0]}</span>
+                            <span className="flex-1 font-medium truncate">{group.name.slice(group.name.indexOf(' ') + 1)}</span>
+                            {hasSelected && <Check className="w-3.5 h-3.5 text-stone-400 shrink-0" />}
+                            <ChevronRight className={`w-3.5 h-3.5 text-stone-400 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                          </button>
+
+                          {/* Group items */}
+                          <div
+                            className={`overflow-hidden transition-all duration-200 ${
+                              isExpanded ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'
+                            }`}
+                          >
+                            {groupActivities.map(t => (
+                              <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => {
+                                  updateField('activityType', t.id)
+                                  setActivityDropdownOpen(false)
+                                  setExpandedGroup(null)
+                                }}
+                                className={`w-full flex items-center gap-2.5 pl-10 pr-3.5 py-2 text-left text-sm transition-colors ${
+                                  form.activityType === t.id
+                                    ? 'bg-stone-100 text-stone-900 font-medium'
+                                    : 'text-stone-500 hover:bg-stone-50 hover:text-stone-700'
+                                }`}
+                              >
+                                {t.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
