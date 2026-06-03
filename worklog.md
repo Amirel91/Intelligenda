@@ -218,3 +218,29 @@ Stage Summary:
 - 3 files changed: +106, -70 lines (deleted tailwind.config.ts)
 - Build errors resolved: no more tailwindcss-animate import, no more truncated JSX
 - Clear logo separation: brand image only on marketing site, Sparkling icon on all tenant customer pages
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Step 3 - Sidebar unificata + riorganizzazione rotte admin
+
+Work Log:
+- Verificato che Step 2 (JWT + jose + middleware) era già implementato
+- Letto e analizzato layout.tsx, dashboard, impostazioni, login esistenti
+- Redesign completo di admin/layout.tsx con sidebar sezionale minimal
+- Creata pagina /admin/piano/page.tsx per gestione piano
+- Aggiornata dashboard con stile coerente e piu pulito
+- Verificata build (nessun errore)
+- Commit e push su git
+
+Stage Summary:
+- Sidebar riorganizzata in sezioni: Panoramica (Dashboard), Gestione (Calendario/Prenota/Servizi/Postazioni/Clienti/Coupon)
+- Footer sidebar con Impostazioni + Piano + link sito/assistenza/logout
+- Badge piano attuale visibile nella sidebar
+- Admin-icon.png usato come logo nella sidebar tenant
+- Shop name dinamico nell'header sidebar
+- Componente SidebarLink riutilizzabile con supporto badge
+- Auto-close sidebar su navigazione mobile
+- Pagina Piano con 3 cards (Gratuito/Pro/Business), piano attuale, data scadenza
+- Dashboard stile compatto con cards piu piccole, link "Vedi tutti" servizi
+- Commit: 92ea278 "feat: Step 3 - sidebar unificata + pagina Piano"
