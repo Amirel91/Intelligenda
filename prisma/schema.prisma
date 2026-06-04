@@ -145,11 +145,28 @@ model Resource {
 
   bookings        Booking[]
   services        Service[]     @relation("ResourceServices")
+  availability    ResourceAvailability[]
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
   @@index([configId, active])
+}
+
+// ============ RESOURCE AVAILABILITY (per-postazione weekly schedule) ============
+
+model ResourceAvailability {
+  id         String   @id @default(cuid())
+  dayOfWeek  Int      // 1=Mon, 2=Tue, ... 7=Sun
+  openTime   String   // "08:00"
+  closeTime  String   // "18:00"
+  closed     Boolean  @default(false)
+
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, dayOfWeek])
+  @@index([resourceId])
 }
 
 // ============ MERCHANT COUPONS (per-negozio) ============

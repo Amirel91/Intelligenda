@@ -357,6 +357,25 @@ const MIGRATION_SQL = [
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "stripeCustomerId" TEXT`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "stripeSubscriptionId" TEXT`,
   `ALTER TABLE "BusinessConfig" ADD COLUMN IF NOT EXISTS "planExpiresAt" TIMESTAMP(3)`,
+  // ============ RESOURCE AVAILABILITY (per-postazione weekly schedule) ============
+  `CREATE TABLE IF NOT EXISTS "ResourceAvailability" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "dayOfWeek" INTEGER NOT NULL,
+    "openTime" TEXT NOT NULL DEFAULT '09:00',
+    "closeTime" TEXT NOT NULL DEFAULT '18:00',
+    "closed" BOOLEAN NOT NULL DEFAULT false,
+    "resourceId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ResourceAvailability_resourceId_fkey') THEN
+      ALTER TABLE "ResourceAvailability" ADD CONSTRAINT "ResourceAvailability_resourceId_fkey"
+        FOREIGN KEY ("resourceId") REFERENCES "Resource"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END $$`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "ResourceAvailability_resourceId_dayOfWeek_key" ON "ResourceAvailability"("resourceId", "dayOfWeek")`,
+  `CREATE INDEX IF NOT EXISTS "ResourceAvailability_resourceId_idx" ON "ResourceAvailability"("resourceId")`,
 ]
 
 // ============ LEAD TABLE (independent, created on demand) ============
@@ -440,15 +459,15 @@ let _schemaEnsured = false
 
 /**
  * INTERVENTO 3: Health-check query to detect if schema is already up-to-date.
- * Tests the existence of the most recently added column ("showHours" on "BusinessConfig").
- * If the column exists, we can safely skip all DDL statements.
+ * Tests the existence of the ResourceAvailability table (most recent migration).
+ * If the table exists, we can safely skip all DDL statements.
  * This turns a 400-1200ms cold-start penalty into a ~80ms single query.
  */
 async function isSchemaUpToDate(connectionString: string): Promise<boolean> {
   try {
     const rows = await neonQueryRows(
       connectionString,
-      `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'BusinessConfig' AND column_name = 'showHours' LIMIT 1`
+      `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'ResourceAvailability' AND column_name = 'resourceId' LIMIT 1`
     )
     return rows.length > 0
   } catch {
