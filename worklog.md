@@ -348,3 +348,25 @@ Stage Summary:
 - ThemeToggle placed in: CustomerNavbar, admin sidebar, landing navbar, superadmin, manutenzione, termini, privacy
 - Default theme: light (configurable via ThemeProvider)
 - Zero logic changes — purely visual dark mode additions
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Add per-resource weekly availability scheduling feature
+
+Work Log:
+- Analyzed full codebase: Prisma schema, slot algorithm, admin postazioni page, all API routes
+- Added ResourceAvailability model to Prisma schema (dayOfWeek, openTime, closeTime, closed, FK to Resource)
+- Added 4 DDL migration statements to MIGRATION_SQL in db.ts
+- Updated health check to detect new ResourceAvailability table
+- Created new API endpoint GET/PUT /api/resources/[id]/availability
+- Updated slot-algorithm.ts: all 4 functions (getAvailableSlots, getBatchAvailability, findFreeResource, isSlotAvailable) now respect per-resource availability
+- Added mergeResourceAvailability() and isResourceAvailableForSlot() helper functions
+- Enhanced admin postazioni page with weekly schedule editor UI (toggle per day, time inputs, save/reset)
+- Added schedule summary indicator on resource cards
+- Generated Prisma client, verified build succeeds, pushed to GitHub
+
+Stage Summary:
+- Commit d91733c pushed to main
+- Feature complete: per-resource weekly availability scheduling
+- Backward compatible: resources without custom schedule follow shop's global hours
