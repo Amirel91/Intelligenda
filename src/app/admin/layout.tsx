@@ -68,6 +68,8 @@ const settingsItems: NavItem[] = [
   { href: '/admin/piano', label: 'Piano', icon: CreditCard },
 ]
 
+const navItems: NavItem[] = [...sections.flatMap(s => s.items), ...settingsItems]
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
