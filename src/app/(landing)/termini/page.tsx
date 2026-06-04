@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -9,23 +10,26 @@ export const metadata: Metadata = {
 
 export default function TerminiPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-stone-900 flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border-b border-stone-100 dark:border-stone-800">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <a
             href="/landing"
-            className="text-stone-900 hover:opacity-80 transition-opacity"
+            className="text-stone-900 dark:text-stone-100 hover:opacity-80 transition-opacity"
           >
             <IntelliGendaLogo size="md" />
           </a>
-          <a
-            href="/landing"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Home
-          </a>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <a
+              href="/landing"
+              className="inline-flex items-center gap-1.5 text-sm text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Home
+            </a>
+          </div>
         </div>
       </header>
 
@@ -34,17 +38,17 @@ export default function TerminiPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
           {/* Title block */}
           <div className="mb-10">
-            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 leading-tight">
               Termini e Condizioni di Servizio
             </h1>
-            <p className="mt-2 text-sm text-stone-400">
+            <p className="mt-2 text-sm text-stone-400 dark:text-stone-500">
               Ultimo aggiornamento: Maggio 2025
             </p>
           </div>
 
           {/* Intro */}
           <div className="prose-legal mb-10">
-            <p className="text-stone-700 leading-relaxed">
+            <p className="text-stone-700 dark:text-stone-300 leading-relaxed">
               Benvenuto su IntelliGenda. I presenti Termini e Condizioni disciplinano l&apos;accesso e
               l&apos;utilizzo della piattaforma SaaS &ldquo;IntelliGenda&rdquo; (di seguito &ldquo;il
               Servizio&rdquo;), fornita da IntelliGenda. Registrando un account su IntelliGenda,
@@ -58,14 +62,14 @@ export default function TerminiPage() {
             {/* Section 1 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   1
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Oggetto del Servizio
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     IntelliGenda fornisce un software in modalità SaaS (Software as a Service) per la
                     gestione informatizzata degli appuntamenti, dei servizi e dei calendari per
                     attività commerciali e professionisti. Il Servizio viene erogato tramite il dominio
@@ -78,14 +82,14 @@ export default function TerminiPage() {
             {/* Section 2 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   2
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Attivazione e Abbonamento
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     All&apos;atto della registrazione, il Cliente può beneficiare di un periodo di
                     prova gratuito di 14 giorni. Al termine, per mantenere attivo il Servizio, il
                     Cliente è tenuto a sottoscrivere un abbonamento al costo di 40,00 EUR mensili
@@ -99,14 +103,14 @@ export default function TerminiPage() {
             {/* Section 3 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   3
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Disdetta e Sospensione
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     Il Cliente ha il diritto di annullare l&apos;abbonamento in qualsiasi momento dal
                     pannello &ldquo;Account&rdquo;. Il Servizio rimarrà attivo fino al termine del
                     periodo mensile già pagato. Alla scadenza, se l&apos;abbonamento è disdetto o il
@@ -120,14 +124,14 @@ export default function TerminiPage() {
             {/* Section 4 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   4
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Responsabilità
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     Il Fornitore eroga il software tramite infrastrutture cloud sicure ma non risponde di
                     interruzioni dovute a terzi o a internet. Il Cliente è l&apos;unico responsabile
                     delle proprie credenziali e dei rapporti commerciali con i suoi clienti finali. Il
@@ -141,14 +145,14 @@ export default function TerminiPage() {
             {/* Section 5 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   5
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Foro Competente
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     I presenti Termini sono regolati dalla legge italiana. Per qualsiasi controversia è
                     competente in via esclusiva il Foro di Sondrio.
                   </p>
@@ -160,9 +164,9 @@ export default function TerminiPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-8 text-center border-t border-stone-100">
-        <p className="text-xs text-stone-400">
-          &copy; 2026 IntelliGenda &egrave; un prodotto di <a href="https://www.mecalab.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-stone-600 transition-colors">MecaLab</a> &mdash; Tutti i diritti riservati.
+      <footer className="py-8 text-center border-t border-stone-100 dark:border-stone-800">
+        <p className="text-xs text-stone-400 dark:text-stone-500">
+          &copy; 2026 IntelliGenda &egrave; un prodotto di <a href="https://www.mecalab.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">MecaLab</a> &mdash; Tutti i diritti riservati.
         </p>
       </footer>
     </div>

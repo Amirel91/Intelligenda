@@ -236,7 +236,7 @@ export default function AdminImpostazioni() {
   }, [])
 
   if (loading) {
-    return (<div className="flex items-center justify-center py-20"><div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" /></div>)
+    return (<div className="flex items-center justify-center py-20"><div className="animate-spin w-8 h-8 border-2 dark:border-stone-600 border-stone-300 border-t-stone-900 rounded-full" /></div>)
   }
 
   const tabs = [
@@ -249,25 +249,25 @@ export default function AdminImpostazioni() {
     <div className="max-w-3xl pb-20 sm:pb-0">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Impostazioni</h1>
-          <p className="text-stone-500 text-sm mt-1">Configura il tuo negozio</p>
+          <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900">Impostazioni</h1>
+          <p className="dark:text-stone-400 text-stone-500 text-sm mt-1">Configura il tuo negozio</p>
         </div>
         <div className="hidden sm:block">
-          <button onClick={saveConfig} disabled={saving} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-all">
+          <button onClick={saveConfig} disabled={saving} className="flex items-center gap-2 px-4 py-2.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-all">
             {saved ? (<><Check className="w-4 h-4" />Salvato!</>) : (<><Save className="w-4 h-4" />{saving ? 'Salvataggio...' : 'Salva tutto'}</>)}
           </button>
         </div>
       </div>
 
-      {saveError && (<div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-3 text-red-600 text-sm"><AlertCircle className="w-5 h-5 shrink-0" /><span>{saveError}</span></div>)}
-      {saved && (<div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 text-emerald-600 text-sm"><Check className="w-5 h-5 shrink-0" /><span>Tutte le modifiche sono state salvate con successo.</span></div>)}
+      {saveError && (<div className="mb-6 p-4 rounded-xl dark:bg-red-950/50 bg-red-50 border dark:border-red-800 border-red-200 flex items-center gap-3 dark:text-red-400 text-red-600 text-sm"><AlertCircle className="w-5 h-5 shrink-0" /><span>{saveError}</span></div>)}
+      {saved && (<div className="mb-6 p-4 rounded-xl dark:bg-emerald-950/50 bg-emerald-50 border dark:border-emerald-800 border-emerald-200 flex items-center gap-3 dark:text-emerald-400 text-emerald-600 text-sm"><Check className="w-5 h-5 shrink-0" /><span>Tutte le modifiche sono state salvate con successo.</span></div>)}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-stone-100 rounded-xl p-1">
+      <div className="flex gap-1 mb-6 dark:bg-stone-800 bg-stone-100 rounded-xl p-1">
         {tabs.map(tab => {
           const Icon = tab.icon
           return (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? 'dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 shadow-sm' : 'dark:text-stone-400 text-stone-500 dark:hover:text-stone-300 hover:text-stone-700'}`}>
               <Icon className="w-4 h-4" />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
@@ -278,41 +278,41 @@ export default function AdminImpostazioni() {
       {/* Tab: Negozio */}
       {activeTab === 'negozio' && (
         <>
-          <div className="bg-white rounded-xl border border-stone-200 p-6">
+          <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Nome del Negozio *</label>
-              <input type="text" value={config.shopName} onChange={e => updateConfigField('shopName', e.target.value)} placeholder="Es: Il mio Negozio" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+              <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Nome del Negozio *</label>
+              <input type="text" value={config.shopName} onChange={e => updateConfigField('shopName', e.target.value)} placeholder="Es: Il mio Negozio" className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Descrizione</label>
-              <textarea value={config.shopDescription} onChange={e => updateConfigField('shopDescription', e.target.value)} rows={3} placeholder="Descrivi la tua attivita..." className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors resize-none" />
-              <p className="text-xs text-stone-400 mt-1">Appare sulla homepage del cliente</p>
+              <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Descrizione</label>
+              <textarea value={config.shopDescription} onChange={e => updateConfigField('shopDescription', e.target.value)} rows={3} placeholder="Descrivi la tua attivita..." className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors resize-none" />
+              <p className="text-xs dark:text-stone-500 text-stone-400 mt-1">Appare sulla homepage del cliente</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Telefono</label>
-                <input type="tel" value={config.shopPhone || ''} onChange={e => updateConfigField('shopPhone', e.target.value)} placeholder="+39 02 1234567" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+                <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Telefono</label>
+                <input type="tel" value={config.shopPhone || ''} onChange={e => updateConfigField('shopPhone', e.target.value)} placeholder="+39 02 1234567" className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
-                <input type="email" value={config.shopEmail || ''} onChange={e => updateConfigField('shopEmail', e.target.value)} placeholder="info@negozio.it" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+                <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Email</label>
+                <input type="email" value={config.shopEmail || ''} onChange={e => updateConfigField('shopEmail', e.target.value)} placeholder="info@negozio.it" className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Indirizzo</label>
-              <input type="text" value={config.shopAddress || ''} onChange={e => updateConfigField('shopAddress', e.target.value)} placeholder="Via Roma 42, Milano" className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+              <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Indirizzo</label>
+              <input type="text" value={config.shopAddress || ''} onChange={e => updateConfigField('shopAddress', e.target.value)} placeholder="Via Roma 42, Milano" className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
             </div>
 
             {/* Punti di Forza */}
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+              <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">
                 Punti di Forza
               </label>
-              <p className="text-xs text-stone-400 mb-2">Fino a 3 punti che appariranno sulla homepage del cliente (es. Parcheggio, Wi-Fi, Aria condizionata)</p>
+              <p className="text-xs dark:text-stone-500 text-stone-400 mb-2">Fino a 3 punti che appariranno sulla homepage del cliente (es. Parcheggio, Wi-Fi, Aria condizionata)</p>
               <div className="space-y-2">
                 {[0, 1, 2].map(i => (
                   <input
@@ -325,7 +325,7 @@ export default function AdminImpostazioni() {
                       updateConfigField('features', newFeatures)
                     }}
                     placeholder={i === 0 ? 'Punto di forza 1' : i === 1 ? 'Punto di forza 2' : 'Punto di forza 3'}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors"
+                    className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors"
                   />
                 ))}
               </div>
@@ -334,18 +334,18 @@ export default function AdminImpostazioni() {
         </div>
 
         {/* QR Code per la Vetrina */}
-        <div className="bg-white rounded-xl border border-stone-200 p-6 mt-6">
+        <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6 mt-6">
           <div className="flex items-center gap-2 mb-1">
-            <QrCode className="w-5 h-5 text-stone-500" />
-            <h2 className="font-semibold text-stone-900">Il tuo QR Code per la Vetrina</h2>
+            <QrCode className="w-5 h-5 dark:text-stone-400 text-stone-500" />
+            <h2 className="font-semibold dark:text-stone-100 text-stone-900">Il tuo QR Code per la Vetrina</h2>
           </div>
-          <p className="text-stone-500 text-sm mb-6">
+          <p className="dark:text-stone-400 text-stone-500 text-sm mb-6">
             Mostra questo QR Code in vetrina per permettere ai clienti di prenotare
             direttamente dal loro smartphone.
           </p>
 
           <div className="flex flex-col items-center">
-            <div className="bg-stone-50 rounded-2xl p-6 mb-4 border border-stone-100">
+            <div className="dark:bg-stone-800/50 bg-stone-50 rounded-2xl p-6 mb-4 border dark:border-stone-800 border-stone-100">
               {tenantUrl ? (
                 <QRCodeCanvas
                   ref={qrRef}
@@ -357,20 +357,20 @@ export default function AdminImpostazioni() {
                   includeMargin={false}
                 />
               ) : (
-                <div className="w-[200px] h-[200px] flex items-center justify-center text-stone-400 text-sm">
+                <div className="w-[200px] h-[200px] flex items-center justify-center dark:text-stone-500 text-stone-400 text-sm">
                   Caricamento QR Code...
                 </div>
               )}
             </div>
 
-            <p className="text-xs text-stone-400 mb-4 break-all text-center max-w-xs">
+            <p className="text-xs dark:text-stone-500 text-stone-400 mb-4 break-all text-center max-w-xs">
               {tenantUrl || '—'}
             </p>
 
             <button
               onClick={handleDownloadQR}
               disabled={!tenantUrl}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <Download className="w-4 h-4" />
               Scarica QR Code per la stampa
@@ -383,34 +383,34 @@ export default function AdminImpostazioni() {
       {/* Tab: Orari */}
       {activeTab === 'orari' && (
         <>
-          <div className="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+          <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6 mb-6">
             <div className="flex items-center gap-2 mb-5">
-              <Clock className="w-5 h-5 text-stone-500" />
-              <h2 className="font-semibold text-stone-900">Orari di Apertura</h2>
+              <Clock className="w-5 h-5 dark:text-stone-400 text-stone-500" />
+              <h2 className="font-semibold dark:text-stone-100 text-stone-900">Orari di Apertura</h2>
             </div>
             <div className="space-y-3">
               {hours.map((wh, i) => (
                 <div key={wh.dayOfWeek} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 py-2 sm:py-0">
                   <div className="flex items-center justify-between sm:w-28 shrink-0">
-                    <span className="text-sm font-medium text-stone-700">{DAY_NAMES[i]}</span>
+                    <span className="text-sm font-medium dark:text-stone-300 text-stone-700">{DAY_NAMES[i]}</span>
                     <label className="flex items-center gap-2 cursor-pointer sm:hidden shrink-0">
                       <div onClick={() => updateHour(i, 'closed', !wh.closed)} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${wh.closed ? 'bg-red-400' : 'bg-stone-300'}`}>
-                        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${wh.closed ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                        <div className={`absolute top-0.5 w-5 h-5 rounded-full dark:bg-stone-900 bg-white shadow-sm transition-transform ${wh.closed ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                       </div>
                     </label>
                   </div>
                   <div className="flex items-center gap-3">
                     <label className="hidden sm:flex items-center gap-2 cursor-pointer shrink-0">
                       <div onClick={() => updateHour(i, 'closed', !wh.closed)} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${wh.closed ? 'bg-red-400' : 'bg-stone-300'}`}>
-                        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${wh.closed ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+                        <div className={`absolute top-0.5 w-5 h-5 rounded-full dark:bg-stone-900 bg-white shadow-sm transition-transform ${wh.closed ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
                       </div>
-                      <span className="text-xs text-stone-500 w-10">{wh.closed ? 'Chiuso' : 'Aperto'}</span>
+                      <span className="text-xs dark:text-stone-400 text-stone-500 w-10">{wh.closed ? 'Chiuso' : 'Aperto'}</span>
                     </label>
                     {!wh.closed && (
                       <div className="flex items-center gap-2 text-sm">
-                        <input type="time" value={wh.openTime} onChange={e => updateHour(i, 'openTime', e.target.value)} className="px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors" />
-                        <span className="text-stone-400">&mdash;</span>
-                        <input type="time" value={wh.closeTime} onChange={e => updateHour(i, 'closeTime', e.target.value)} className="px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors" />
+                        <input type="time" value={wh.openTime} onChange={e => updateHour(i, 'openTime', e.target.value)} className="px-3 py-2 rounded-lg border dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
+                        <span className="dark:text-stone-500 text-stone-400">&mdash;</span>
+                        <input type="time" value={wh.closeTime} onChange={e => updateHour(i, 'closeTime', e.target.value)} className="px-3 py-2 rounded-lg border dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
                       </div>
                     )}
                   </div>
@@ -419,43 +419,43 @@ export default function AdminImpostazioni() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-stone-200 p-6">
+          <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
             <div className="flex items-center gap-2 mb-5">
-              <UtensilsCrossed className="w-5 h-5 text-stone-500" />
-              <h2 className="font-semibold text-stone-900">Pausa Pranzo</h2>
+              <UtensilsCrossed className="w-5 h-5 dark:text-stone-400 text-stone-500" />
+              <h2 className="font-semibold dark:text-stone-100 text-stone-900">Pausa Pranzo</h2>
             </div>
-            <p className="text-stone-500 text-sm mb-4">I clienti non potranno prenotare durante l&apos;orario di pausa pranzo.</p>
+            <p className="dark:text-stone-400 text-stone-500 text-sm mb-4">I clienti non potranno prenotare durante l&apos;orario di pausa pranzo.</p>
 
             <div className="flex items-center gap-3 mb-4">
-              <div onClick={() => updateConfigField('lunchBreakEnabled', !config.lunchBreakEnabled)} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${config.lunchBreakEnabled ? 'bg-stone-900' : 'bg-stone-300'}`}>
-                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${config.lunchBreakEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+              <div onClick={() => updateConfigField('lunchBreakEnabled', !config.lunchBreakEnabled)} className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer ${config.lunchBreakEnabled ? 'dark:bg-stone-100 bg-stone-900' : 'bg-stone-300'}`}>
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full dark:bg-stone-900 bg-white shadow-sm transition-transform ${config.lunchBreakEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
               </div>
-              <span className="text-sm text-stone-700">{config.lunchBreakEnabled ? 'Pausa pranzo attiva' : 'Pausa pranzo disattiva'}</span>
+              <span className="text-sm dark:text-stone-300 text-stone-700">{config.lunchBreakEnabled ? 'Pausa pranzo attiva' : 'Pausa pranzo disattiva'}</span>
             </div>
 
             {config.lunchBreakEnabled && (
               <div className="flex items-center gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-stone-500 mb-1">Dalle</label>
-                  <input type="time" value={config.lunchBreakStart} onChange={e => updateConfigField('lunchBreakStart', e.target.value)} className="px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors" />
+                  <label className="block text-xs font-medium dark:text-stone-400 text-stone-500 mb-1">Dalle</label>
+                  <input type="time" value={config.lunchBreakStart} onChange={e => updateConfigField('lunchBreakStart', e.target.value)} className="px-3 py-2 rounded-lg border dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
                 </div>
-                <span className="text-stone-400 mt-5">&mdash;</span>
+                <span className="dark:text-stone-500 text-stone-400 mt-5">&mdash;</span>
                 <div>
-                  <label className="block text-xs font-medium text-stone-500 mb-1">Alle</label>
-                  <input type="time" value={config.lunchBreakEnd} onChange={e => updateConfigField('lunchBreakEnd', e.target.value)} className="px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors" />
+                  <label className="block text-xs font-medium dark:text-stone-400 text-stone-500 mb-1">Alle</label>
+                  <input type="time" value={config.lunchBreakEnd} onChange={e => updateConfigField('lunchBreakEnd', e.target.value)} className="px-3 py-2 rounded-lg border dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
                 </div>
               </div>
             )}
           </div>
 
           {/* Preavviso Minimo */}
-          <div className="bg-white rounded-xl border border-stone-200 p-6">
+          <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
             <div className="flex items-center gap-2 mb-3">
-              <ShieldAlert className="w-5 h-5 text-stone-500" />
-              <h2 className="font-semibold text-stone-900">Preavviso Minimo di Prenotazione</h2>
+              <ShieldAlert className="w-5 h-5 dark:text-stone-400 text-stone-500" />
+              <h2 className="font-semibold dark:text-stone-100 text-stone-900">Preavviso Minimo di Prenotazione</h2>
             </div>
-            <p className="text-stone-500 text-sm mb-4">
-              I clienti non potranno prenotare slot orari piu vicini di <strong className="text-stone-700">{config.minNoticeHours} {config.minNoticeHours === 1 ? 'ora' : 'ore'}</strong> da adesso.
+            <p className="dark:text-stone-400 text-stone-500 text-sm mb-4">
+              I clienti non potranno prenotare slot orari piu vicini di <strong className="dark:text-stone-300 text-stone-700">{config.minNoticeHours} {config.minNoticeHours === 1 ? 'ora' : 'ore'}</strong> da adesso.
               Questo protegge dalle prenotazioni dell&apos;ultimo minuto.
             </p>
             <div className="flex items-center gap-3 max-w-xs">
@@ -465,62 +465,62 @@ export default function AdminImpostazioni() {
                 max={48}
                 value={config.minNoticeHours}
                 onChange={e => updateConfigField('minNoticeHours', Math.max(0, Math.min(48, parseInt(e.target.value) || 0)))}
-                className="w-24 px-3 py-2.5 rounded-xl border-2 border-stone-200 bg-white text-stone-900 text-center font-medium outline-none focus:border-stone-900 transition-colors"
+                className="w-24 px-3 py-2.5 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 text-center font-medium outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors"
               />
-              <span className="text-sm text-stone-500">ore (max 48, 0 = disabilitato)</span>
+              <span className="text-sm dark:text-stone-400 text-stone-500">ore (max 48, 0 = disabilitato)</span>
             </div>
           </div>
 
           {/* Ferie e Chiusure Straordinarie */}
-          <div className="bg-white rounded-xl border border-stone-200 p-6">
+          <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
             <div className="flex items-center gap-2 mb-3">
-              <Plane className="w-5 h-5 text-stone-500" />
-              <h2 className="font-semibold text-stone-900">Ferie e Chiusure Straordinarie</h2>
+              <Plane className="w-5 h-5 dark:text-stone-400 text-stone-500" />
+              <h2 className="font-semibold dark:text-stone-100 text-stone-900">Ferie e Chiusure Straordinarie</h2>
             </div>
-            <p className="text-stone-500 text-sm mb-5">
+            <p className="dark:text-stone-400 text-stone-500 text-sm mb-5">
               Blocca interi giorni o settimane (es. ferie estive, ristrutturazione).
               I giorni selezionati saranno automaticamente chiusi al calendario del cliente.
             </p>
 
-            {periodError && (<div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{periodError}</div>)}
+            {periodError && (<div className="mb-4 p-3 rounded-xl dark:bg-red-950/50 bg-red-50 dark:text-red-400 text-red-600 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{periodError}</div>)}
 
-            <div className="bg-stone-50 rounded-xl p-4 mb-5">
-              <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-3">Nuovo Periodo</p>
+            <div className="dark:bg-stone-800/50 bg-stone-50 rounded-xl p-4 mb-5">
+              <p className="text-xs font-medium dark:text-stone-400 text-stone-500 uppercase tracking-wide mb-3">Nuovo Periodo</p>
               <div className="flex flex-col sm:flex-row sm:items-end gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-stone-600 mb-1">Data inizio</label>
-                  <input type="date" value={newPeriod.startDate} onChange={e => setNewPeriod(prev => ({ ...prev, startDate: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors text-sm" />
+                  <label className="block text-xs font-medium dark:text-stone-400 text-stone-600 mb-1">Data inizio</label>
+                  <input type="date" value={newPeriod.startDate} onChange={e => setNewPeriod(prev => ({ ...prev, startDate: e.target.value }))} className="w-full px-3 py-2.5 rounded-lg border dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors text-sm" />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-stone-600 mb-1">Data fine</label>
-                  <input type="date" value={newPeriod.endDate} onChange={e => setNewPeriod(prev => ({ ...prev, endDate: e.target.value }))} min={newPeriod.startDate} className="w-full px-3 py-2.5 rounded-lg border border-stone-200 bg-white text-stone-900 outline-none focus:border-stone-900 transition-colors text-sm" />
+                  <label className="block text-xs font-medium dark:text-stone-400 text-stone-600 mb-1">Data fine</label>
+                  <input type="date" value={newPeriod.endDate} onChange={e => setNewPeriod(prev => ({ ...prev, endDate: e.target.value }))} min={newPeriod.startDate} className="w-full px-3 py-2.5 rounded-lg border dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors text-sm" />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-stone-600 mb-1">Motivo (opzionale)</label>
-                  <input type="text" value={newPeriod.reason} onChange={e => setNewPeriod(prev => ({ ...prev, reason: e.target.value }))} placeholder="Es. Ferie estive" className="w-full px-3 py-2.5 rounded-lg border border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors text-sm" />
+                  <label className="block text-xs font-medium dark:text-stone-400 text-stone-600 mb-1">Motivo (opzionale)</label>
+                  <input type="text" value={newPeriod.reason} onChange={e => setNewPeriod(prev => ({ ...prev, reason: e.target.value }))} placeholder="Es. Ferie estive" className="w-full px-3 py-2.5 rounded-lg border dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors text-sm" />
                 </div>
-                <button onClick={addClosedPeriod} disabled={addingPeriod || !newPeriod.startDate || !newPeriod.endDate} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0">
+                <button onClick={addClosedPeriod} disabled={addingPeriod || !newPeriod.startDate || !newPeriod.endDate} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0">
                   {addingPeriod ? (<div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />) : (<><Plus className="w-4 h-4" />Aggiungi</>)}
                 </button>
               </div>
             </div>
 
             {closedPeriods.length === 0 ? (
-              <p className="text-sm text-stone-400 text-center py-4">Nessun periodo di chiusura configurato.</p>
+              <p className="text-sm dark:text-stone-500 text-stone-400 text-center py-4">Nessun periodo di chiusura configurato.</p>
             ) : (
               <div className="space-y-2">
                 {closedPeriods.map(period => (
-                  <div key={period.id} className="flex items-center justify-between gap-3 py-3 px-4 rounded-xl bg-stone-50 border border-stone-100">
+                  <div key={period.id} className="flex items-center justify-between gap-3 py-3 px-4 rounded-xl dark:bg-stone-800/50 bg-stone-50 border dark:border-stone-800 border-stone-100">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-stone-800 truncate">
+                        <p className="text-sm font-medium dark:text-stone-200 text-stone-800 truncate">
                           {formatDateDisplay(period.startDate)}{period.startDate !== period.endDate ? ` — ${formatDateDisplay(period.endDate)}` : ''}
                         </p>
-                        {period.reason && (<p className="text-xs text-stone-500 truncate">{period.reason}</p>)}
+                        {period.reason && (<p className="text-xs dark:text-stone-400 text-stone-500 truncate">{period.reason}</p>)}
                       </div>
                     </div>
-                    <button onClick={() => deleteClosedPeriod(period.id)} className="flex items-center justify-center w-8 h-8 rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0" title="Elimina periodo">
+                    <button onClick={() => deleteClosedPeriod(period.id)} className="flex items-center justify-center w-8 h-8 rounded-lg dark:text-stone-500 text-stone-400 dark:hover:text-red-400 hover:text-red-500 dark:hover:bg-red-950/50 hover:bg-red-50 transition-colors shrink-0" title="Elimina periodo">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -533,34 +533,34 @@ export default function AdminImpostazioni() {
 
       {/* Tab: Password */}
       {activeTab === 'password' && (
-        <div className="bg-white rounded-xl border border-stone-200 p-6">
+        <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
           <div className="flex items-center gap-2 mb-5">
-            <Key className="w-5 h-5 text-stone-500" />
-            <h2 className="font-semibold text-stone-900">Cambia Password</h2>
+            <Key className="w-5 h-5 dark:text-stone-400 text-stone-500" />
+            <h2 className="font-semibold dark:text-stone-100 text-stone-900">Cambia Password</h2>
           </div>
-          {passwordError && (<div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm">{passwordError}</div>)}
-          {passwordSuccess && (<div className="mb-4 p-3 rounded-xl bg-emerald-50 text-emerald-600 text-sm">{passwordSuccess}</div>)}
+          {passwordError && (<div className="mb-4 p-3 rounded-xl dark:bg-red-950/50 bg-red-50 dark:text-red-400 text-red-600 text-sm">{passwordError}</div>)}
+          {passwordSuccess && (<div className="mb-4 p-3 rounded-xl dark:bg-emerald-950/50 bg-emerald-50 dark:text-emerald-400 text-emerald-600 text-sm">{passwordSuccess}</div>)}
           <div className="space-y-4 max-w-sm">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Password Attuale</label>
-              <input type="password" value={passwords.current} onChange={e => setPasswords(prev => ({ ...prev, current: e.target.value }))} className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+              <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Password Attuale</label>
+              <input type="password" value={passwords.current} onChange={e => setPasswords(prev => ({ ...prev, current: e.target.value }))} className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Nuova Password</label>
-              <input type="password" value={passwords.new} onChange={e => setPasswords(prev => ({ ...prev, new: e.target.value }))} className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+              <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Nuova Password</label>
+              <input type="password" value={passwords.new} onChange={e => setPasswords(prev => ({ ...prev, new: e.target.value }))} className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">Conferma Nuova Password</label>
-              <input type="password" value={passwords.confirm} onChange={e => setPasswords(prev => ({ ...prev, confirm: e.target.value }))} className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors" />
+              <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Conferma Nuova Password</label>
+              <input type="password" value={passwords.confirm} onChange={e => setPasswords(prev => ({ ...prev, confirm: e.target.value }))} className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors" />
             </div>
-            <button onClick={handleChangePassword} className="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors">Aggiorna Password</button>
+            <button onClick={handleChangePassword} className="px-4 py-2.5 rounded-xl border dark:border-stone-700 border-stone-200 dark:text-stone-300 text-stone-700 text-sm font-medium dark:hover:bg-stone-800 hover:bg-stone-50 transition-colors">Aggiorna Password</button>
           </div>
         </div>
       )}
 
       {/* Sticky save button for mobile */}
-      <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-white/90 backdrop-blur-lg border-t border-stone-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-30">
-        <button onClick={saveConfig} disabled={saving} className="w-full py-3.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden dark:bg-stone-900/90 bg-white/90 backdrop-blur-lg border-t dark:border-stone-700 border-stone-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-30">
+        <button onClick={saveConfig} disabled={saving} className="w-full py-3.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
           {saved ? (<><Check className="w-4 h-4" />Salvato!</>) : (<><Save className="w-4 h-4" />{saving ? 'Salvataggio...' : 'Salva tutto'}</>)}
         </button>
       </div>

@@ -109,17 +109,17 @@ export default function ProfiloPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white">
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white dark:from-stone-800 dark:to-stone-900">
         <CustomerNavbar />
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-stone-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-stone-400 dark:text-stone-500" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white dark:from-stone-800 dark:to-stone-900">
       <CustomerNavbar />
 
       <main className="flex-1 px-4 py-6 pt-16">
@@ -128,43 +128,43 @@ export default function ProfiloPage() {
           {/* Back link */}
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-600 transition-colors mb-6"
+            className="inline-flex items-center gap-1.5 text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             Torna alla home
           </Link>
 
           {/* Profile header */}
-          <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm mb-6">
+          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 shadow-sm mb-6">
             <div className="flex items-center gap-4 mb-5">
-              <div className="w-14 h-14 rounded-full bg-stone-900 flex items-center justify-center shrink-0">
-                <span className="text-xl font-semibold text-white">
+              <div className="w-14 h-14 rounded-full bg-stone-900 dark:bg-stone-100 flex items-center justify-center shrink-0">
+                <span className="text-xl font-semibold text-white dark:text-stone-900">
                   {customer?.nome?.charAt(0)?.toUpperCase() || '?'}
                 </span>
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-stone-900">{customer?.nome || 'Cliente'}</h1>
-                <p className="text-sm text-stone-500">Il tuo profilo</p>
+                <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-100">{customer?.nome || 'Cliente'}</h1>
+                <p className="text-sm text-stone-500 dark:text-stone-400">Il tuo profilo</p>
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm">
-                <Mail className="w-4 h-4 text-stone-400 shrink-0" />
-                <span className="text-stone-700">{customer?.email || '—'}</span>
+                <Mail className="w-4 h-4 text-stone-400 dark:text-stone-500 shrink-0" />
+                <span className="text-stone-700 dark:text-stone-300">{customer?.email || '—'}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <Phone className="w-4 h-4 text-stone-400 shrink-0" />
-                <span className="text-stone-700">
+                <Phone className="w-4 h-4 text-stone-400 dark:text-stone-500 shrink-0" />
+                <span className="text-stone-700 dark:text-stone-300">
                   {customer?.telefono?.startsWith('temp_') ? 'Non impostato' : (customer?.telefono || '—')}
                 </span>
               </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-stone-100">
+            <div className="mt-5 pt-4 border-t border-stone-100 dark:border-stone-800">
               <Link
                 href="/prenota"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
               >
                 <CalendarDays className="w-4 h-4" />
                 Prenota un appuntamento
@@ -173,14 +173,14 @@ export default function ProfiloPage() {
           </div>
 
           {success && (
-            <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-sm text-emerald-600 flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0" />
               {success}
             </div>
           )}
 
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
@@ -188,61 +188,61 @@ export default function ProfiloPage() {
 
           {/* Upcoming bookings */}
           <div className="mb-6">
-            <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3 px-1">
+            <h2 className="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-3 px-1">
               Prossimi appuntamenti
             </h2>
             {futureBookings.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-stone-200 p-8 text-center">
-                <CalendarDays className="w-8 h-8 text-stone-300 mx-auto mb-3" />
-                <p className="text-sm text-stone-400">Nessun appuntamento programmato</p>
-                <Link href="/prenota" className="text-sm text-stone-900 font-medium hover:underline mt-1 inline-block">
+              <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-8 text-center">
+                <CalendarDays className="w-8 h-8 text-stone-300 dark:text-stone-600 mx-auto mb-3" />
+                <p className="text-sm text-stone-400 dark:text-stone-500">Nessun appuntamento programmato</p>
+                <Link href="/prenota" className="text-sm text-stone-900 dark:text-stone-100 font-medium hover:underline mt-1 inline-block">
                   Prenota ora
                 </Link>
               </div>
             ) : (
               <div className="space-y-3">
                 {futureBookings.map(booking => (
-                  <div key={booking.id} className="bg-white rounded-2xl border border-stone-200 p-5 shadow-sm">
+                  <div key={booking.id} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-5 shadow-sm">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide">
+                        <p className="text-xs font-semibold text-stone-400 dark:text-stone-500 uppercase tracking-wide">
                           {formatDate(booking.startTime)}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Clock className="w-4 h-4 text-stone-500" />
-                          <span className="text-sm font-medium text-stone-900">
+                          <Clock className="w-4 h-4 text-stone-500 dark:text-stone-400" />
+                          <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
                             {formatTime(booking.startTime)} — {formatTime(booking.endTime)}
                           </span>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
                         Confermato
                       </span>
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {booking.services.map((s, i) => (
-                        <span key={i} className="px-2.5 py-1 rounded-lg bg-stone-50 text-stone-600 text-xs">
+                        <span key={i} className="px-2.5 py-1 rounded-lg bg-stone-50 dark:bg-stone-800/50 text-stone-600 dark:text-stone-400 text-xs">
                           {s.name} ({s.durationMinutes} min)
                         </span>
                       ))}
                     </div>
 
                     {booking.resource && (
-                      <div className="flex items-center gap-1.5 text-xs text-stone-400 mb-3">
+                      <div className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500 mb-3">
                         <MapPin className="w-3.5 h-3.5" />
                         {booking.resource}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-stone-100">
-                      <span className="text-sm font-semibold text-stone-900">
+                    <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800">
+                      <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
                         {booking.totalPrice.toFixed(2)} euro
                       </span>
                       <button
                         onClick={() => handleCancelBooking(booking.id)}
                         disabled={cancelling === booking.id}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 disabled:opacity-50 transition-colors"
                       >
                         {cancelling === booking.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -261,30 +261,30 @@ export default function ProfiloPage() {
           {/* Past bookings */}
           {pastBookings.length > 0 && (
             <div>
-              <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-3 px-1">
+              <h2 className="text-sm font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-3 px-1">
                 Storico
               </h2>
               <div className="space-y-2">
                 {pastBookings.map(booking => (
-                  <div key={booking.id} className="bg-white rounded-xl border border-stone-100 p-4">
+                  <div key={booking.id} className="bg-white dark:bg-stone-900 rounded-xl border border-stone-100 dark:border-stone-800 p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-stone-400">
+                        <p className="text-xs text-stone-400 dark:text-stone-500">
                           {formatDate(booking.startTime)}
                         </p>
-                        <p className="text-sm text-stone-700 mt-0.5">
+                        <p className="text-sm text-stone-700 dark:text-stone-300 mt-0.5">
                           {formatTime(booking.startTime)} — {formatTime(booking.endTime)}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {booking.services.map((s, i) => (
-                            <span key={i} className="text-xs text-stone-500">{s.name}</span>
+                            <span key={i} className="text-xs text-stone-500 dark:text-stone-400">{s.name}</span>
                           ))}
                         </div>
                       </div>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         booking.status === 'cancelled'
-                          ? 'bg-red-50 text-red-600'
-                          : 'bg-stone-100 text-stone-500'
+                          ? 'bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400'
+                          : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
                       }`}>
                         {booking.status === 'cancelled' ? 'Annullato' : 'Completato'}
                       </span>

@@ -75,7 +75,7 @@ export default function AdminClienti() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 dark:border-stone-600 border-stone-300 border-t-stone-900 rounded-full" />
       </div>
     )
   }
@@ -84,15 +84,15 @@ export default function AdminClienti() {
     <div className="max-w-5xl">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Clienti</h1>
-          <p className="text-stone-500 text-sm mt-1">
+          <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900">Clienti</h1>
+          <p className="dark:text-stone-400 text-stone-500 text-sm mt-1">
             Archivio clienti con {clients.length} {clients.length === 1 ? 'cliente' : 'clienti'} unici
           </p>
         </div>
         <button
           onClick={exportCSV}
           disabled={filtered.length === 0}
-          className="print:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40 transition-all shrink-0"
+          className="print:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40 transition-all shrink-0"
         >
           <Download className="w-4 h-4" />
           Esporta CSV
@@ -102,22 +102,22 @@ export default function AdminClienti() {
       {/* Search + Sort */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 dark:text-stone-500 text-stone-400" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cerca per nome, telefono, email..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors text-sm"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors text-sm"
           />
         </div>
-        <div className="flex gap-1 bg-stone-100 rounded-xl p-1 shrink-0">
+        <div className="flex gap-1 dark:bg-stone-800 bg-stone-100 rounded-xl p-1 shrink-0">
           {sortButtons.map(s => (
             <button
               key={s.key}
               onClick={() => setSortBy(s.key)}
               className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                sortBy === s.key ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+                sortBy === s.key ? 'dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 shadow-sm' : 'dark:text-stone-400 text-stone-500 dark:hover:text-stone-300 hover:text-stone-700'
               }`}
             >
               {s.label}
@@ -127,51 +127,51 @@ export default function AdminClienti() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 overflow-hidden">
         {/* Desktop table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-stone-200 bg-stone-50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase">Cliente</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase">Telefono</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase">Email</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-stone-500 uppercase">Prenotazioni</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-stone-500 uppercase">Totale Speso</th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-stone-500 uppercase">Ultima Visita</th>
+              <tr className="border-b dark:border-stone-700 border-stone-200 dark:bg-stone-800/50 bg-stone-50">
+                <th className="text-left px-4 py-3 text-xs font-medium dark:text-stone-400 text-stone-500 uppercase">Cliente</th>
+                <th className="text-left px-4 py-3 text-xs font-medium dark:text-stone-400 text-stone-500 uppercase">Telefono</th>
+                <th className="text-left px-4 py-3 text-xs font-medium dark:text-stone-400 text-stone-500 uppercase">Email</th>
+                <th className="text-center px-4 py-3 text-xs font-medium dark:text-stone-400 text-stone-500 uppercase">Prenotazioni</th>
+                <th className="text-right px-4 py-3 text-xs font-medium dark:text-stone-400 text-stone-500 uppercase">Totale Speso</th>
+                <th className="text-right px-4 py-3 text-xs font-medium dark:text-stone-400 text-stone-500 uppercase">Ultima Visita</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-stone-400 text-sm">
+                  <td colSpan={6} className="px-4 py-12 text-center dark:text-stone-500 text-stone-400 text-sm">
                     {search ? 'Nessun cliente trovato' : 'Nessun cliente registrato'}
                   </td>
                 </tr>
               ) : (
                 filtered.map((c, i) => (
-                  <tr key={`${c.customerPhone}-${c.customerName}-${i}`} className="border-b border-stone-100 hover:bg-stone-50 transition-colors">
+                  <tr key={`${c.customerPhone}-${c.customerName}-${i}`} className="border-b dark:border-stone-800 border-stone-100 dark:hover:bg-stone-800 hover:bg-stone-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 text-xs font-semibold shrink-0">
+                        <div className="w-8 h-8 rounded-full dark:bg-stone-800 bg-stone-100 flex items-center justify-center dark:text-stone-400 text-stone-500 text-xs font-semibold shrink-0">
                           {c.customerName[0]}{c.customerSurname[0]}
                         </div>
                         <div>
-                          <div className="font-medium text-stone-900 text-sm">{c.customerName} {c.customerSurname}</div>
+                          <div className="font-medium dark:text-stone-100 text-stone-900 text-sm">{c.customerName} {c.customerSurname}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-stone-600">{c.customerPhone}</td>
-                    <td className="px-4 py-3 text-sm text-stone-500">{c.customerEmail || '—'}</td>
+                    <td className="px-4 py-3 text-sm dark:text-stone-400 text-stone-600">{c.customerPhone}</td>
+                    <td className="px-4 py-3 text-sm dark:text-stone-400 text-stone-500">{c.customerEmail || '—'}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-900 text-white font-medium">
+                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full dark:bg-stone-100 bg-stone-900 text-white font-medium">
                         {c.totalBookings}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-sm font-medium text-stone-900">
+                    <td className="px-4 py-3 text-right text-sm font-medium dark:text-stone-100 text-stone-900">
                       EUR{c.totalSpent.toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-right text-sm text-stone-500">
+                    <td className="px-4 py-3 text-right text-sm dark:text-stone-400 text-stone-500">
                       {formatRomeDate(c.lastBooking)}
                     </td>
                   </tr>
@@ -182,21 +182,21 @@ export default function AdminClienti() {
         </div>
 
         {/* Mobile card list */}
-        <div className="md:hidden divide-y divide-stone-100">
+        <div className="md:hidden divide-y dark:divide-stone-800 divide-stone-100">
           {filtered.length === 0 ? (
-            <div className="px-4 py-12 text-center text-stone-400 text-sm">
+            <div className="px-4 py-12 text-center dark:text-stone-500 text-stone-400 text-sm">
               {search ? 'Nessun cliente trovato' : 'Nessun cliente registrato'}
             </div>
           ) : (
             filtered.map((c, i) => (
               <div key={`${c.customerPhone}-${c.customerName}-${i}`} className="p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 text-sm font-semibold shrink-0">
+                  <div className="w-10 h-10 rounded-full dark:bg-stone-800 bg-stone-100 flex items-center justify-center dark:text-stone-400 text-stone-500 text-sm font-semibold shrink-0">
                     {c.customerName[0]}{c.customerSurname[0]}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-stone-900 truncate">{c.customerName} {c.customerSurname}</div>
-                    <div className="flex items-center gap-3 text-xs text-stone-500 mt-0.5">
+                    <div className="font-medium dark:text-stone-100 text-stone-900 truncate">{c.customerName} {c.customerSurname}</div>
+                    <div className="flex items-center gap-3 text-xs dark:text-stone-400 text-stone-500 mt-0.5">
                       <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{c.customerPhone}</span>
                       {c.customerEmail && (
                         <span className="flex items-center gap-1 truncate"><Mail className="w-3 h-3" />{c.customerEmail}</span>
@@ -204,12 +204,12 @@ export default function AdminClienti() {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-900 text-white font-medium">
+                    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full dark:bg-stone-100 bg-stone-900 text-white font-medium">
                       {c.totalBookings} prenotaz.
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-xs text-stone-500 pl-[52px]">
+                <div className="flex items-center justify-between text-xs dark:text-stone-400 text-stone-500 pl-[52px]">
                   <span className="flex items-center gap-1"><Euro className="w-3 h-3" />Totale: EUR{c.totalSpent.toFixed(2)}</span>
                   <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Ultima: {formatRomeDate(c.lastBooking)}</span>
                 </div>
@@ -221,7 +221,7 @@ export default function AdminClienti() {
 
       {/* Summary footer */}
       {filtered.length > 0 && (
-        <div className="mt-3 text-xs text-stone-400 text-right">
+        <div className="mt-3 text-xs dark:text-stone-500 text-stone-400 text-right">
           {filtered.length} {filtered.length === 1 ? 'cliente' : 'clienti'} trovati
           {search && ' (filtrati)'}
           {' · '}Totale storico: EUR{filtered.reduce((s, c) => s + c.totalSpent, 0).toFixed(2)}

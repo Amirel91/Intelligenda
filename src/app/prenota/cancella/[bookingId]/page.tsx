@@ -86,31 +86,31 @@ export default function CancellaPrenotazione() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-900">
+        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-stone-100 rounded-full" />
       </div>
     )
   }
 
   if (cancelled) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center px-4">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="max-w-md w-full p-6 bg-white rounded-2xl shadow-lg border border-stone-100 text-center"
+          className="max-w-md w-full p-6 bg-white dark:bg-stone-900 rounded-2xl shadow-lg border border-stone-100 dark:border-stone-800 text-center"
         >
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-            <Check className="w-8 h-8 text-emerald-600" />
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+            <Check className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h1 className="text-xl font-semibold text-stone-900 mb-2">Prenotazione Annullata</h1>
-          <p className="text-stone-500 text-sm mb-6">
+          <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-2">Prenotazione Annullata</h1>
+          <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
             La tua prenotazione e stata cancellata con successo.
             Lo slot e ora di nuovo disponibile per gli altri utenti.
           </p>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Torna alla Home
@@ -121,63 +121,63 @@ export default function CancellaPrenotazione() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center px-4">
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="max-w-md w-full p-6 bg-white rounded-2xl shadow-lg border border-stone-100"
+        className="max-w-md w-full p-6 bg-white dark:bg-stone-900 rounded-2xl shadow-lg border border-stone-100 dark:border-stone-800"
       >
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
-            <CalendarX className="w-5 h-5 text-red-500" />
+          <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/50 flex items-center justify-center">
+            <CalendarX className="w-5 h-5 text-red-500 dark:text-red-400" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-stone-900">Annulla Prenotazione</h1>
-            <p className="text-xs text-stone-500">Conferma per liberare lo slot sul calendario</p>
+            <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Annulla Prenotazione</h1>
+            <p className="text-xs text-stone-500 dark:text-stone-400">Conferma per liberare lo slot sul calendario</p>
           </div>
         </div>
 
         {error && !booking && (
-          <div className="p-4 rounded-xl bg-stone-50 text-stone-600 text-sm text-center">
+          <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 text-stone-600 dark:text-stone-300 text-sm text-center">
             {error}
           </div>
         )}
 
         {booking && (
           <>
-            <div className="p-4 rounded-xl bg-stone-50 border border-stone-100 space-y-2 text-sm mb-6">
+            <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-2 text-sm mb-6">
               <div className="flex justify-between">
-                <span className="text-stone-500">Cliente</span>
-                <span className="font-medium text-stone-900">{booking.customerName} {booking.customerSurname}</span>
+                <span className="text-stone-500 dark:text-stone-400">Cliente</span>
+                <span className="font-medium text-stone-900 dark:text-stone-100">{booking.customerName} {booking.customerSurname}</span>
               </div>
               <div className="flex justify-between items-start">
-                <span className="text-stone-500">Data e Ora</span>
-                <span className="font-medium text-stone-900 text-right">{formatDateTime(booking.startTime)}</span>
+                <span className="text-stone-500 dark:text-stone-400">Data e Ora</span>
+                <span className="font-medium text-stone-900 dark:text-stone-100 text-right">{formatDateTime(booking.startTime)}</span>
               </div>
               {booking.services && booking.services.length > 0 && (
-                <div className="border-t border-stone-200 pt-2 space-y-1">
+                <div className="border-t border-stone-200 dark:border-stone-700 pt-2 space-y-1">
                   {booking.services.map(bs => (
                     <div key={bs.service.name} className="flex justify-between">
-                      <span className="text-stone-600">{bs.service.name}</span>
+                      <span className="text-stone-600 dark:text-stone-300">{bs.service.name}</span>
                       <span className="font-medium">€{bs.service.price.toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="flex justify-between font-semibold border-t border-stone-200 pt-2">
+              <div className="flex justify-between font-semibold border-t border-stone-200 dark:border-stone-700 pt-2">
                 <span>Totale</span>
                 <span>€{booking.totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Warning */}
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 mb-6">
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 mb-6">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <p>Questa azione e irreversibile. Lo slot verra liberato immediatamente e altri utenti potranno prenotarlo.</p>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm text-center">
+              <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 text-sm text-center">
                 {error}
               </div>
             )}
@@ -185,7 +185,7 @@ export default function CancellaPrenotazione() {
             <div className="flex gap-3">
               <Link
                 href="/"
-                className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors text-center"
+                className="flex-1 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-center"
               >
                 Torna Indietro
               </Link>
@@ -210,7 +210,7 @@ export default function CancellaPrenotazione() {
         {!booking && !error && (
           <Link
             href="/"
-            className="block w-full py-3 rounded-xl border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors text-center"
+            className="block w-full py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-center"
           >
             Torna alla Home
           </Link>

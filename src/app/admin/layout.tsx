@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 interface AuthContextType {
   username: string | null
@@ -99,8 +100,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Show loading spinner only on non-public pages while checking auth
   if (loading && !isPublicPage) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-800">
+        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-t-stone-100 rounded-full" />
       </div>
     )
   }
@@ -115,7 +116,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AuthContext.Provider value={{ username, loading: false }}>
-      <div className="min-h-screen bg-stone-100 flex">
+      <div className="min-h-screen bg-stone-100 dark:bg-stone-900 flex">
         {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div
@@ -126,17 +127,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Sidebar */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-stone-200 flex flex-col transition-transform lg:translate-x-0 ${
+          className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-stone-900 border-r border-stone-200 dark:border-stone-700 flex flex-col transition-transform lg:translate-x-0 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <div className="p-4 flex items-center justify-between border-b border-stone-100">
+          <div className="p-4 flex items-center justify-between border-b border-stone-100 dark:border-stone-800">
             <Link href="/admin/dashboard">
-              <IntelliGendaLogo size="md" showText={false} className="text-stone-900" textClassName="font-semibold" />
+              <IntelliGendaLogo size="md" showText={false} className="text-stone-900 dark:text-stone-100" textClassName="font-semibold" />
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-2 rounded-lg hover:bg-stone-100 lg:hidden"
+              className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-700 lg:hidden"
             >
               <X className="w-5 h-5" />
             </button>
@@ -153,8 +154,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-stone-900 text-white'
-                      : 'text-stone-600 hover:bg-stone-100'
+                      ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
+                      : 'text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -164,12 +165,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </nav>
 
-          <div className="p-3 border-t border-stone-100 space-y-1">
+          <div className="p-3 border-t border-stone-100 dark:border-stone-800 space-y-1">
             {/* PWA Install Button */}
             {canInstallPWA && !isIOSSafari && (
               <button
                 onClick={promptPWAInstall}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-stone-900 text-white hover:bg-stone-800 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
               >
                 <Download className="w-5 h-5" />
                 Installa l'App sul Telefono
@@ -179,21 +180,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {canInstallPWA && isIOSSafari && !showIOSHint && (
               <button
                 onClick={() => setShowIOSHint(true)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors"
               >
                 <Download className="w-5 h-5" />
                 Installa l'App sul Telefono
               </button>
             )}
             {canInstallPWA && isIOSSafari && showIOSHint && (
-              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-800 space-y-1">
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-xs text-blue-800 dark:text-blue-200 space-y-1">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-semibold text-sm">Installa IntelliGenda</span>
-                  <button onClick={() => setShowIOSHint(false)} className="p-1 rounded-md hover:bg-blue-100">
+                  <button onClick={() => setShowIOSHint(false)} className="p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <ol className="space-y-0.5 list-decimal list-inside text-blue-700">
+                <ol className="space-y-0.5 list-decimal list-inside text-blue-700 dark:text-blue-300">
                   <li>Tocca <strong>Condividi</strong> in basso</li>
                   <li>Seleziona <strong>Aggiungi a Home</strong></li>
                   <li>Conferma con <strong>Aggiungi</strong></li>
@@ -202,41 +203,46 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             )}
             <Link
               href="/"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-500 hover:bg-stone-100 transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
             >
               <Home className="w-5 h-5" />
               Vai al sito
             </Link>
             <a
               href={`mailto:support@intelligenda.it?subject=${encodeURIComponent(`Richiesta Assistenza - ${shopName || 'Attivita'}`)}`}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-500 hover:bg-stone-100 transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
             >
               <LifeBuoy className="w-5 h-5" />
               Hai bisogno di aiuto?
             </a>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
             >
               <LogOut className="w-5 h-5" />
               Esci
             </button>
+            {/* Theme Toggle */}
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <ThemeToggle />
+              <span className="text-xs text-stone-400 dark:text-stone-500">Tema</span>
+            </div>
           </div>
         </aside>
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Mobile header */}
-          <header className="lg:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-stone-200 px-4 py-3 flex items-center gap-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <header className="lg:hidden sticky top-0 z-30 bg-white/80 dark:bg-stone-950/80 backdrop-blur-lg border-b border-stone-200 dark:border-stone-700 px-4 py-3 flex items-center gap-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 -ml-2 rounded-lg hover:bg-stone-100"
+              className="p-2 -ml-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-700"
             >
-              <Menu className="w-5 h-5 text-stone-600" />
+              <Menu className="w-5 h-5 text-stone-600 dark:text-stone-400" />
             </button>
-            <span className="flex-1 font-semibold text-stone-900 truncate">{navItems.find(n => pathname === n.href || (n.href !== '/admin/dashboard' && pathname.startsWith(n.href)))?.label || 'Gestionale'}</span>
+            <span className="flex-1 font-semibold text-stone-900 dark:text-stone-100 truncate">{navItems.find(n => pathname === n.href || (n.href !== '/admin/dashboard' && pathname.startsWith(n.href)))?.label || 'Gestionale'}</span>
             {pathname !== '/admin/prenota' && (
-              <Link href="/admin/prenota" className="p-2 -mr-2 rounded-lg hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors">
+              <Link href="/admin/prenota" className="p-2 -mr-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors">
                 <Plus className="w-5 h-5" />
               </Link>
             )}

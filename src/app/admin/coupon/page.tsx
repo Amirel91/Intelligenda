@@ -121,7 +121,7 @@ export default function CouponAdminPage() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 dark:border-stone-600 border-stone-300 border-t-stone-900 rounded-full animate-spin" />
       </div>
     )
   }
@@ -131,12 +131,12 @@ export default function CouponAdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Codici Sconto</h1>
-          <p className="text-sm text-stone-500 mt-1">Crea e gestisci i codici sconto per i tuoi clienti</p>
+          <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900">Codici Sconto</h1>
+          <p className="text-sm dark:text-stone-400 text-stone-500 mt-1">Crea e gestisci i codici sconto per i tuoi clienti</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
         >
           <Plus className="w-4 h-4" />
           Nuovo Coupon
@@ -144,7 +144,7 @@ export default function CouponAdminPage() {
       </div>
 
       {error && (
-        <div className="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+        <div className="mb-4 p-4 rounded-xl dark:bg-red-950/50 bg-red-50 border dark:border-red-800 border-red-200 dark:text-red-400 text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -152,11 +152,11 @@ export default function CouponAdminPage() {
       {/* Empty state */}
       {coupons.length === 0 && !error && (
         <div className="text-center py-16">
-          <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-4">
-            <Tag className="w-8 h-8 text-stone-400" />
+          <div className="w-16 h-16 rounded-full dark:bg-stone-800 bg-stone-100 flex items-center justify-center mx-auto mb-4">
+            <Tag className="w-8 h-8 dark:text-stone-500 text-stone-400" />
           </div>
-          <p className="text-stone-500 text-sm">Nessun codice sconto creato</p>
-          <p className="text-stone-400 text-xs mt-1">Crea il tuo primo coupon per offrire sconti ai clienti</p>
+          <p className="dark:text-stone-400 text-stone-500 text-sm">Nessun codice sconto creato</p>
+          <p className="dark:text-stone-500 text-stone-400 text-xs mt-1">Crea il tuo primo coupon per offrire sconti ai clienti</p>
         </div>
       )}
 
@@ -174,32 +174,32 @@ export default function CouponAdminPage() {
               animate={{ opacity: 1, y: 0 }}
               className={`p-4 rounded-xl border-2 transition-all ${
                 coupon.isActive
-                  ? 'border-stone-200 bg-white'
-                  : 'border-stone-100 bg-stone-50 opacity-60'
+                  ? 'dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white'
+                  : 'dark:border-stone-800 border-stone-100 dark:bg-stone-800/50 bg-stone-50 opacity-60'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono font-bold text-stone-900 text-lg tracking-wider">{coupon.code}</span>
+                    <span className="font-mono font-bold dark:text-stone-100 text-stone-900 text-lg tracking-wider">{coupon.code}</span>
                     {!coupon.isActive && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-200 text-stone-500 font-medium">Disattivo</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full dark:bg-stone-700 bg-stone-200 dark:text-stone-400 text-stone-500 font-medium">Disattivo</span>
                     )}
                     {isExpired && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">Scaduto</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full dark:bg-red-900/50 bg-red-100 dark:text-red-400 text-red-600 font-medium">Scaduto</span>
                     )}
                   </div>
 
                   <div className="mt-2 flex items-center gap-4 text-sm">
-                    <span className="text-emerald-600 font-semibold">-€{coupon.discountAmount.toFixed(2)}</span>
-                    <span className="text-stone-400">|</span>
-                    <span className="text-stone-500">
+                    <span className="dark:text-emerald-400 text-emerald-600 font-semibold">-€{coupon.discountAmount.toFixed(2)}</span>
+                    <span className="dark:text-stone-500 text-stone-400">|</span>
+                    <span className="dark:text-stone-400 text-stone-500">
                       {coupon.usedCount}/{coupon.maxUses} utilizzi
                     </span>
                     {coupon.expiresAt && (
                       <>
-                        <span className="text-stone-400">|</span>
-                        <span className="text-stone-500">
+                        <span className="dark:text-stone-500 text-stone-400">|</span>
+                        <span className="dark:text-stone-400 text-stone-500">
                           Scade: {new Date(coupon.expiresAt).toLocaleDateString('it-IT')}
                         </span>
                       </>
@@ -207,7 +207,7 @@ export default function CouponAdminPage() {
                   </div>
 
                   {/* Usage bar */}
-                  <div className="mt-2 h-1.5 rounded-full bg-stone-100 overflow-hidden">
+                  <div className="mt-2 h-1.5 rounded-full dark:bg-stone-800 bg-stone-100 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${
                         usagePercent >= 80 ? 'bg-red-500' : usagePercent >= 50 ? 'bg-amber-500' : 'bg-emerald-500'
@@ -221,19 +221,19 @@ export default function CouponAdminPage() {
                 <div className="flex items-center gap-1 ml-4 shrink-0">
                   <button
                     onClick={() => toggleActive(coupon)}
-                    className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
+                    className="p-2 rounded-lg dark:hover:bg-stone-700 hover:bg-stone-100 transition-colors"
                     title={coupon.isActive ? 'Disattiva' : 'Attiva'}
                   >
                     {coupon.isActive ? (
-                      <ToggleRight className="w-5 h-5 text-emerald-600" />
+                      <ToggleRight className="w-5 h-5 dark:text-emerald-400 text-emerald-600" />
                     ) : (
-                      <ToggleLeft className="w-5 h-5 text-stone-400" />
+                      <ToggleLeft className="w-5 h-5 dark:text-stone-500 text-stone-400" />
                     )}
                   </button>
                   {coupon.usedCount === 0 && (
                     <button
                       onClick={() => deleteCoupon(coupon)}
-                      className="p-2 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors"
+                      className="p-2 rounded-lg dark:hover:bg-red-950/50 hover:bg-red-50 dark:text-stone-500 text-stone-400 hover:text-red-600 transition-colors"
                       title="Elimina"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -262,35 +262,35 @@ export default function CouponAdminPage() {
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="bg-white rounded-t-2xl sm:rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-xl"
+              className="dark:bg-stone-900 bg-white rounded-t-2xl sm:rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-xl"
             >
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-semibold text-stone-900">Nuovo Codice Sconto</h2>
-                <button onClick={() => setShowCreate(false)} className="p-2 rounded-lg hover:bg-stone-100">
+                <h2 className="text-lg font-semibold dark:text-stone-100 text-stone-900">Nuovo Codice Sconto</h2>
+                <button onClick={() => setShowCreate(false)} className="p-2 rounded-lg dark:hover:bg-stone-700 hover:bg-stone-100">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="space-y-4">
                 {createError && (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                  <div className="p-3 rounded-lg dark:bg-red-950/50 bg-red-50 border dark:border-red-800 border-red-200 dark:text-red-400 text-red-700 text-sm">
                     {createError}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Codice</label>
+                  <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Codice</label>
                   <input
                     type="text"
                     value={newCode}
                     onChange={e => setNewCode(e.target.value.toUpperCase())}
                     placeholder="SCONTO10"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors uppercase font-mono tracking-wider focus:border-stone-900"
+                    className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors uppercase font-mono tracking-wider dark:focus:border-stone-100 focus:border-stone-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Sconto (EUR)</label>
+                  <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Sconto (EUR)</label>
                   <input
                     type="number"
                     value={newDiscount}
@@ -298,37 +298,37 @@ export default function CouponAdminPage() {
                     placeholder="10.00"
                     min="0.01"
                     step="0.01"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors focus:border-stone-900"
+                    className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors dark:focus:border-stone-100 focus:border-stone-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">Utilizzi massimi</label>
+                  <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Utilizzi massimi</label>
                   <input
                     type="number"
                     value={newMaxUses}
                     onChange={e => setNewMaxUses(e.target.value)}
                     min="1"
-                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors focus:border-stone-900"
+                    className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors dark:focus:border-stone-100 focus:border-stone-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                    Scadenza <span className="text-stone-400 font-normal">(opzionale)</span>
+                  <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">
+                    Scadenza <span className="dark:text-stone-500 text-stone-400 font-normal">(opzionale)</span>
                   </label>
                   <input
                     type="date"
                     value={newExpiresAt}
                     onChange={e => setNewExpiresAt(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors focus:border-stone-900"
+                    className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors dark:focus:border-stone-100 focus:border-stone-900"
                   />
                 </div>
 
                 <button
                   onClick={handleCreate}
                   disabled={creating || !newCode.trim() || !newDiscount}
-                  className="w-full py-3 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full py-3 rounded-xl dark:bg-stone-100 bg-stone-900 text-white font-medium hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {creating ? 'Creazione...' : 'Crea Coupon'}
                 </button>

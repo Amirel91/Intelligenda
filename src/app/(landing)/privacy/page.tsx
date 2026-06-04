@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -9,23 +10,26 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-stone-900 flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-100">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border-b border-stone-100 dark:border-stone-800">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <a
             href="/landing"
-            className="text-stone-900 hover:opacity-80 transition-opacity"
+            className="text-stone-900 dark:text-stone-100 hover:opacity-80 transition-opacity"
           >
             <IntelliGendaLogo size="md" />
           </a>
-          <a
-            href="/landing"
-            className="inline-flex items-center gap-1.5 text-sm text-stone-400 hover:text-stone-700 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Home
-          </a>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <a
+              href="/landing"
+              className="inline-flex items-center gap-1.5 text-sm text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Home
+            </a>
+          </div>
         </div>
       </header>
 
@@ -34,17 +38,17 @@ export default function PrivacyPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
           {/* Title block */}
           <div className="mb-10">
-            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-100 leading-tight">
               Privacy Policy
             </h1>
-            <p className="mt-2 text-sm text-stone-400">
+            <p className="mt-2 text-sm text-stone-400 dark:text-stone-500">
               Ultimo aggiornamento: Maggio 2025 &mdash; Conformit&agrave; GDPR (Regolamento UE 679/2016)
             </p>
           </div>
 
           {/* Intro */}
           <div className="mb-10">
-            <p className="text-stone-700 leading-relaxed">
+            <p className="text-stone-700 dark:text-stone-300 leading-relaxed">
               La presente Privacy Policy descrive le modalità di gestione dei dati personali raccolti da
               IntelliGenda in conformità al Regolamento Europeo della Protezione dei Dati (GDPR n.
               679/2016).
@@ -56,14 +60,14 @@ export default function PrivacyPage() {
             {/* Section 1 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   1
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Titolare del Trattamento
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     Il Titolare del Trattamento è il gestore della piattaforma IntelliGenda. Email di
                     contatto reperibile sul sito principale.
                   </p>
@@ -74,19 +78,19 @@ export default function PrivacyPage() {
             {/* Section 2 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   2
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Tipologia di Dati Raccolti
                   </h2>
-                  <div className="text-stone-600 leading-relaxed text-sm space-y-4">
+                  <div className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm space-y-4">
                     <div>
-                      <h3 className="font-semibold text-stone-800 mb-1">
+                      <h3 className="font-semibold text-stone-800 dark:text-stone-200 mb-1">
                         Dati dei Commercianti
                       </h3>
-                      <ul className="list-disc list-inside space-y-1 text-stone-600">
+                      <ul className="list-disc list-inside space-y-1 text-stone-600 dark:text-stone-400">
                         <li>Nome, Cognome, Nome attivit&agrave;, Email, Password cifrata</li>
                         <li>
                           Dati di fatturazione gestiti in modo cifrato e sicuro dai server di Nexi
@@ -94,13 +98,13 @@ export default function PrivacyPage() {
                       </ul>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-stone-800 mb-1">
+                      <h3 className="font-semibold text-stone-800 dark:text-stone-200 mb-1">
                         Dati degli Utenti Finali (Clienti dei negozi)
                       </h3>
-                      <ul className="list-disc list-inside space-y-1 text-stone-600">
+                      <ul className="list-disc list-inside space-y-1 text-stone-600 dark:text-stone-400">
                         <li>Nome, Cognome, Numero di telefono e Email (facoltativa)</li>
                       </ul>
-                      <p className="mt-2 text-stone-500">
+                      <p className="mt-2 text-stone-500 dark:text-stone-400">
                         Per questi dati il Commerciante agisce come Titolare del Trattamento, mentre
                         IntelliGenda agisce come Responsabile Esterno (Data Processor) limitandosi alla
                         memorizzazione sicura nel database.
@@ -114,14 +118,14 @@ export default function PrivacyPage() {
             {/* Section 3 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   3
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Finalit&agrave; e Base Giuridica
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     I dati sono trattati per consentire la creazione dell&apos;account, gestire la
                     fatturazione e i rinnovi tramite Nexi, consentire le prenotazioni e raccogliere i
                     feedback anti-churn anonimi alla disdetta. La base giuridica è l&apos;esecuzione di
@@ -134,14 +138,14 @@ export default function PrivacyPage() {
             {/* Section 4 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   4
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Conservazione e Sicurezza
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     Tutti i dati sono salvati all&apos;interno dell&apos;Unione Europea su database
                     protetti con sistemi di crittografia avanzata e isolamento dei dati per singolo
                     tenant (Row-Level Security), impedendo accessi non autorizzati.
@@ -153,14 +157,14 @@ export default function PrivacyPage() {
             {/* Section 5 */}
             <section>
               <div className="flex items-start gap-4">
-                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 text-white text-sm font-bold flex items-center justify-center">
+                <span className="shrink-0 w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-bold flex items-center justify-center">
                   5
                 </span>
                 <div>
-                  <h2 className="text-lg font-bold text-stone-900 mb-2">
+                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100 mb-2">
                     Diritti dell&apos;Interessato
                   </h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">
+                  <p className="text-stone-600 dark:text-stone-400 leading-relaxed text-sm">
                     Gli utenti possono esercitare in ogni momento i diritti previsti dal GDPR (accesso,
                     modifica, portabilit&agrave; o cancellazione dei dati) scrivendo all&apos;indirizzo
                     email del Titolare.
@@ -173,9 +177,9 @@ export default function PrivacyPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-8 text-center border-t border-stone-100">
-        <p className="text-xs text-stone-400">
-          &copy; 2026 IntelliGenda &egrave; un prodotto di <a href="https://www.mecalab.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-stone-600 transition-colors">MecaLab</a> &mdash; Tutti i diritti riservati.
+      <footer className="py-8 text-center border-t border-stone-100 dark:border-stone-800">
+        <p className="text-xs text-stone-400 dark:text-stone-500">
+          &copy; 2026 IntelliGenda &egrave; un prodotto di <a href="https://www.mecalab.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">MecaLab</a> &mdash; Tutti i diritti riservati.
         </p>
       </footer>
     </div>

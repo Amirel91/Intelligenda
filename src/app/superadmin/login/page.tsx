@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 const SA_TOKEN_KEY = 'superadmin_token'
 
@@ -52,38 +53,43 @@ export default function SuperAdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center px-6 relative">
+      {/* ThemeToggle in top-right */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <IntelliGendaLogo size="xl" showText={false} className="text-stone-900" />
+            <IntelliGendaLogo size="xl" showText={false} className="text-stone-900 dark:text-stone-100" />
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">SuperAdmin</h1>
-          <p className="text-sm text-stone-500 mt-1">IntelliGenda — Pannello di controllo piattaforma</p>
+          <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100">SuperAdmin</h1>
+          <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">IntelliGenda — Pannello di controllo piattaforma</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-stone-200 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm text-center">
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 text-sm text-center">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Password SuperAdmin</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Password SuperAdmin</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => { setPassword(e.target.value); setError('') }}
                 placeholder="Inserisci la password"
-                className="w-full px-4 py-3 pr-11 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors"
+                className="w-full px-4 py-3 pr-11 rounded-xl border-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none focus:border-stone-900 dark:focus:border-stone-100 transition-colors"
                 autoFocus
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -93,14 +99,14 @@ export default function SuperAdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-stone-900 text-white font-medium flex items-center justify-center gap-2 hover:bg-stone-800 disabled:opacity-50 transition-all"
+            className="w-full py-3.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium flex items-center justify-center gap-2 hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 transition-all"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Accedi al pannello'}
           </button>
         </form>
 
         <div className="text-center mt-6">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />
             Torna al sito
           </Link>

@@ -62,14 +62,14 @@ export default function AdminLoginPage() {
 
   if (shopError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 px-6">
+      <div className="min-h-screen flex items-center justify-center dark:bg-stone-800/50 bg-stone-50 px-6">
         <div className="w-full max-w-sm text-center">
-          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center">
-            <Lock className="w-7 h-7 text-red-500" />
+          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl dark:bg-red-900/50 bg-red-100 flex items-center justify-center">
+            <Lock className="w-7 h-7 dark:text-red-400 text-red-500" />
           </div>
-          <h1 className="text-2xl font-semibold text-stone-900 mb-2">Errore</h1>
-          <p className="text-stone-500 text-sm mb-6">Nessun negozio selezionato.</p>
-          <Link href="/" className="text-sm text-stone-400 hover:text-stone-600 transition-colors">
+          <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900 mb-2">Errore</h1>
+          <p className="dark:text-stone-400 text-stone-500 text-sm mb-6">Nessun negozio selezionato.</p>
+          <Link href="/" className="text-sm dark:text-stone-500 text-stone-400 dark:hover:text-stone-400 hover:text-stone-600 transition-colors">
             ← Torna al sito
           </Link>
         </div>
@@ -78,16 +78,16 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 px-6">
+    <div className="min-h-screen flex items-center justify-center dark:bg-stone-800/50 bg-stone-50 px-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-stone-900 flex items-center justify-center">
+          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl dark:bg-stone-100 bg-stone-900 flex items-center justify-center">
             <Lock className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-semibold text-stone-900">Area Admin</h1>
-          <p className="text-stone-500 text-sm mt-1">
+          <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900">Area Admin</h1>
+          <p className="dark:text-stone-400 text-stone-500 text-sm mt-1">
             {shopName ? (
-              <>Accedi a <span className="font-medium text-stone-700">{shopName}</span></>
+              <>Accedi a <span className="font-medium dark:text-stone-300 text-stone-700">{shopName}</span></>
             ) : (
               'Caricamento...'
             )}
@@ -96,13 +96,13 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm text-center">
+            <div className="p-3 rounded-xl dark:bg-red-950/50 bg-red-50 dark:text-red-400 text-red-600 text-sm text-center">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Username</label>
+            <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Username</label>
             <input
               type="text"
               value={username}
@@ -110,12 +110,12 @@ export default function AdminLoginPage() {
               placeholder="admin"
               required
               autoComplete="username"
-              className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors"
+              className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Password</label>
+            <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -124,12 +124,12 @@ export default function AdminLoginPage() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
-                className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors pr-12"
+                className="w-full px-4 py-3 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors pr-12"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 dark:text-stone-500 text-stone-400 dark:hover:text-stone-400 hover:text-stone-600"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -139,7 +139,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 disabled:opacity-50 transition-colors"
+            className="w-full py-3.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white font-medium hover:bg-stone-800 disabled:opacity-50 transition-colors"
           >
             {loading ? (
               <div className="flex items-center justify-center gap-2">
@@ -155,11 +155,11 @@ export default function AdminLoginPage() {
         <div className="mt-6 text-center space-y-3">
           <a
             href="/admin/forgot-password"
-            className="block text-sm text-stone-500 hover:text-stone-800 font-medium transition-colors cursor-pointer"
+            className="block text-sm dark:text-stone-400 text-stone-500 dark:hover:text-stone-200 hover:text-stone-800 font-medium transition-colors cursor-pointer"
           >
             Password dimenticata?
           </a>
-          <Link href="/" className="block text-sm text-stone-400 hover:text-stone-600 transition-colors">
+          <Link href="/" className="block text-sm dark:text-stone-500 text-stone-400 dark:hover:text-stone-400 hover:text-stone-600 transition-colors">
             ← Torna al sito
           </Link>
         </div>

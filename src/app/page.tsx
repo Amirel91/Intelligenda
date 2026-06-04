@@ -89,7 +89,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white dark:from-stone-800 dark:to-stone-900">
       <CustomerNavbar />
       <main className="flex-1 flex flex-col items-center px-6 py-16 pt-16">
 
@@ -110,20 +110,20 @@ export default function HomePage() {
             <Image src="/admin-icon.png" alt="Logo" width={80} height={80} className="w-full h-full object-contain" priority />
           </motion.div>
 
-          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 mb-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 mb-3">
             {config?.shopName || 'Caricamento...'}
           </h1>
 
           {config?.shopDescription && (
-            <p className="text-stone-500 text-base leading-relaxed mb-8">{config.shopDescription}</p>
+            <p className="text-stone-500 dark:text-stone-400 text-base leading-relaxed mb-8">{config.shopDescription}</p>
           )}
 
           {/* Contact Info */}
           {(config?.shopPhone || config?.shopEmail || config?.shopAddress) && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mb-8 space-y-2">
-              {config?.shopPhone && (<a href={`tel:${config.shopPhone}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"><Phone className="w-4 h-4" />{config.shopPhone}</a>)}
-              {config?.shopEmail && (<a href={`mailto:${config.shopEmail}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 transition-colors"><Mail className="w-4 h-4" />{config.shopEmail}</a>)}
-              {config?.shopAddress && (<div className="flex items-center justify-center gap-2 text-sm text-stone-500"><MapPin className="w-4 h-4 shrink-0" />{config.shopAddress}</div>)}
+              {config?.shopPhone && (<a href={`tel:${config.shopPhone}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 transition-colors"><Phone className="w-4 h-4" />{config.shopPhone}</a>)}
+              {config?.shopEmail && (<a href={`mailto:${config.shopEmail}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 transition-colors"><Mail className="w-4 h-4" />{config.shopEmail}</a>)}
+              {config?.shopAddress && (<div className="flex items-center justify-center gap-2 text-sm text-stone-500 dark:text-stone-400"><MapPin className="w-4 h-4 shrink-0" />{config.shopAddress}</div>)}
             </motion.div>
           )}
 
@@ -132,7 +132,7 @@ export default function HomePage() {
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center justify-center gap-3 w-full max-w-xs mx-auto px-8 py-5 rounded-2xl bg-stone-900 text-white text-lg font-medium shadow-lg shadow-stone-900/20 hover:shadow-xl hover:shadow-stone-900/30 transition-shadow cursor-pointer"
+              className="inline-flex items-center justify-center gap-3 w-full max-w-xs mx-auto px-8 py-5 rounded-2xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-lg font-medium shadow-lg shadow-stone-900/20 dark:shadow-black/20 hover:shadow-xl hover:shadow-stone-900/30 dark:hover:shadow-black/30 transition-shadow cursor-pointer"
             >
               <CalendarDays className="w-6 h-6" />
               Prenota un appuntamento
@@ -149,7 +149,7 @@ export default function HomePage() {
             >
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                <h2 className="text-xs font-medium text-stone-400 uppercase tracking-widest">In evidenza</h2>
+                <h2 className="text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-widest">In evidenza</h2>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
                 {featuredServices.map((service, i) => (
@@ -161,7 +161,7 @@ export default function HomePage() {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => handleFeaturedClick(service)}
-                    className="px-5 py-2.5 rounded-full bg-white border border-stone-200 text-stone-700 text-sm font-medium shadow-sm hover:shadow-md hover:border-stone-300 transition-all cursor-pointer"
+                    className="px-5 py-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium shadow-sm hover:shadow-md hover:border-stone-300 dark:hover:border-stone-600 transition-all cursor-pointer"
                   >
                     {service.name}
                   </motion.button>
@@ -181,7 +181,7 @@ export default function HomePage() {
               {config.features.filter(Boolean).map((feature, i) => (
                 <span
                   key={i}
-                  className="px-3.5 py-1.5 rounded-full bg-stone-100 text-stone-600 text-xs font-medium"
+                  className="px-3.5 py-1.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 text-xs font-medium"
                 >
                   {feature}
                 </span>

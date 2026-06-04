@@ -43,26 +43,26 @@ const CANCEL_REASONS = [
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
   trial: {
     label: 'Periodo di prova',
-    color: 'text-blue-700',
-    bg: 'bg-blue-50',
+    color: 'text-blue-700 dark:text-blue-400',
+    bg: 'bg-blue-50 dark:bg-blue-950/50',
     icon: <Sparkles className="w-4 h-4" />,
   },
   active: {
     label: 'Attivo',
-    color: 'text-emerald-700',
-    bg: 'bg-emerald-50',
+    color: 'text-emerald-700 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/50',
     icon: <CheckCircle2 className="w-4 h-4" />,
   },
   cancelling: {
     label: 'In fase di disdetta',
-    color: 'text-orange-700',
-    bg: 'bg-orange-50',
+    color: 'text-orange-700 dark:text-orange-400',
+    bg: 'bg-orange-50 dark:bg-orange-950/50',
     icon: <AlertTriangle className="w-4 h-4" />,
   },
   suspended: {
     label: 'Sospeso',
-    color: 'text-red-700',
-    bg: 'bg-red-50',
+    color: 'text-red-700 dark:text-red-400',
+    bg: 'bg-red-50 dark:bg-red-950/50',
     icon: <XCircle className="w-4 h-4" />,
   },
 }
@@ -72,8 +72,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 export default function AccountPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-stone-100 rounded-full" />
       </div>
     }>
       <AccountContent />
@@ -255,8 +255,8 @@ function AccountContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-stone-100 rounded-full" />
       </div>
     )
   }
@@ -264,24 +264,24 @@ function AccountContent() {
   const statusConfig = STATUS_CONFIG[subscription?.status || 'trial']
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       {/* ============ HEADER / NAVBAR ============ */}
-      <header className="bg-white border-b border-stone-200 sticky top-0 z-30">
+      <header className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700 sticky top-0 z-30">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <a href="/landing" className="p-2 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors">
+            <a href="/landing" className="p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </a>
             <div>
-              <h1 className="text-lg font-bold text-stone-900">Il mio Account</h1>
+              <h1 className="text-lg font-bold text-stone-900 dark:text-stone-100">Il mio Account</h1>
               {subscription?.businessName && (
-                <p className="text-xs text-stone-400">{subscription.businessName}</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500">{subscription.businessName}</p>
               )}
             </div>
           </div>
           <button
             onClick={() => router.push('/login')}
-            className="p-2 rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+            className="p-2 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
             title="Esci"
           >
             <LogIn className="w-5 h-5" />
@@ -292,17 +292,17 @@ function AccountContent() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* ============ NOTIFICATION MESSAGE ============ */}
         {message && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-emerald-800">{message}</p>
-            <button onClick={() => setMessage('')} className="ml-auto text-emerald-400 hover:text-emerald-600">
+          <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-emerald-800 dark:text-emerald-300">{message}</p>
+            <button onClick={() => setMessage('')} className="ml-auto text-emerald-400 dark:text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
         {error && !subscription && (
-          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
+          <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">{error}</div>
         )}
 
         {/* ============ GESTISCI LA TUA AGENDA (HIGH CONTRAST) ============ */}
@@ -310,39 +310,39 @@ function AccountContent() {
           href={getAgendaUrl()}
           className="block group"
         >
-          <div className="bg-stone-900 rounded-2xl p-6 flex items-center justify-between hover:bg-stone-800 transition-colors shadow-lg shadow-stone-900/20">
+          <div className="bg-stone-900 dark:bg-stone-100 rounded-2xl p-6 flex items-center justify-between hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors shadow-lg shadow-stone-900/20 dark:shadow-black/20">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
-                <CalendarDays className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-white/10 dark:bg-stone-900/10 flex items-center justify-center">
+                <CalendarDays className="w-6 h-6 text-white dark:text-stone-900" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white">Gestisci la tua Agenda</h2>
-                <p className="text-sm text-stone-400 mt-0.5">
+                <h2 className="text-base font-bold text-white dark:text-stone-900">Gestisci la tua Agenda</h2>
+                <p className="text-sm text-stone-400 dark:text-stone-500 mt-0.5">
                   {isVercelDomain
                     ? `Vai al pannello operativo di ${slug}`
                     : `${slug}.intelligenda.it`}
                 </p>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-              <ArrowRight className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-white/10 dark:bg-stone-900/10 flex items-center justify-center group-hover:bg-white/20 dark:group-hover:bg-stone-900/20 transition-colors">
+              <ArrowRight className="w-5 h-5 text-white dark:text-stone-900" />
             </div>
           </div>
         </a>
 
         {/* ============ SUBSCRIPTION CARD ============ */}
         {subscription && (
-          <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
             {/* Card Header */}
-            <div className="p-6 border-b border-stone-100">
+            <div className="p-6 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center">
-                    <CreditCard className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-stone-900 dark:bg-stone-100 flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-white dark:text-stone-900" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-stone-900">Abbonamento e Rinnovi</h2>
-                    <p className="text-xs text-stone-400">Gestisci il tuo piano IntelliGenda</p>
+                    <h2 className="text-base font-bold text-stone-900 dark:text-stone-100">Abbonamento e Rinnovi</h2>
+                    <p className="text-xs text-stone-400 dark:text-stone-500">Gestisci il tuo piano IntelliGenda</p>
                   </div>
                 </div>
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
@@ -353,15 +353,15 @@ function AccountContent() {
 
               {/* Plan info */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-xl bg-stone-50">
-                  <p className="text-xs text-stone-400 mb-1">Piano</p>
-                  <p className="text-sm font-semibold text-stone-900">Pro — 40 EUR/mese</p>
+                <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50">
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">Piano</p>
+                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Pro — 40 EUR/mese</p>
                 </div>
-                <div className="p-3 rounded-xl bg-stone-50">
-                  <p className="text-xs text-stone-400 mb-1">
+                <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50">
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">
                     {subscription.status === 'cancelling' ? 'Scadenza servizio' : 'Prossimo rinnovo'}
                   </p>
-                  <p className="text-sm font-semibold text-stone-900">
+                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
                     {subscription.planEndDate
                       ? formatDate(subscription.planEndDate)
                       : 'Non ancora attivato'}
@@ -375,12 +375,12 @@ function AccountContent() {
               {/* ============ TRIAL STATUS ============ */}
               {subscription.status === 'trial' && (
                 <>
-                  <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                  <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50">
                     <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-blue-900">Stai provando IntelliGenda</p>
-                        <p className="text-xs text-blue-700 mt-1">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200">Stai provando IntelliGenda</p>
+                        <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
                           Hai {formatTrialDays(subscription.createdAt).remaining} giorni rimanenti nel tuo periodo di prova gratuito.
                           Attiva ora l&apos;abbonamento per continuare a usare tutte le funzionalita senza interruzioni.
                         </p>
@@ -390,7 +390,7 @@ function AccountContent() {
                   <button
                     onClick={handleSubscribe}
                     disabled={subscribing}
-                    className="w-full py-3.5 rounded-xl bg-stone-900 text-white font-medium flex items-center justify-center gap-2 hover:bg-stone-800 disabled:opacity-50 transition-all"
+                    className="w-full py-3.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium flex items-center justify-center gap-2 hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 transition-all"
                   >
                     {subscribing ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -407,16 +407,16 @@ function AccountContent() {
               {/* ============ ACTIVE STATUS ============ */}
               {subscription.status === 'active' && (
                 <>
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                    <p className="text-sm text-emerald-800">
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                    <p className="text-sm text-emerald-800 dark:text-emerald-300">
                       Il tuo abbonamento e attivo. Il prossimo addebito di 40 EUR sara effettuato il{' '}
                       {subscription.planEndDate ? formatDate(subscription.planEndDate) : '—'}.
                     </p>
                   </div>
                   <button
                     onClick={() => setShowCancelModal(true)}
-                    className="w-full py-3 rounded-xl border border-stone-200 text-stone-500 text-sm font-medium hover:bg-stone-50 hover:text-stone-700 transition-all"
+                    className="w-full py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300 transition-all"
                   >
                     Cancella abbonamento
                   </button>
@@ -426,17 +426,17 @@ function AccountContent() {
               {/* ============ CANCELLING STATUS ============ */}
               {subscription.status === 'cancelling' && (
                 <>
-                  <div className="p-4 rounded-xl bg-orange-50 border border-orange-100">
+                  <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100 dark:border-orange-900/50">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-orange-900">Disdetta in corso</p>
-                        <p className="text-xs text-orange-700 mt-1">
+                        <p className="text-sm font-medium text-orange-900 dark:text-orange-200">Disdetta in corso</p>
+                        <p className="text-xs text-orange-700 dark:text-orange-400 mt-1">
                           Hai richiesto la disdetta del tuo abbonamento. Il servizio rimarra completamente attivo
                           fino al {subscription.planEndDate ? formatDate(subscription.planEndDate) : '—'},
                           data in cui tutte le prenotazioni e i dati saranno sospesi.
                         </p>
-                        <p className="text-xs text-orange-600 mt-2">
+                        <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
                           Vuoi ripensarci? Puoi riattivare l&apos;abbonamento in qualsiasi momento.
                         </p>
                       </div>
@@ -462,16 +462,16 @@ function AccountContent() {
               {/* ============ SUSPENDED STATUS ============ */}
               {subscription.status === 'suspended' && (
                 <>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-100">
+                  <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50">
                     <div className="flex items-start gap-3">
-                      <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-red-900">Account sospeso</p>
-                        <p className="text-xs text-red-700 mt-1">
+                        <p className="text-sm font-medium text-red-900 dark:text-red-200">Account sospeso</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 mt-1">
                           Il periodo di abbonamento e terminato. Il tuo account e stato sospeso
                           e il tuo negozio non e piu accessibile ai clienti.
                         </p>
-                        <p className="text-xs text-red-600 mt-2">
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">
                           Riattiva ora per tornare online e recuperare tutti i tuoi dati.
                         </p>
                       </div>
@@ -480,7 +480,7 @@ function AccountContent() {
                   <button
                     onClick={handleSubscribe}
                     disabled={subscribing}
-                    className="w-full py-3.5 rounded-xl bg-stone-900 text-white font-medium flex items-center justify-center gap-2 hover:bg-stone-800 disabled:opacity-50 transition-all"
+                    className="w-full py-3.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium flex items-center justify-center gap-2 hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 transition-all"
                   >
                     {subscribing ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -499,28 +499,28 @@ function AccountContent() {
 
         {/* ============ ACCOUNT INFO CARD ============ */}
         {subscription && (
-          <div className="bg-white rounded-2xl border border-stone-200 p-6">
-            <h3 className="text-sm font-bold text-stone-900 mb-4">Informazioni account</h3>
+          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6">
+            <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100 mb-4">Informazioni account</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-stone-400">Nome attivita</span>
-                <span className="text-stone-900 font-medium">{subscription.businessName}</span>
+                <span className="text-stone-400 dark:text-stone-500">Nome attivita</span>
+                <span className="text-stone-900 dark:text-stone-100 font-medium">{subscription.businessName}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-stone-400">Indirizzo web</span>
+                <span className="text-stone-400 dark:text-stone-500">Indirizzo web</span>
                 <a
                   href={isVercelDomain ? `/t/${slug}` : `https://${slug}.intelligenda.it`}
-                  className="text-stone-900 font-medium hover:underline underline-offset-2"
+                  className="text-stone-900 dark:text-stone-100 font-medium hover:underline underline-offset-2"
                 >
                   {slug}.intelligenda.it
                 </a>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-stone-400">Data creazione</span>
-                <span className="text-stone-900">{formatDate(subscription.createdAt)}</span>
+                <span className="text-stone-400 dark:text-stone-500">Data creazione</span>
+                <span className="text-stone-900 dark:text-stone-100">{formatDate(subscription.createdAt)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-stone-400">Stato</span>
+                <span className="text-stone-400 dark:text-stone-500">Stato</span>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
                   {statusConfig.icon}
                   {statusConfig.label}
@@ -541,14 +541,14 @@ function AccountContent() {
           />
 
           {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="relative bg-white dark:bg-stone-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             {/* Modal Header */}
-            <div className="p-6 border-b border-stone-100">
+            <div className="p-6 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-stone-900">Cancella abbonamento</h3>
+                <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">Cancella abbonamento</h3>
                 <button
                   onClick={() => { setShowCancelModal(false); setSelectedReason(null); setCustomReason(''); setCancelError('') }}
-                  className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors"
+                  className="p-1.5 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -558,9 +558,9 @@ function AccountContent() {
             {/* Modal Body */}
             <div className="p-6 space-y-5">
               {/* Warning */}
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 flex items-start gap-2.5">
-                <CalendarClock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-800">
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/50 flex items-start gap-2.5">
+                <CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-800 dark:text-amber-300">
                   Il tuo servizio rimarra attivo fino al{' '}
                   {subscription?.planEndDate ? formatDate(subscription.planEndDate) : 'fine del periodo pagato'}.
                   Dopo quella data, il tuo negozio sara sospeso.
@@ -569,7 +569,7 @@ function AccountContent() {
 
               {/* Anti-churn feedback */}
               <div>
-                <p className="text-sm text-stone-700 mb-3">
+                <p className="text-sm text-stone-700 dark:text-stone-300 mb-3">
                   Ci dispiace vederti andare via. Qual e il motivo principale?
                 </p>
 
@@ -579,18 +579,18 @@ function AccountContent() {
                       key={reason.id}
                       className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                         selectedReason === reason.id
-                          ? 'border-stone-400 bg-stone-50'
-                          : 'border-stone-200 hover:border-stone-300'
+                          ? 'border-stone-400 dark:border-stone-500 bg-stone-50 dark:bg-stone-800/50'
+                          : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600'
                       }`}
                     >
                       <div className="mt-0.5">
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
                           selectedReason === reason.id
-                            ? 'border-stone-900'
-                            : 'border-stone-300'
+                            ? 'border-stone-900 dark:border-stone-100'
+                            : 'border-stone-300 dark:border-stone-600'
                         }`}>
                           {selectedReason === reason.id && (
-                            <div className="w-2 h-2 rounded-full bg-stone-900" />
+                            <div className="w-2 h-2 rounded-full bg-stone-900 dark:bg-stone-100" />
                           )}
                         </div>
                       </div>
@@ -602,7 +602,7 @@ function AccountContent() {
                         onChange={() => { setSelectedReason(reason.id); setCancelError('') }}
                         className="sr-only"
                       />
-                      <span className="text-sm text-stone-700">{reason.label}</span>
+                      <span className="text-sm text-stone-700 dark:text-stone-300">{reason.label}</span>
                     </label>
                   ))}
                 </div>
@@ -616,22 +616,22 @@ function AccountContent() {
                       ? 'Descrivi la funzionalita che ti servirebbe...'
                       : 'Scrivi il motivo...'}
                     rows={3}
-                    className="mt-3 w-full px-4 py-3 rounded-xl border border-stone-200 bg-white text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-400 resize-none transition-colors"
+                    className="mt-3 w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none focus:border-stone-400 dark:focus:border-stone-500 resize-none transition-colors"
                   />
                 )}
               </div>
 
               {/* Error message */}
               {cancelError && (
-                <p className="text-xs text-red-600">{cancelError}</p>
+                <p className="text-xs text-red-600 dark:text-red-400">{cancelError}</p>
               )}
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t border-stone-100 flex items-center gap-3">
+            <div className="p-6 border-t border-stone-100 dark:border-stone-800 flex items-center gap-3">
               <button
                 onClick={() => { setShowCancelModal(false); setSelectedReason(null); setCustomReason(''); setCancelError('') }}
-                className="flex-1 py-3 rounded-xl border border-stone-200 text-stone-600 text-sm font-medium hover:bg-stone-50 transition-all"
+                className="flex-1 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-all"
               >
                 Torna indietro
               </button>

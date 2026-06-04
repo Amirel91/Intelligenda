@@ -211,12 +211,12 @@ export default function AdminPrenota() {
   }
 
   const getDayColor = (dateStr: string, isPast: boolean) => {
-    if (isDayClosed(dateStr)) return 'text-red-500 bg-red-50'
+    if (isDayClosed(dateStr)) return 'dark:text-red-400 text-red-500 dark:bg-red-950/50 bg-red-50'
     const avail = dayAvailabilities[dateStr]
-    if (!avail || avail === 'none') return isPast ? 'text-stone-300 bg-stone-50' : 'text-stone-300'
-    if (avail === 'high') return 'text-emerald-600 bg-emerald-50'
-    if (avail === 'medium') return 'text-amber-600 bg-amber-50'
-    return 'text-red-500 bg-red-50'
+    if (!avail || avail === 'none') return isPast ? 'dark:text-stone-600 text-stone-300 dark:bg-stone-800/50 bg-stone-50' : 'dark:text-stone-600 text-stone-300'
+    if (avail === 'high') return 'dark:text-emerald-400 text-emerald-600 dark:bg-emerald-950/50 bg-emerald-50'
+    if (avail === 'medium') return 'dark:text-amber-400 text-amber-600 dark:bg-amber-950/50 bg-amber-50'
+    return 'dark:text-red-400 text-red-500 dark:bg-red-950/50 bg-red-50'
   }
 
   const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
@@ -325,48 +325,48 @@ export default function AdminPrenota() {
   ]
 
   if (loading) {
-    return (<div className="flex items-center justify-center py-20"><div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" /></div>)
+    return (<div className="flex items-center justify-center py-20"><div className="animate-spin w-8 h-8 border-2 dark:border-stone-600 border-stone-300 border-t-stone-900 rounded-full" /></div>)
   }
 
   // Step 4: Success
   if (step === 4) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-xl border border-stone-200 p-8 text-center">
+        <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-8 text-center">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', duration: 0.6, bounce: 0.5 }}
-            className="mx-auto mb-6 w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center"
+            className="mx-auto mb-6 w-16 h-16 rounded-full dark:bg-emerald-900/50 bg-emerald-100 flex items-center justify-center"
           >
-            <PartyPopper className="w-8 h-8 text-emerald-600" />
+            <PartyPopper className="w-8 h-8 dark:text-emerald-400 text-emerald-600" />
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">Prenotazione creata!</h2>
-            <p className="text-stone-500 text-sm mb-6">La prenotazione e stata inserita con successo.</p>
+            <h2 className="text-xl font-semibold dark:text-stone-100 text-stone-900 mb-2">Prenotazione creata!</h2>
+            <p className="dark:text-stone-400 text-stone-500 text-sm mb-6">La prenotazione e stata inserita con successo.</p>
 
-            <div className="text-left max-w-sm mx-auto p-4 rounded-xl bg-stone-50 border border-stone-100 space-y-2 text-sm">
+            <div className="text-left max-w-sm mx-auto p-4 rounded-xl dark:bg-stone-800/50 bg-stone-50 border dark:border-stone-800 border-stone-100 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-stone-500">Data</span>
+                <span className="dark:text-stone-400 text-stone-500">Data</span>
                 <span className="font-medium">{formatDisplayDate(booking.date)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-stone-500">Ora</span>
+                <span className="dark:text-stone-400 text-stone-500">Ora</span>
                 <span className="font-medium">{booking.time}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-stone-500">Cliente</span>
+                <span className="dark:text-stone-400 text-stone-500">Cliente</span>
                 <span className="font-medium">{booking.customer.customerName} {booking.customer.customerSurname}</span>
               </div>
-              <div className="border-t border-stone-200 pt-2 space-y-1">
+              <div className="border-t dark:border-stone-700 border-stone-200 pt-2 space-y-1">
                 {selectedServices.map(s => (
                   <div key={s.id} className="flex justify-between">
-                    <span className="text-stone-600">{s.name}</span>
+                    <span className="dark:text-stone-400 text-stone-600">{s.name}</span>
                     <span className="font-medium">EUR {s.price.toFixed(2)}</span>
                   </div>
                 ))}
-                <div className="flex justify-between font-semibold pt-1 border-t border-stone-200">
+                <div className="flex justify-between font-semibold pt-1 border-t dark:border-stone-700 border-stone-200">
                   <span>Totale</span>
                   <span>EUR {totalPrice.toFixed(2)}</span>
                 </div>
@@ -376,13 +376,13 @@ export default function AdminPrenota() {
             <div className="flex gap-3 mt-6 justify-center">
               <button
                 onClick={() => { setStep(1); setBooking({ serviceIds: [], date: '', time: '', customer: { customerName: '', customerSurname: '', customerPhone: '', customerEmail: '' } }); setFormErrors({}) }}
-                className="px-6 py-3 rounded-xl border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors"
+                className="px-6 py-3 rounded-xl border dark:border-stone-700 border-stone-200 dark:text-stone-300 text-stone-700 text-sm font-medium dark:hover:bg-stone-800 hover:bg-stone-50 transition-colors"
               >
                 Nuova Prenotazione
               </button>
               <button
                 onClick={() => router.push('/admin/calendario')}
-                className="px-6 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
+                className="px-6 py-3 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
               >
                 Vai al Calendario
               </button>
@@ -398,12 +398,12 @@ export default function AdminPrenota() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Nuova Prenotazione</h1>
-          <p className="text-stone-500 text-sm mt-1">Inserisci una prenotazione manualmente</p>
+          <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900">Nuova Prenotazione</h1>
+          <p className="dark:text-stone-400 text-stone-500 text-sm mt-1">Inserisci una prenotazione manualmente</p>
         </div>
         <button
           onClick={() => router.push('/admin/calendario')}
-          className="text-sm text-stone-500 hover:text-stone-700 transition-colors"
+          className="text-sm dark:text-stone-400 text-stone-500 dark:hover:text-stone-300 hover:text-stone-700 transition-colors"
         >
           Torna al calendario
         </button>
@@ -414,14 +414,14 @@ export default function AdminPrenota() {
         {stepLabels.map(s => (
           <div key={s.num} className="flex-1 flex items-center gap-2">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-              step >= s.num ? 'bg-stone-900 text-white' : 'bg-stone-200 text-stone-500'
+              step >= s.num ? 'dark:bg-stone-100 bg-stone-900 text-white' : 'dark:bg-stone-700 bg-stone-200 dark:text-stone-400 text-stone-500'
             }`}>
               {step > s.num ? <Check className="w-3.5 h-3.5" /> : s.num}
             </div>
-            <span className={`text-xs font-medium hidden sm:flex ${step >= s.num ? 'text-stone-900' : 'text-stone-400'}`}>
+            <span className={`text-xs font-medium hidden sm:flex ${step >= s.num ? 'dark:text-stone-100 text-stone-900' : 'dark:text-stone-500 text-stone-400'}`}>
               {s.label}
             </span>
-            {s.num < 3 && <div className={`flex-1 h-0.5 ${step > s.num ? 'bg-stone-900' : 'bg-stone-200'}`} />}
+            {s.num < 3 && <div className={`flex-1 h-0.5 ${step > s.num ? 'dark:bg-stone-100 bg-stone-900' : 'dark:bg-stone-700 bg-stone-200'}`} />}
           </div>
         ))}
       </div>
@@ -437,9 +437,9 @@ export default function AdminPrenota() {
         >
           {/* ==================== STEP 1: SERVICES ==================== */}
           {step === 1 && (
-            <div className="bg-white rounded-xl border border-stone-200 p-6">
-              <h2 className="text-lg font-semibold text-stone-900 mb-1">Scegli i servizi</h2>
-              <p className="text-stone-500 text-sm mb-4">Seleziona uno o piu servizi per l&apos;appuntamento</p>
+            <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
+              <h2 className="text-lg font-semibold dark:text-stone-100 text-stone-900 mb-1">Scegli i servizi</h2>
+              <p className="dark:text-stone-400 text-stone-500 text-sm mb-4">Seleziona uno o piu servizi per l&apos;appuntamento</p>
 
               <div className="space-y-3">
                 {services.filter(s => s.active).map(service => {
@@ -449,22 +449,22 @@ export default function AdminPrenota() {
                       key={service.id}
                       onClick={() => toggleService(service.id)}
                       className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                        isSelected ? 'border-stone-900 bg-stone-50' : 'border-stone-200 bg-white hover:border-stone-300'
+                        isSelected ? 'border-stone-900 dark:bg-stone-800/50 bg-stone-50' : 'dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white dark:hover:border-stone-600 hover:border-stone-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-stone-900 border-stone-900' : 'border-stone-300'}`}>
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'dark:bg-stone-100 bg-stone-900 border-stone-900' : 'dark:border-stone-600 border-stone-300'}`}>
                             {isSelected && <Check className="w-3 h-3 text-white" />}
                           </div>
                           <div>
-                            <span className="font-medium text-stone-900">{service.name}</span>
-                            {service.description && <p className="text-stone-500 text-xs mt-0.5">{service.description}</p>}
+                            <span className="font-medium dark:text-stone-100 text-stone-900">{service.name}</span>
+                            {service.description && <p className="dark:text-stone-400 text-stone-500 text-xs mt-0.5">{service.description}</p>}
                           </div>
                         </div>
                         <div className="text-right shrink-0 ml-4">
-                          <div className="font-semibold text-stone-900">EUR {service.price.toFixed(2)}</div>
-                          <div className="text-stone-400 text-xs flex items-center gap-1 justify-end">
+                          <div className="font-semibold dark:text-stone-100 text-stone-900">EUR {service.price.toFixed(2)}</div>
+                          <div className="dark:text-stone-500 text-stone-400 text-xs flex items-center gap-1 justify-end">
                             <Clock className="w-3 h-3" />{service.durationMinutes} min
                           </div>
                         </div>
@@ -475,18 +475,18 @@ export default function AdminPrenota() {
               </div>
 
               {booking.serviceIds.length > 0 && (
-                <div className="mt-4 p-4 rounded-xl bg-stone-900 text-white flex items-center justify-between">
+                <div className="mt-4 p-4 rounded-xl dark:bg-stone-100 bg-stone-900 text-white flex items-center justify-between">
                   <div>
-                    <span className="text-stone-400 text-sm">Selezionati</span>
+                    <span className="dark:text-stone-500 text-stone-400 text-sm">Selezionati</span>
                     <div className="font-semibold">
                       {booking.serviceIds.length} servizio{booking.serviceIds.length > 1 ? 'i' : ''} &middot; {formatDuration(totalDuration)}
                     </div>
                     {totalCleanupInList > 0 && (
-                      <div className="text-stone-400 text-xs mt-0.5">incl. {totalCleanupInList} min di pulizia/organizzazione</div>
+                      <div className="dark:text-stone-500 text-stone-400 text-xs mt-0.5">incl. {totalCleanupInList} min di pulizia/organizzazione</div>
                     )}
                   </div>
                   <div className="text-right">
-                    <span className="text-stone-400 text-sm">Totale</span>
+                    <span className="dark:text-stone-500 text-stone-400 text-sm">Totale</span>
                     <div className="font-semibold">EUR {totalPrice.toFixed(2)}</div>
                   </div>
                 </div>
@@ -496,34 +496,34 @@ export default function AdminPrenota() {
 
           {/* ==================== STEP 2: CALENDAR ==================== */}
           {step === 2 && (
-            <div className="bg-white rounded-xl border border-stone-200 p-6">
-              <h2 className="text-lg font-semibold text-stone-900 mb-1">Scegli data e ora</h2>
-              <p className="text-stone-500 text-sm mb-4">
+            <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
+              <h2 className="text-lg font-semibold dark:text-stone-100 text-stone-900 mb-1">Scegli data e ora</h2>
+              <p className="dark:text-stone-400 text-stone-500 text-sm mb-4">
                 Durata: {formatDuration(totalDuration)} &middot; EUR {totalPrice.toFixed(2)}
               </p>
 
               {/* Legend */}
-              <div className="flex flex-wrap gap-3 mb-4 text-xs text-stone-500">
+              <div className="flex flex-wrap gap-3 mb-4 text-xs dark:text-stone-400 text-stone-500">
                 <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> Disponibile</div>
                 <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500" /> Pochi posti</div>
                 <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-500" /> Completo</div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-300 border border-red-400" /> Chiuso</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-300 border dark:border-red-700 border-red-400" /> Chiuso</div>
               </div>
 
               {/* Calendar */}
-              <div className="rounded-xl border border-stone-100 p-4">
+              <div className="rounded-xl border dark:border-stone-800 border-stone-100 p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <button onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="p-2 rounded-lg hover:bg-stone-100 transition-colors">
-                    <ChevronLeft className="w-5 h-5 text-stone-600" />
+                  <button onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="p-2 rounded-lg dark:hover:bg-stone-700 hover:bg-stone-100 transition-colors">
+                    <ChevronLeft className="w-5 h-5 dark:text-stone-400 text-stone-600" />
                   </button>
-                  <span className="font-semibold text-stone-900">{monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}</span>
-                  <button onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))} className="p-2 rounded-lg hover:bg-stone-100 transition-colors">
-                    <ChevronRight className="w-5 h-5 text-stone-600" />
+                  <span className="font-semibold dark:text-stone-100 text-stone-900">{monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}</span>
+                  <button onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))} className="p-2 rounded-lg dark:hover:bg-stone-700 hover:bg-stone-100 transition-colors">
+                    <ChevronRight className="w-5 h-5 dark:text-stone-400 text-stone-600" />
                   </button>
                 </div>
 
                 <div className="grid grid-cols-7 mb-2">
-                  {dayNames.map(d => (<div key={d} className="text-center text-xs font-medium text-stone-400 py-1">{d}</div>))}
+                  {dayNames.map(d => (<div key={d} className="text-center text-xs font-medium dark:text-stone-500 text-stone-400 py-1">{d}</div>))}
                 </div>
 
                 <div className="grid grid-cols-7 gap-1">
@@ -537,9 +537,9 @@ export default function AdminPrenota() {
                         onClick={() => !isDisabled && fetchSlotsForDate(day.dateStr)}
                         className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all ${
                           day.date === 0 ? '' :
-                          booking.date === day.dateStr ? 'bg-stone-900 text-white font-semibold' :
+                          booking.date === day.dateStr ? 'dark:bg-stone-100 bg-stone-900 text-white font-semibold' :
                           getDayColor(day.dateStr, day.isPast)
-                        } ${!isDisabled ? 'hover:bg-stone-200 cursor-pointer' : ''}`}
+                        } ${!isDisabled ? 'dark:hover:bg-stone-700 hover:bg-stone-200 cursor-pointer' : ''}`}
                       >
                         {day.date > 0 ? (
                           <>
@@ -556,16 +556,16 @@ export default function AdminPrenota() {
               {/* Time slots */}
               {booking.date && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
-                  <h3 className="text-sm font-medium text-stone-700 mb-3">
+                  <h3 className="text-sm font-medium dark:text-stone-300 text-stone-700 mb-3">
                     {loadingSlots ? 'Caricamento orari...' : `Orari disponibili per ${formatDisplayDate(booking.date)}`}
                   </h3>
                   {loadingSlots ? (
-                    <div className="flex items-center gap-2 text-stone-400">
-                      <div className="animate-spin w-4 h-4 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+                    <div className="flex items-center gap-2 dark:text-stone-500 text-stone-400">
+                      <div className="animate-spin w-4 h-4 border-2 dark:border-stone-600 border-stone-300 border-t-stone-900 rounded-full" />
                       Caricamento...
                     </div>
                   ) : availableSlots.length === 0 ? (
-                    <p className="text-stone-400 text-sm">Nessun orario disponibile per questa data</p>
+                    <p className="dark:text-stone-500 text-stone-400 text-sm">Nessun orario disponibile per questa data</p>
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 sm:grid-cols-6 gap-2">
                       {availableSlots.map(slot => (
@@ -573,7 +573,7 @@ export default function AdminPrenota() {
                           key={slot}
                           onClick={() => setBooking(prev => ({ ...prev, time: slot }))}
                           className={`py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
-                            booking.time === slot ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 text-stone-700 hover:border-stone-300'
+                            booking.time === slot ? 'border-stone-900 dark:bg-stone-100 bg-stone-900 text-white' : 'dark:border-stone-700 border-stone-200 dark:text-stone-300 text-stone-700 dark:hover:border-stone-600 hover:border-stone-300'
                           }`}
                         >
                           {slot}
@@ -588,37 +588,37 @@ export default function AdminPrenota() {
 
           {/* ==================== STEP 3: CUSTOMER INFO ==================== */}
           {step === 3 && (
-            <div className="bg-white rounded-xl border border-stone-200 p-6">
-              <h2 className="text-lg font-semibold text-stone-900 mb-1">Dati cliente</h2>
-              <p className="text-stone-500 text-sm mb-4">Inserisci i dati del cliente per la prenotazione</p>
+            <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
+              <h2 className="text-lg font-semibold dark:text-stone-100 text-stone-900 mb-1">Dati cliente</h2>
+              <p className="dark:text-stone-400 text-stone-500 text-sm mb-4">Inserisci i dati del cliente per la prenotazione</p>
 
               {/* Summary */}
-              <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-100">
-                <div className="text-sm font-medium text-stone-700 mb-2">Riepilogo</div>
+              <div className="mb-6 p-4 rounded-xl dark:bg-stone-800/50 bg-stone-50 border dark:border-stone-800 border-stone-100">
+                <div className="text-sm font-medium dark:text-stone-300 text-stone-700 mb-2">Riepilogo</div>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-stone-500">Data</span>
+                    <span className="dark:text-stone-400 text-stone-500">Data</span>
                     <span className="font-medium">{formatDisplayDate(booking.date)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-stone-500">Ora</span>
+                    <span className="dark:text-stone-400 text-stone-500">Ora</span>
                     <span className="font-medium">{booking.time}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-stone-500">Durata</span>
+                    <span className="dark:text-stone-400 text-stone-500">Durata</span>
                     <span className="font-medium">{formatDuration(totalServiceDuration)}{totalCleanupInList > 0 ? ` + ${totalCleanupInList} min pulizia` : ''}</span>
                   </div>
-                  <div className="border-t border-stone-200 pt-1 mt-1">
+                  <div className="border-t dark:border-stone-700 border-stone-200 pt-1 mt-1">
                     {selectedServices.map(s => (
                       <div key={s.id} className="flex justify-between">
-                        <span className="text-stone-600">{s.name}</span>
+                        <span className="dark:text-stone-400 text-stone-600">{s.name}</span>
                         <span className="font-medium">EUR {s.price.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="border-t border-stone-200 pt-1 mt-1 flex justify-between">
-                    <span className="font-semibold text-stone-900">Totale</span>
-                    <span className="font-semibold text-stone-900">EUR {totalPrice.toFixed(2)}</span>
+                  <div className="border-t dark:border-stone-700 border-stone-200 pt-1 mt-1 flex justify-between">
+                    <span className="font-semibold dark:text-stone-100 text-stone-900">Totale</span>
+                    <span className="font-semibold dark:text-stone-100 text-stone-900">EUR {totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -627,51 +627,51 @@ export default function AdminPrenota() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Nome *</label>
+                    <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Nome *</label>
                     <input
                       type="text"
                       value={booking.customer.customerName}
                       onChange={e => { setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerName: e.target.value } })); if (formErrors.customerName) setFormErrors(prev => ({ ...prev, customerName: '' })) }}
                       placeholder="Mario"
-                      className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${formErrors.customerName ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'}`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors ${formErrors.customerName ? 'dark:border-red-700 border-red-400' : 'dark:border-stone-700 border-stone-200 dark:focus:border-stone-100 focus:border-stone-900'}`}
                     />
-                    {formErrors.customerName && <p className="text-red-500 text-xs mt-1">{formErrors.customerName}</p>}
+                    {formErrors.customerName && <p className="dark:text-red-400 text-red-500 text-xs mt-1">{formErrors.customerName}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Cognome *</label>
+                    <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Cognome *</label>
                     <input
                       type="text"
                       value={booking.customer.customerSurname}
                       onChange={e => { setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerSurname: e.target.value } })); if (formErrors.customerSurname) setFormErrors(prev => ({ ...prev, customerSurname: '' })) }}
                       placeholder="Rossi"
-                      className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${formErrors.customerSurname ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'}`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors ${formErrors.customerSurname ? 'dark:border-red-700 border-red-400' : 'dark:border-stone-700 border-stone-200 dark:focus:border-stone-100 focus:border-stone-900'}`}
                     />
-                    {formErrors.customerSurname && <p className="text-red-500 text-xs mt-1">{formErrors.customerSurname}</p>}
+                    {formErrors.customerSurname && <p className="dark:text-red-400 text-red-500 text-xs mt-1">{formErrors.customerSurname}</p>}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Telefono *</label>
+                    <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Telefono *</label>
                     <input
                       type="tel"
                       value={booking.customer.customerPhone}
                       onChange={e => { setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerPhone: e.target.value } })); if (formErrors.customerPhone) setFormErrors(prev => ({ ...prev, customerPhone: '' })) }}
                       placeholder="+39 333 1234567"
-                      className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${formErrors.customerPhone ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'}`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors ${formErrors.customerPhone ? 'dark:border-red-700 border-red-400' : 'dark:border-stone-700 border-stone-200 dark:focus:border-stone-100 focus:border-stone-900'}`}
                     />
-                    {formErrors.customerPhone && <p className="text-red-500 text-xs mt-1">{formErrors.customerPhone}</p>}
+                    {formErrors.customerPhone && <p className="dark:text-red-400 text-red-500 text-xs mt-1">{formErrors.customerPhone}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Email <span className="text-stone-400 font-normal">(opzionale)</span></label>
+                    <label className="block text-sm font-medium dark:text-stone-300 text-stone-700 mb-1.5">Email <span className="dark:text-stone-500 text-stone-400 font-normal">(opzionale)</span></label>
                     <input
                       type="email"
                       value={booking.customer.customerEmail}
                       onChange={e => { setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerEmail: e.target.value } })); if (formErrors.customerEmail) setFormErrors(prev => ({ ...prev, customerEmail: '' })) }}
                       placeholder="mario@email.com"
-                      className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${formErrors.customerEmail ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'}`}
+                      className={`w-full px-4 py-3 rounded-xl border-2 dark:bg-stone-900 bg-white dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none transition-colors ${formErrors.customerEmail ? 'dark:border-red-700 border-red-400' : 'dark:border-stone-700 border-stone-200 dark:focus:border-stone-100 focus:border-stone-900'}`}
                     />
-                    {formErrors.customerEmail && <p className="text-red-500 text-xs mt-1">{formErrors.customerEmail}</p>}
+                    {formErrors.customerEmail && <p className="dark:text-red-400 text-red-500 text-xs mt-1">{formErrors.customerEmail}</p>}
                   </div>
                 </div>
 
@@ -681,9 +681,9 @@ export default function AdminPrenota() {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={e => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
+                    className="w-4 h-4 rounded dark:border-stone-600 border-stone-300 dark:text-stone-100 text-stone-900 focus:ring-stone-900"
                   />
-                  <span className="text-sm text-stone-600">Ricordami per la prossima prenotazione</span>
+                  <span className="text-sm dark:text-stone-400 text-stone-600">Ricordami per la prossima prenotazione</span>
                 </label>
               </div>
             </div>
@@ -698,7 +698,7 @@ export default function AdminPrenota() {
             {step > 1 && (
               <button
                 onClick={() => setStep(prev => prev - 1)}
-                className="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors"
+                className="px-4 py-2.5 rounded-xl border dark:border-stone-700 border-stone-200 dark:text-stone-300 text-stone-700 text-sm font-medium dark:hover:bg-stone-800 hover:bg-stone-50 transition-colors"
               >
                 Indietro
               </button>
@@ -707,11 +707,11 @@ export default function AdminPrenota() {
 
           <div className="flex items-center gap-3">
             {error && (
-              <span className="text-red-500 text-sm">{error}</span>
+              <span className="dark:text-red-400 text-red-500 text-sm">{error}</span>
             )}
 
             {step >= 2 && booking.serviceIds.length > 0 && (
-              <span className="hidden sm:inline text-xs text-stone-500">
+              <span className="hidden sm:inline text-xs dark:text-stone-400 text-stone-500">
                 {booking.serviceIds.length} servizio{booking.serviceIds.length > 1 ? 'i' : ''} &middot; {formatDuration(totalDuration)} &middot; EUR {totalPrice.toFixed(2)}
               </span>
             )}
@@ -719,7 +719,7 @@ export default function AdminPrenota() {
             <button
               onClick={goNext}
               disabled={!canGoNext() || submitting}
-              className="px-4 sm:px-6 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium flex items-center gap-2 hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="px-4 sm:px-6 py-2.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium flex items-center gap-2 hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               {submitting ? (
                 <><div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> Salvataggio...</>

@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 dark:border-stone-600 border-stone-300 border-t-stone-900 rounded-full" />
       </div>
     )
   }
@@ -39,8 +39,8 @@ export default function AdminDashboard() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-stone-900">Dashboard</h1>
-        <p className="text-stone-500 text-sm mt-1 capitalize">{today}</p>
+        <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900">Dashboard</h1>
+        <p className="dark:text-stone-400 text-stone-500 text-sm mt-1 capitalize">{today}</p>
       </div>
 
       {/* Stats Grid */}
@@ -49,13 +49,13 @@ export default function AdminDashboard() {
           icon={<CalendarCheck className="w-5 h-5" />}
           label="Prenotazioni Oggi"
           value={stats?.bookingsCount ?? 0}
-          color="bg-blue-50 text-blue-600"
+          color="dark:bg-blue-950/50 bg-blue-50 text-blue-600"
         />
         <StatCard
           icon={<Euro className="w-5 h-5" />}
           label="Ricavi Oggi"
           value={`€${(stats?.revenue ?? 0).toFixed(2)}`}
-          color="bg-emerald-50 text-emerald-600"
+          color="dark:bg-emerald-950/50 bg-emerald-50 dark:text-emerald-400 text-emerald-600"
         />
         <StatCard
           icon={<TrendingUp className="w-5 h-5" />}
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
           icon={<Clock className="w-5 h-5" />}
           label="Ricavi Totali"
           value={`€${(stats?.totalRevenue ?? 0).toFixed(2)}`}
-          color="bg-amber-50 text-amber-600"
+          color="dark:bg-amber-950/50 bg-amber-50 dark:text-amber-400 text-amber-600"
         />
         <StatCard
           icon={<Star className="w-5 h-5" />}
@@ -78,25 +78,25 @@ export default function AdminDashboard() {
       </div>
 
       {/* Top Services */}
-      <div className="bg-white rounded-xl border border-stone-200 p-6">
-        <h2 className="font-semibold text-stone-900 mb-4">Servizi più richiesti (oggi)</h2>
+      <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
+        <h2 className="font-semibold dark:text-stone-100 text-stone-900 mb-4">Servizi più richiesti (oggi)</h2>
         {stats?.topServices && stats.topServices.length > 0 ? (
           <div className="space-y-3">
             {stats.topServices.map((s, i) => (
               <div key={s.name} className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-sm font-semibold text-stone-600">
+                <div className="w-8 h-8 rounded-lg dark:bg-stone-800 bg-stone-100 flex items-center justify-center text-sm font-semibold dark:text-stone-400 text-stone-600">
                   {i + 1}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-stone-900">{s.name}</div>
-                  <div className="text-sm text-stone-500">{s.count} prenotazioni</div>
+                  <div className="font-medium dark:text-stone-100 text-stone-900">{s.name}</div>
+                  <div className="text-sm dark:text-stone-400 text-stone-500">{s.count} prenotazioni</div>
                 </div>
-                <div className="font-semibold text-stone-900">€{s.revenue.toFixed(2)}</div>
+                <div className="font-semibold dark:text-stone-100 text-stone-900">€{s.revenue.toFixed(2)}</div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-stone-400 text-sm">Nessuna prenotazione oggi</p>
+          <p className="dark:text-stone-500 text-stone-400 text-sm">Nessuna prenotazione oggi</p>
         )}
       </div>
     </div>
@@ -105,14 +105,14 @@ export default function AdminDashboard() {
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) {
   return (
-    <div className="bg-white rounded-xl border border-stone-200 p-5">
+    <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-5">
       <div className="flex items-center gap-3 mb-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
           {icon}
         </div>
-        <span className="text-sm text-stone-500">{label}</span>
+        <span className="text-sm dark:text-stone-400 text-stone-500">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-stone-900">{value}</div>
+      <div className="text-2xl font-bold dark:text-stone-100 text-stone-900">{value}</div>
     </div>
   )
 }

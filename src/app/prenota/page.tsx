@@ -382,8 +382,8 @@ export default function PrenotaPage() {
         onClick={() => toggleService(service.id)}
         className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
           isSelected
-            ? 'border-stone-900 bg-stone-50'
-            : 'border-stone-200 bg-white hover:border-stone-300'
+            ? 'border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800/50'
+            : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600'
         }`}
       >
         <div className="flex items-center justify-between">
@@ -391,23 +391,23 @@ export default function PrenotaPage() {
             <div className="flex items-center gap-3">
               <div
                 className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0 ${
-                  isSelected ? 'bg-stone-900 border-stone-900' : 'border-stone-300'
+                  isSelected ? 'bg-stone-900 dark:bg-stone-100 border-stone-900 dark:border-stone-100' : 'border-stone-300 dark:border-stone-600'
                 }`}
               >
-                {isSelected && <Check className="w-3 h-3 text-white" />}
+                {isSelected && <Check className="w-3 h-3 text-white dark:text-stone-900" />}
               </div>
-              <span className="font-medium text-stone-900">{service.name}</span>
+              <span className="font-medium text-stone-900 dark:text-stone-100">{service.name}</span>
             </div>
             {service.description && (
-              <p className="text-stone-500 text-sm mt-1 ml-8">{service.description}</p>
+              <p className="text-stone-500 dark:text-stone-400 text-sm mt-1 ml-8">{service.description}</p>
             )}
           </div>
           <div className="text-right ml-4 shrink-0">
             {hasDiscount && (
-              <div className="text-xs text-stone-400 line-through">€{service.price.toFixed(2)}</div>
+              <div className="text-xs text-stone-400 dark:text-stone-500 line-through">€{service.price.toFixed(2)}</div>
             )}
-            <div className={`font-semibold ${hasDiscount ? 'text-green-600' : 'text-stone-900'}`}>€{(hasDiscount ? service.discountedPrice! : service.price).toFixed(2)}</div>
-            <div className="text-stone-400 text-xs flex items-center gap-1 justify-end">
+            <div className={`font-semibold ${hasDiscount ? 'text-green-600 dark:text-green-400' : 'text-stone-900 dark:text-stone-100'}`}>€{(hasDiscount ? service.discountedPrice! : service.price).toFixed(2)}</div>
+            <div className="text-stone-400 dark:text-stone-500 text-xs flex items-center gap-1 justify-end">
               <Clock className="w-3 h-3" />
               {service.durationMinutes} min
             </div>
@@ -452,24 +452,24 @@ export default function PrenotaPage() {
     return (
       <div>
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli i servizi</h2>
-          <p className="text-stone-500 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
+          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli i servizi</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
         </div>
 
         {/* Search bar — Apple/iOS style */}
         <div className="relative mb-5">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Cerca un servizio..."
-            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-100 text-stone-900 placeholder-stone-400 text-sm outline-none focus:bg-stone-200/70 transition-colors"
+            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 text-sm outline-none focus:bg-stone-200/70 dark:focus:bg-stone-700/70 transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 hover:text-stone-600 transition-colors"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -485,7 +485,7 @@ export default function PrenotaPage() {
           return (
             <div>
               {filtered.length === 0 && (
-                <p className="text-stone-400 text-sm text-center py-6">Nessun servizio trovato per &ldquo;{searchQuery.trim()}&rdquo;</p>
+                <p className="text-stone-400 dark:text-stone-500 text-sm text-center py-6">Nessun servizio trovato per &ldquo;{searchQuery.trim()}&rdquo;</p>
               )}
               <div className="space-y-3">
                 {filtered.map(s => <ServiceCard key={s.id} service={s} />)}
@@ -507,22 +507,22 @@ export default function PrenotaPage() {
               const isOpen = openCategories.has(category)
               const selectedCount = countSelected(items)
               return (
-                <div key={category} className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+                <div key={category} className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden">
                   <button
                     onClick={() => toggleCategory(category)}
-                    className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
-                      <h3 className="text-sm font-semibold text-stone-800">{category}</h3>
-                      <span className="text-xs text-stone-400">{items.length} servizi</span>
+                      <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">{category}</h3>
+                      <span className="text-xs text-stone-400 dark:text-stone-500">{items.length} servizi</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {selectedCount > 0 && (
-                        <span className="w-5 h-5 rounded-full bg-stone-900 text-white text-[10px] font-semibold flex items-center justify-center">
+                        <span className="w-5 h-5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-[10px] font-semibold flex items-center justify-center">
                           {selectedCount}
                         </span>
                       )}
-                      <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 text-stone-400 dark:text-stone-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                     </div>
                   </button>
                   <AnimatePresence>
@@ -546,22 +546,22 @@ export default function PrenotaPage() {
 
             {/* Uncategorized services — always visible */}
             {uncategorized.length > 0 && (
-              <div className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden">
                 <button
                   onClick={() => toggleCategory('__uncategorized__')}
-                  className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
-                    <h3 className="text-sm font-semibold text-stone-800">Altri servizi</h3>
-                    <span className="text-xs text-stone-400">{uncategorized.length} servizi</span>
+                    <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">Altri servizi</h3>
+                    <span className="text-xs text-stone-400 dark:text-stone-500">{uncategorized.length} servizi</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {countSelected(uncategorized) > 0 && (
-                      <span className="w-5 h-5 rounded-full bg-stone-900 text-white text-[10px] font-semibold flex items-center justify-center">
+                      <span className="w-5 h-5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-[10px] font-semibold flex items-center justify-center">
                         {countSelected(uncategorized)}
                       </span>
                     )}
-                    <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${openCategories.has('__uncategorized__') ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-stone-400 dark:text-stone-500 transition-transform duration-200 ${openCategories.has('__uncategorized__') ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
                 <AnimatePresence>
@@ -589,19 +589,19 @@ export default function PrenotaPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-xl bg-stone-900 text-white flex items-center justify-between"
+          className="mt-4 p-4 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-between"
         >
           <div>
-            <span className="text-stone-400 text-sm">Servizi selezionati</span>
+            <span className="text-stone-400 dark:text-stone-500 text-sm">Servizi selezionati</span>
             <div className="font-semibold">
               {booking.serviceIds.length} servizio{booking.serviceIds.length > 1 ? 'i' : ''} · {formatDuration(totalDuration)}
             </div>
             {totalCleanupInList > 0 && (
-              <div className="text-stone-400 text-xs mt-0.5">incl. {totalCleanupInList} min di pulizia/organizzazione</div>
+              <div className="text-stone-400 dark:text-stone-500 text-xs mt-0.5">incl. {totalCleanupInList} min di pulizia/organizzazione</div>
             )}
           </div>
           <div className="text-right">
-            <span className="text-stone-400 text-sm">Totale</span>
+            <span className="text-stone-400 dark:text-stone-500 text-sm">Totale</span>
             <div className="font-semibold">€{totalPrice.toFixed(2)}</div>
           </div>
         </motion.div>
@@ -626,12 +626,12 @@ export default function PrenotaPage() {
       return (
         <div>
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli un operatore</h2>
-            <p className="text-stone-500 text-sm">Caricamento operatori disponibili...</p>
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli un operatore</h2>
+            <p className="text-stone-500 dark:text-stone-400 text-sm">Caricamento operatori disponibili...</p>
           </div>
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="p-4 rounded-xl bg-stone-200 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+              <div key={i} className="p-4 rounded-xl bg-stone-200 dark:bg-stone-700 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
             ))}
           </div>
         </div>
@@ -641,8 +641,8 @@ export default function PrenotaPage() {
     return (
       <div>
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli un operatore</h2>
-          <p className="text-stone-500 text-sm">Seleziona chi ti assistera, oppure scegli il primo disponibile</p>
+          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli un operatore</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-sm">Seleziona chi ti assistera, oppure scegli il primo disponibile</p>
         </div>
 
         <div className="space-y-3">
@@ -652,23 +652,23 @@ export default function PrenotaPage() {
             onClick={() => selectOperator(null)}
             className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
               !booking.resourceId
-                ? 'border-stone-900 bg-stone-50'
-                : 'border-stone-200 bg-white hover:border-stone-300'
+                ? 'border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800/50'
+                : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600'
             }`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                  !booking.resourceId ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
+                  !booking.resourceId ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
                 }`}
               >
                 <Users className="w-4 h-4" />
               </div>
               <div className="flex-1">
-                <div className="font-medium text-stone-900">Qualsiasi operatore disponibile</div>
-                <div className="text-stone-500 text-xs mt-0.5">Verra assegnato il primo operatore libero</div>
+                <div className="font-medium text-stone-900 dark:text-stone-100">Qualsiasi operatore disponibile</div>
+                <div className="text-stone-500 dark:text-stone-400 text-xs mt-0.5">Verra assegnato il primo operatore libero</div>
               </div>
-              {!booking.resourceId && <Check className="w-5 h-5 text-stone-900 shrink-0" />}
+              {!booking.resourceId && <Check className="w-5 h-5 text-stone-900 dark:text-stone-100 shrink-0" />}
             </div>
           </motion.button>
 
@@ -682,22 +682,22 @@ export default function PrenotaPage() {
                 onClick={() => selectOperator(resource.id)}
                 className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
                   isSelected
-                    ? 'border-stone-900 bg-stone-50'
-                    : 'border-stone-200 bg-white hover:border-stone-300'
+                    ? 'border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800/50'
+                    : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                      isSelected ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'
+                      isSelected ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
                     }`}
                   >
                     {resource.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-stone-900">{resource.name}</div>
+                    <div className="font-medium text-stone-900 dark:text-stone-100">{resource.name}</div>
                   </div>
-                  {isSelected && <Check className="w-5 h-5 text-stone-900 shrink-0" />}
+                  {isSelected && <Check className="w-5 h-5 text-stone-900 dark:text-stone-100 shrink-0" />}
                 </div>
               </motion.button>
             )
@@ -708,7 +708,7 @@ export default function PrenotaPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-3 rounded-xl bg-stone-50 border border-stone-100 text-sm text-stone-500 text-center"
+          className="mt-4 p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 text-sm text-stone-500 dark:text-stone-400 text-center"
         >
           {booking.resourceId
             ? `Verrai affidato a ${selectedOperatorName}`
@@ -805,13 +805,13 @@ export default function PrenotaPage() {
   }, [calendarMonth])
 
   const getDayColor = (dateStr: string, isPast: boolean) => {
-    if (isPast) return 'text-stone-300'
-    if (isDayClosed(dateStr)) return 'text-red-500 bg-red-50'
+    if (isPast) return 'text-stone-300 dark:text-stone-600'
+    if (isDayClosed(dateStr)) return 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/50'
     const avail = dayAvailabilities[dateStr]
-    if (!avail || avail === 'none') return 'text-stone-300'
-    if (avail === 'high' || avail === 'medium') return 'text-emerald-600 bg-emerald-50'
+    if (!avail || avail === 'none') return 'text-stone-300 dark:text-stone-600'
+    if (avail === 'high' || avail === 'medium') return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50'
     // 'low' = pochi posti ma ancora disponibili -> giallo (NON rosso)
-    return 'text-amber-600 bg-amber-50'
+    return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50'
   }
 
   const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
@@ -820,8 +820,8 @@ export default function PrenotaPage() {
   const StepCalendar = () => (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-stone-900 mb-1">Scegli data e ora</h2>
-        <p className="text-stone-500 text-sm">
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli data e ora</h2>
+        <p className="text-stone-500 dark:text-stone-400 text-sm">
           Durata totale: {formatDuration(totalDuration)} · {totalPrice.toFixed(2)}€
           {booking.resourceId && (
             <span className="ml-1">· {selectedOperatorName}</span>
@@ -830,7 +830,7 @@ export default function PrenotaPage() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-4 text-xs text-stone-500">
+      <div className="flex flex-wrap gap-3 mb-4 text-xs text-stone-500 dark:text-stone-400">
         <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> Disponibile</div>
         <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500" /> Pochi posti</div>
         <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-500" /> Completo</div>
@@ -841,30 +841,30 @@ export default function PrenotaPage() {
       {calendarLoading ? (
         <CalendarSkeleton />
       ) : (
-      <div className="bg-white rounded-xl border border-stone-200 p-4">
+      <div className="bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4">
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-            className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
           >
-            <ChevronLeft className="w-5 h-5 text-stone-600" />
+            <ChevronLeft className="w-5 h-5 text-stone-600 dark:text-stone-400" />
           </button>
-          <span className="font-semibold text-stone-900">
+          <span className="font-semibold text-stone-900 dark:text-stone-100">
             {monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
           </span>
           <button
             onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-            className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
           >
-            <ChevronRight className="w-5 h-5 text-stone-600" />
+            <ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-400" />
           </button>
         </div>
 
         {/* Day headers */}
         <div className="grid grid-cols-7 mb-2">
           {dayNames.map(d => (
-            <div key={d} className="text-center text-xs font-medium text-stone-400 py-1">
+            <div key={d} className="text-center text-xs font-medium text-stone-400 dark:text-stone-500 py-1">
               {d}
             </div>
           ))}
@@ -881,9 +881,9 @@ export default function PrenotaPage() {
                 day.date === 0
                   ? ''
                   : booking.date === day.dateStr
-                  ? 'bg-stone-900 text-white font-semibold'
+                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-semibold'
                   : getDayColor(day.dateStr, day.isPast)
-              } ${day.date > 0 && !day.isPast && !isDayClosed(day.dateStr) ? 'hover:bg-stone-200 cursor-pointer' : ''}`}
+              } ${day.date > 0 && !day.isPast && !isDayClosed(day.dateStr) ? 'hover:bg-stone-200 dark:hover:bg-stone-700 cursor-pointer' : ''}`}
             >
               {day.date > 0 ? (
                 <>
@@ -904,14 +904,14 @@ export default function PrenotaPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mt-4"
         >
-          <h3 className="text-sm font-medium text-stone-700 mb-3">
+          <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-3">
             {loadingSlots ? 'Caricamento orari...' : `Orari disponibili per ${formatDisplayDate(booking.date)}`}
           </h3>
 
           {loadingSlots ? (
             <SlotsSkeleton />
           ) : availableSlots.length === 0 ? (
-            <p className="text-stone-400 text-sm">Nessun orario disponibile per questa data</p>
+            <p className="text-stone-400 dark:text-stone-500 text-sm">Nessun orario disponibile per questa data</p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {availableSlots.map(slot => (
@@ -921,8 +921,8 @@ export default function PrenotaPage() {
                   onClick={() => setBooking(prev => ({ ...prev, time: slot }))}
                   className={`py-3 rounded-xl text-sm font-medium border-2 transition-all ${
                     booking.time === slot
-                      ? 'border-stone-900 bg-stone-900 text-white'
-                      : 'border-stone-200 text-stone-700 hover:border-stone-300'
+                      ? 'border-stone-900 dark:border-stone-100 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
+                      : 'border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-300 dark:hover:border-stone-600'
                   }`}
                 >
                   {slot}
@@ -947,16 +947,16 @@ export default function PrenotaPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-5 p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center gap-3"
+          className="mb-5 p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50 flex items-center gap-3"
         >
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-            <User className="w-4 h-4 text-blue-600" />
+          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+            <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-blue-900 truncate">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-200 truncate">
               Account connesso{customerAuth.email ? ` — ${customerAuth.email}` : ''}
             </p>
-            <p className="text-xs text-blue-600">Completa i dati qui sotto per confermare la prenotazione.</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400">Completa i dati qui sotto per confermare la prenotazione.</p>
           </div>
         </motion.div>
       )
@@ -973,21 +973,21 @@ export default function PrenotaPage() {
       >
         {/* Divider line with text */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1 h-px bg-stone-200" />
-          <span className="text-xs text-stone-400 whitespace-nowrap">oppure</span>
-          <div className="flex-1 h-px bg-stone-200" />
+          <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+          <span className="text-xs text-stone-400 dark:text-stone-500 whitespace-nowrap">oppure</span>
+          <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
         </div>
 
         <Link
           href="/login?callback=/prenota"
-          className="w-full p-4 rounded-2xl bg-amber-50/60 border border-amber-100 flex items-center gap-3 text-left hover:bg-amber-100/60 transition-colors"
+          className="w-full p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/50 flex items-center gap-3 text-left hover:bg-amber-100/60 dark:hover:bg-amber-900/50 transition-colors"
         >
-          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <LogIn className="w-4 h-4 text-amber-600" />
+          <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+            <LogIn className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-900">Hai gia un account?</p>
-            <p className="text-xs text-amber-600">Accedi per gestire le tue prenotazioni.</p>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">Hai gia un account?</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">Accedi per gestire le tue prenotazioni.</p>
           </div>
           <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
         </Link>
@@ -1052,49 +1052,49 @@ export default function PrenotaPage() {
 
   // Reusable booking summary block (shared by logged-in and guest views)
   const BookingSummaryBlock = () => (
-    <div className="mb-6 p-4 rounded-xl bg-stone-50 border border-stone-100">
-      <div className="text-sm font-medium text-stone-700 mb-2">Riepilogo</div>
+    <div className="mb-6 p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
+      <div className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Riepilogo</div>
       <div className="space-y-1 text-sm">
         {booking.resourceId && (
           <div className="flex justify-between">
-            <span className="text-stone-500">Operatore</span>
-            <span className="font-medium">{selectedOperatorName}</span>
+            <span className="text-stone-500 dark:text-stone-400">Operatore</span>
+            <span className="font-medium text-stone-900 dark:text-stone-100">{selectedOperatorName}</span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-stone-500">Data</span>
-          <span className="font-medium">{formatDisplayDate(booking.date)}</span>
+          <span className="text-stone-500 dark:text-stone-400">Data</span>
+          <span className="font-medium text-stone-900 dark:text-stone-100">{formatDisplayDate(booking.date)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-stone-500">Ora</span>
-          <span className="font-medium">{booking.time}</span>
+          <span className="text-stone-500 dark:text-stone-400">Ora</span>
+          <span className="font-medium text-stone-900 dark:text-stone-100">{booking.time}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-stone-500">Durata</span>
-          <span className="font-medium">{formatDuration(totalServiceDuration)}{totalCleanupInList > 0 ? ` + ${totalCleanupInList} min pulizia` : ''}</span>
+          <span className="text-stone-500 dark:text-stone-400">Durata</span>
+          <span className="font-medium text-stone-900 dark:text-stone-100">{formatDuration(totalServiceDuration)}{totalCleanupInList > 0 ? ` + ${totalCleanupInList} min pulizia` : ''}</span>
         </div>
-        <div className="border-t border-stone-200 pt-1 mt-1">
+        <div className="border-t border-stone-200 dark:border-stone-700 pt-1 mt-1">
           {selectedServices.map(s => (
             <div key={s.id} className="flex justify-between items-center">
-              <span className="text-stone-600">{s.name}</span>
+              <span className="text-stone-600 dark:text-stone-300">{s.name}</span>
               <div className="text-right">
                 {s.discountedPrice && s.discountedPrice > 0 && (
-                  <span className="text-xs text-stone-400 line-through mr-1">€{s.price.toFixed(2)}</span>
+                  <span className="text-xs text-stone-400 dark:text-stone-500 line-through mr-1">€{s.price.toFixed(2)}</span>
                 )}
-                <span className="font-medium">{(s.discountedPrice && s.discountedPrice > 0 ? s.discountedPrice : s.price).toFixed(2)}</span>
+                <span className="font-medium text-stone-900 dark:text-stone-100">{(s.discountedPrice && s.discountedPrice > 0 ? s.discountedPrice : s.price).toFixed(2)}</span>
               </div>
             </div>
           ))}
         </div>
         {discountAmount > 0 && (
-          <div className="flex justify-between text-emerald-600 pt-1">
+          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 pt-1">
             <span className="font-medium">Sconto</span>
             <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
           </div>
         )}
-        <div className="border-t border-stone-200 pt-1 mt-1 flex justify-between">
-          <span className="font-semibold text-stone-900">{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
-          <span className="font-semibold text-stone-900">€{finalTotalPrice.toFixed(2)}</span>
+        <div className="border-t border-stone-200 dark:border-stone-700 pt-1 mt-1 flex justify-between">
+          <span className="font-semibold text-stone-900 dark:text-stone-100">{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
+          <span className="font-semibold text-stone-900 dark:text-stone-100">€{finalTotalPrice.toFixed(2)}</span>
         </div>
       </div>
     </div>
@@ -1103,19 +1103,19 @@ export default function PrenotaPage() {
   // Reusable coupon input block (independent of auth state)
   const CouponInputBlock = () => (
     <div>
-      <label className="block text-sm font-medium text-stone-700 mb-1.5">
-        Hai un codice sconto? <span className="text-stone-400 font-normal">(opzionale)</span>
+      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+        Hai un codice sconto? <span className="text-stone-400 dark:text-stone-500 font-normal">(opzionale)</span>
       </label>
       {couponValid ? (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 bg-emerald-50">
-          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="flex-1 text-sm font-medium text-emerald-700">
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50">
+          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="flex-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">
             -€{couponDiscount!.toFixed(2)} applicato
           </span>
           <button
             type="button"
             onClick={removeCoupon}
-            className="p-1 rounded-md hover:bg-emerald-100 text-emerald-600 transition-colors"
+            className="p-1 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -1131,29 +1131,29 @@ export default function PrenotaPage() {
             }}
             onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), validateCoupon())}
             placeholder="SCONTO10"
-            className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors uppercase ${
-              couponError ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors uppercase ${
+              couponError ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
           />
           <button
             type="button"
             onClick={validateCoupon}
             disabled={couponLoading || !couponCode.trim()}
-            className="px-4 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+            className="px-4 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           >
             {couponLoading ? '...' : 'Applica'}
           </button>
         </div>
       )}
-      {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
+      {couponError && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{couponError}</p>}
     </div>
   )
 
   const StepCustomerInfo = () => (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-stone-900 mb-1">I tuoi dati</h2>
-        <p className="text-stone-500 text-sm">
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">I tuoi dati</h2>
+        <p className="text-stone-500 dark:text-stone-400 text-sm">
           {hasCompleteProfile ? 'Conferma la tua prenotazione' : 'Inserisci i tuoi dati per confermare la prenotazione'}
         </p>
       </div>
@@ -1165,37 +1165,37 @@ export default function PrenotaPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-stone-50 rounded-2xl p-6 border border-stone-100"
+            className="mb-6 bg-stone-50 dark:bg-stone-800/50 rounded-2xl p-6 border border-stone-100 dark:border-stone-800"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-stone-900 flex items-center justify-center shrink-0">
-                <span className="text-sm font-semibold text-white">
+              <div className="w-10 h-10 rounded-full bg-stone-900 dark:bg-stone-100 flex items-center justify-center shrink-0">
+                <span className="text-sm font-semibold text-white dark:text-stone-900">
                   {customerAuth.nome?.charAt(0)?.toUpperCase() || '?'}
                 </span>
               </div>
               <div>
-                <p className="text-base font-semibold text-stone-900">
+                <p className="text-base font-semibold text-stone-900 dark:text-stone-100">
                   Bentornato, {customerAuth.nome?.split(' ')[0] || 'Cliente'}!
                 </p>
-                <p className="text-sm text-stone-500">
+                <p className="text-sm text-stone-500 dark:text-stone-400">
                   Convalidiamo la tua prenotazione utilizzando i dati del tuo profilo.
                 </p>
               </div>
             </div>
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-stone-600">
-                <User className="w-4 h-4 text-stone-400" />
+              <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
+                <User className="w-4 h-4 text-stone-400 dark:text-stone-500" />
                 <span>{customerAuth.nome}</span>
               </div>
               {customerAuth.telefono && !customerAuth.telefono.startsWith('temp_') && (
-                <div className="flex items-center gap-2 text-stone-600">
-                  <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
+                  <svg className="w-4 h-4 text-stone-400 dark:text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                   <span>{customerAuth.telefono}</span>
                 </div>
               )}
               {customerAuth.email && (
-                <div className="flex items-center gap-2 text-stone-600">
-                  <Mail className="w-4 h-4 text-stone-400" />
+                <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
+                  <Mail className="w-4 h-4 text-stone-400 dark:text-stone-500" />
                   <span>{customerAuth.email}</span>
                 </div>
               )}
@@ -1220,7 +1220,7 @@ export default function PrenotaPage() {
           {/* Guest form */}
           <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Nome *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Nome *</label>
           <input
             type="text"
             value={booking.customer.customerName}
@@ -1229,15 +1229,15 @@ export default function PrenotaPage() {
               if (formErrors.customerName) setFormErrors(prev => ({ ...prev, customerName: '' }))
             }}
             placeholder="Mario"
-            className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
-              formErrors.customerName ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+              formErrors.customerName ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
           />
-          {formErrors.customerName && <p className="text-red-500 text-xs mt-1">{formErrors.customerName}</p>}
+          {formErrors.customerName && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerName}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Cognome *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Cognome *</label>
           <input
             type="text"
             value={booking.customer.customerSurname}
@@ -1246,15 +1246,15 @@ export default function PrenotaPage() {
               if (formErrors.customerSurname) setFormErrors(prev => ({ ...prev, customerSurname: '' }))
             }}
             placeholder="Rossi"
-            className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
-              formErrors.customerSurname ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+              formErrors.customerSurname ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
           />
-          {formErrors.customerSurname && <p className="text-red-500 text-xs mt-1">{formErrors.customerSurname}</p>}
+          {formErrors.customerSurname && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerSurname}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Telefono *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Telefono *</label>
           <input
             type="tel"
             value={booking.customer.customerPhone}
@@ -1263,16 +1263,16 @@ export default function PrenotaPage() {
               if (formErrors.customerPhone) setFormErrors(prev => ({ ...prev, customerPhone: '' }))
             }}
             placeholder="+39 333 1234567"
-            className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
-              formErrors.customerPhone ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+              formErrors.customerPhone ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
           />
-          {formErrors.customerPhone && <p className="text-red-500 text-xs mt-1">{formErrors.customerPhone}</p>}
+          {formErrors.customerPhone && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerPhone}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">
-            Email <span className="text-stone-400 font-normal">(opzionale)</span>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+            Email <span className="text-stone-400 dark:text-stone-500 font-normal">(opzionale)</span>
           </label>
           <input
             type="email"
@@ -1282,11 +1282,11 @@ export default function PrenotaPage() {
               if (formErrors.customerEmail) setFormErrors(prev => ({ ...prev, customerEmail: '' }))
             }}
             placeholder="mario@email.com"
-            className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
-              formErrors.customerEmail ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+              formErrors.customerEmail ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
           />
-          {formErrors.customerEmail && <p className="text-red-500 text-xs mt-1">{formErrors.customerEmail}</p>}
+          {formErrors.customerEmail && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerEmail}</p>}
         </div>
 
         {/* Coupon code input */}
@@ -1299,9 +1299,9 @@ export default function PrenotaPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={e => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
+              className="w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-stone-900 dark:text-stone-100 focus:ring-stone-900 dark:focus:ring-stone-100"
             />
-            <span className="text-sm text-stone-600">Ricordami per la prossima prenotazione</span>
+            <span className="text-sm text-stone-600 dark:text-stone-400">Ricordami per la prossima prenotazione</span>
           </label>
         )}
           </div>
@@ -1328,13 +1328,13 @@ export default function PrenotaPage() {
                       })
                     }
                   }}
-                  className="w-4 h-4 mt-0.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900"
+                  className="w-4 h-4 mt-0.5 rounded border-stone-300 dark:border-stone-600 text-stone-900 dark:text-stone-100 focus:ring-stone-900 dark:focus:ring-stone-100"
                 />
                 <div>
-                  <span className="text-sm font-medium text-stone-700 group-hover:text-stone-900 transition-colors">
+                  <span className="text-sm font-medium text-stone-700 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors">
                     Voglio registrarmi per salvare i miei dati
                   </span>
-                  <p className="text-xs text-stone-400 mt-0.5">
+                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
                     Crea un account per gestire le tue prenotazioni in futuro. Ti invieremo i dati di accesso via email.
                   </p>
                 </div>
@@ -1350,9 +1350,9 @@ export default function PrenotaPage() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-3 space-y-3 pl-6 border-l-2 border-amber-200">
+                    <div className="mt-3 space-y-3 pl-6 border-l-2 border-amber-200 dark:border-amber-800">
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1.5">Crea Password *</label>
+                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Crea Password *</label>
                         <input
                           type="password"
                           value={regPassword}
@@ -1361,14 +1361,14 @@ export default function PrenotaPage() {
                             if (formErrors.regPassword) setFormErrors(prev => ({ ...prev, regPassword: '' }))
                           }}
                           placeholder="Almeno 6 caratteri"
-                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
-                            formErrors.regPassword ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+                            formErrors.regPassword ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
                           }`}
                         />
-                        {formErrors.regPassword && <p className="text-red-500 text-xs mt-1">{formErrors.regPassword}</p>}
+                        {formErrors.regPassword && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.regPassword}</p>}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1.5">Conferma Password *</label>
+                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Conferma Password *</label>
                         <input
                           type="password"
                           value={regPasswordConfirm}
@@ -1377,11 +1377,11 @@ export default function PrenotaPage() {
                             if (formErrors.regPasswordConfirm) setFormErrors(prev => ({ ...prev, regPasswordConfirm: '' }))
                           }}
                           placeholder="Ripeti la password"
-                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors ${
-                            formErrors.regPasswordConfirm ? 'border-red-400' : 'border-stone-200 focus:border-stone-900'
+                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+                            formErrors.regPasswordConfirm ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
                           }`}
                         />
-                        {formErrors.regPasswordConfirm && <p className="text-red-500 text-xs mt-1">{formErrors.regPasswordConfirm}</p>}
+                        {formErrors.regPasswordConfirm && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.regPasswordConfirm}</p>}
                       </div>
                     </div>
                   </motion.div>
@@ -1405,9 +1405,9 @@ export default function PrenotaPage() {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: 'spring', duration: 0.6, bounce: 0.5 }}
-        className="mx-auto mb-6 w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center"
+        className="mx-auto mb-6 w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center"
       >
-        <PartyPopper className="w-10 h-10 text-emerald-600" />
+        <PartyPopper className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
       </motion.div>
 
       <motion.div
@@ -1415,42 +1415,42 @@ export default function PrenotaPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h2 className="text-2xl font-semibold text-stone-900 mb-2">Prenotazione confermata!</h2>
-        <p className="text-stone-500 mb-8">Grazie, ti aspettiamo!</p>
+        <h2 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 mb-2">Prenotazione confermata!</h2>
+        <p className="text-stone-500 dark:text-stone-400 mb-8">Grazie, ti aspettiamo!</p>
 
-        <div className="text-left max-w-sm mx-auto p-5 rounded-xl bg-stone-50 border border-stone-100 space-y-2 text-sm">
+        <div className="text-left max-w-sm mx-auto p-5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-stone-500">Data</span>
-            <span className="font-medium">{formatDisplayDate(booking.date)}</span>
+            <span className="text-stone-500 dark:text-stone-400">Data</span>
+            <span className="font-medium text-stone-900 dark:text-stone-100">{formatDisplayDate(booking.date)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-stone-500">Ora</span>
-            <span className="font-medium">{booking.time}</span>
+            <span className="text-stone-500 dark:text-stone-400">Ora</span>
+            <span className="font-medium text-stone-900 dark:text-stone-100">{booking.time}</span>
           </div>
           {booking.resourceId && (
             <div className="flex justify-between">
-              <span className="text-stone-500">Operatore</span>
-              <span className="font-medium">{selectedOperatorName}</span>
+              <span className="text-stone-500 dark:text-stone-400">Operatore</span>
+              <span className="font-medium text-stone-900 dark:text-stone-100">{selectedOperatorName}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-stone-500">Cliente</span>
-            <span className="font-medium">{booking.customer.customerName} {booking.customer.customerSurname}</span>
+            <span className="text-stone-500 dark:text-stone-400">Cliente</span>
+            <span className="font-medium text-stone-900 dark:text-stone-100">{booking.customer.customerName} {booking.customer.customerSurname}</span>
           </div>
-          <div className="border-t border-stone-200 pt-2 space-y-1">
+          <div className="border-t border-stone-200 dark:border-stone-700 pt-2 space-y-1">
             {selectedServices.map(s => (
               <div key={s.id} className="flex justify-between">
-                <span className="text-stone-600">{s.name}</span>
-                <span className={`font-medium ${discountAmount > 0 ? 'line-through text-stone-400' : ''}`}>€{s.price.toFixed(2)}</span>
+                <span className="text-stone-600 dark:text-stone-300">{s.name}</span>
+                <span className={`font-medium ${discountAmount > 0 ? 'line-through text-stone-400 dark:text-stone-500' : 'text-stone-900 dark:text-stone-100'}`}>€{s.price.toFixed(2)}</span>
               </div>
             ))}
             {discountAmount > 0 && (
-              <div className="flex justify-between text-emerald-600">
+              <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
                 <span className="font-medium">Sconto applicato</span>
                 <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between font-semibold pt-1 border-t border-stone-200">
+            <div className="flex justify-between font-semibold pt-1 border-t border-stone-200 dark:border-stone-700">
               <span>{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
               <span>€{finalTotalPrice.toFixed(2)}</span>
             </div>
@@ -1464,11 +1464,11 @@ export default function PrenotaPage() {
             href={buildGoogleCalendarUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
           >
             <Calendar className="w-4 h-4" />
             Aggiungi al Calendario
-            <ExternalLink className="w-3.5 h-3.5 text-stone-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
           </a>
 
           {/* Cancellation Link */}
@@ -1484,7 +1484,7 @@ export default function PrenotaPage() {
                   setConfirmedBookingId(null)
                 } catch { /* silent */ }
               }}
-              className="block w-full text-center px-4 py-2.5 rounded-xl text-stone-400 text-xs hover:text-stone-600 hover:bg-stone-100 transition-colors"
+              className="block w-full text-center px-4 py-2.5 rounded-xl text-stone-400 dark:text-stone-500 text-xs hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
             >
               Annulla questa prenotazione
             </button>
@@ -1513,7 +1513,7 @@ export default function PrenotaPage() {
 
         <button
           onClick={() => router.push('/')}
-          className="mt-6 px-8 py-3 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors print:hidden"
+          className="mt-6 px-8 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors print:hidden"
         >
           Torna alla Home
         </button>
@@ -1529,20 +1529,20 @@ export default function PrenotaPage() {
             {isIOSSafari && !showIOSHint ? (
               <button
                 onClick={() => setShowIOSHint(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/50 text-blue-700 dark:text-blue-400 text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Scarica l&apos;app sul tuo telefono
               </button>
             ) : isIOSSafari && showIOSHint ? (
-              <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-800 text-left space-y-2">
+              <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/50 text-sm text-blue-800 dark:text-blue-300 text-left space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">Installa IntelliGenda</span>
-                  <button onClick={dismissPWAInstall} className="p-1 rounded-md hover:bg-blue-100">
+                  <button onClick={dismissPWAInstall} className="p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <ol className="space-y-1 list-decimal list-inside text-blue-700">
+                <ol className="space-y-1 list-decimal list-inside text-blue-700 dark:text-blue-400">
                   <li>Tocca il pulsante <strong>Condividi</strong> in basso</li>
                   <li>Seleziona <strong>Aggiungi a Home</strong></li>
                   <li>Conferma con <strong>Aggiungi</strong></li>
@@ -1551,7 +1551,7 @@ export default function PrenotaPage() {
             ) : (
               <button
                 onClick={promptPWAInstall}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
               >
                 <Download className="w-4 h-4" />
                 Scarica l&apos;app per le prossime prenotazioni
@@ -1699,24 +1699,24 @@ export default function PrenotaPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-stone-100 rounded-full" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-stone-200">
+      <header className="sticky top-0 z-10 bg-white/80 dark:bg-stone-950/80 backdrop-blur-lg border-b border-stone-200 dark:border-stone-700">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => step > 1 && step < 5 ? setStep(prev => prev - 1) : router.push('/')}
-            className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-stone-600" />
+            <ArrowLeft className="w-5 h-5 text-stone-600 dark:text-stone-400" />
           </button>
-          <h1 className="font-semibold text-stone-900">Prenota</h1>
+          <h1 className="font-semibold text-stone-900 dark:text-stone-100">Prenota</h1>
         </div>
 
         {/* Steps indicator — 4 steps (confirmation is step 5, shown separately) */}
@@ -1727,21 +1727,21 @@ export default function PrenotaPage() {
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors shrink-0 ${
                     step >= s.num
-                      ? 'bg-stone-900 text-white'
-                      : 'bg-stone-200 text-stone-500'
+                      ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
+                      : 'bg-stone-200 dark:bg-stone-700 text-stone-500 dark:text-stone-400'
                   }`}
                 >
                   {s.num}
                 </div>
                 <span
                   className={`text-xs font-medium hidden sm:block ${
-                    step >= s.num ? 'text-stone-900' : 'text-stone-400'
+                    step >= s.num ? 'text-stone-900 dark:text-stone-100' : 'text-stone-400 dark:text-stone-500'
                   }`}
                 >
                   {s.label}
                 </span>
                 {s.num < 4 && (
-                  <div className={`flex-1 h-0.5 ${step > s.num ? 'bg-stone-900' : 'bg-stone-200'}`} />
+                  <div className={`flex-1 h-0.5 ${step > s.num ? 'bg-stone-900 dark:bg-stone-100' : 'bg-stone-200 dark:bg-stone-700'}`} />
                 )}
               </div>
             ))}
@@ -1770,17 +1770,17 @@ export default function PrenotaPage() {
 
       {/* Footer with Next button */}
       {step > 0 && step < 5 && (
-        <footer className="sticky bottom-0 bg-white/80 backdrop-blur-lg border-t border-stone-200 p-4">
+        <footer className="sticky bottom-0 bg-white/80 dark:bg-stone-950/80 backdrop-blur-lg border-t border-stone-200 dark:border-stone-700 p-4">
           <div className="max-w-lg mx-auto">
             {error && (
-              <div className="mb-3 p-3 rounded-xl bg-red-50 text-red-600 text-sm text-center">
+              <div className="mb-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 text-sm text-center">
                 {error}
               </div>
             )}
 
             {/* Selected services badge (step 2+) */}
             {step >= 2 && booking.serviceIds.length > 0 && (
-              <div className="mb-3 text-xs text-stone-500 text-center">
+              <div className="mb-3 text-xs text-stone-500 dark:text-stone-400 text-center">
                 {booking.serviceIds.length} servizio{booking.serviceIds.length > 1 ? 'i' : ''} · {formatDuration(totalDuration)} · €{totalPrice.toFixed(2)}
               </div>
             )}
@@ -1788,11 +1788,11 @@ export default function PrenotaPage() {
             <button
               onClick={goNext}
               disabled={!canGoNext() || submitting}
-              className="w-full py-4 rounded-xl bg-stone-900 text-white font-medium text-base flex items-center justify-center gap-2 hover:bg-stone-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="w-full py-4 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium text-base flex items-center justify-center gap-2 hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               {submitting ? (
                 <>
-                  <div className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full" />
+                  <div className="animate-spin w-5 h-5 border-2 border-white/30 dark:border-stone-900/30 border-t-white dark:border-stone-900 rounded-full" />
                   Prenotazione in corso...
                 </>
               ) : step === 4 ? (

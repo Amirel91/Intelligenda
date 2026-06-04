@@ -141,8 +141,8 @@ export default function AdminPostazioni() {
   return (
     <div className="max-w-3xl pb-20 sm:pb-0">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-stone-900">Postazioni e Collaboratori</h1>
-        <p className="text-stone-500 text-sm mt-1">
+        <h1 className="text-2xl font-semibold dark:text-stone-100 text-stone-900">Postazioni e Collaboratori</h1>
+        <p className="dark:text-stone-400 text-stone-500 text-sm mt-1">
           Gestisci le postazioni o i collaboratori della tua attivita. I clienti potranno prenotare
           in parallelo sulle postazioni disponibili.
         </p>
@@ -152,13 +152,13 @@ export default function AdminPostazioni() {
       <div className="space-y-3 mb-8">
         {resourcesLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin w-6 h-6 border-2 border-stone-300 border-t-stone-900 rounded-full" />
+            <div className="animate-spin w-6 h-6 border-2 dark:border-stone-600 border-stone-300 border-t-stone-900 rounded-full" />
           </div>
         ) : resources.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-stone-200">
-            <Users className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-            <p className="text-stone-400 text-sm">Nessuna postazione configurata</p>
-            <p className="text-stone-400 text-xs mt-1">Aggiungi la prima postazione qui sotto</p>
+          <div className="text-center py-12 dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200">
+            <Users className="w-10 h-10 dark:text-stone-600 text-stone-300 mx-auto mb-3" />
+            <p className="dark:text-stone-500 text-stone-400 text-sm">Nessuna postazione configurata</p>
+            <p className="dark:text-stone-500 text-stone-400 text-xs mt-1">Aggiungi la prima postazione qui sotto</p>
           </div>
         ) : (
           resources.map((res) => (
@@ -166,10 +166,10 @@ export default function AdminPostazioni() {
               key={res.id}
               className={`bg-white rounded-xl border transition-colors ${
                 editingResource?.id === res.id
-                  ? 'border-stone-900 shadow-lg ring-1 ring-stone-900/10'
+                  ? 'border-stone-900 shadow-lg ring-1 dark:ring-stone-100/10 ring-stone-900/10'
                   : res.active
-                    ? 'border-stone-200'
-                    : 'border-stone-100 opacity-60'
+                    ? 'dark:border-stone-700 border-stone-200'
+                    : 'dark:border-stone-800 border-stone-100 opacity-60'
               }`}
             >
               {/* Resource row */}
@@ -182,22 +182,22 @@ export default function AdminPostazioni() {
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSaveResource(res.id)}
-                      className="px-3 py-1.5 rounded-lg border-2 border-stone-900 text-sm text-stone-900 outline-none w-48"
+                      className="px-3 py-1.5 rounded-lg border-2 border-stone-900 text-sm dark:text-stone-100 text-stone-900 outline-none w-48"
                       autoFocus
                     />
                   ) : (
                     <div className="min-w-0">
-                      <span className="text-sm font-medium text-stone-900 truncate block">{res.name}</span>
+                      <span className="text-sm font-medium dark:text-stone-100 text-stone-900 truncate block">{res.name}</span>
                       <div className="flex items-center gap-2 mt-0.5">
                         {res._count.bookings > 0 && (
-                          <span className="text-xs text-stone-400">{res._count.bookings} prenotaz.</span>
+                          <span className="text-xs dark:text-stone-500 text-stone-400">{res._count.bookings} prenotaz.</span>
                         )}
                         {res.services && res.services.length > 0 ? (
-                          <span className="text-xs text-stone-400">
+                          <span className="text-xs dark:text-stone-500 text-stone-400">
                             {res.services.length} servizio{res.services.length > 1 ? 'i' : ''} abilitat{res.services.length === 1 ? 'o' : 'i'}
                           </span>
                         ) : (
-                          <span className="text-xs text-stone-400">Tutti i servizi</span>
+                          <span className="text-xs dark:text-stone-500 text-stone-400">Tutti i servizi</span>
                         )}
                       </div>
                     </div>
@@ -209,7 +209,7 @@ export default function AdminPostazioni() {
                       <button
                         onClick={() => handleSaveResource(res.id)}
                         disabled={savingResource || !editName.trim()}
-                        className="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+                        className="p-2 rounded-lg dark:text-emerald-400 text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 transition-colors"
                         title="Salva"
                       >
                         {savingResource ? (
@@ -220,7 +220,7 @@ export default function AdminPostazioni() {
                       </button>
                       <button
                         onClick={() => { setEditingResource(null); setEditName(''); setEditServiceIds([]) }}
-                        className="p-2 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors"
+                        className="p-2 rounded-lg dark:text-stone-500 text-stone-400 dark:hover:bg-stone-700 hover:bg-stone-100 transition-colors"
                         title="Annulla"
                       >
                         <X className="w-4 h-4" />
@@ -232,8 +232,8 @@ export default function AdminPostazioni() {
                         onClick={() => handleToggleResource(res)}
                         className={`p-1.5 rounded-lg text-xs font-semibold px-2.5 transition-colors ${
                           res.active
-                            ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
-                            : 'text-stone-500 bg-stone-100 hover:bg-stone-200'
+                            ? 'dark:text-emerald-400 text-emerald-700 dark:bg-emerald-950/50 bg-emerald-50 dark:hover:bg-emerald-900/50 hover:bg-emerald-100'
+                            : 'dark:text-stone-400 text-stone-500 dark:bg-stone-800 bg-stone-100 dark:hover:bg-stone-700 hover:bg-stone-200'
                         }`}
                         title={res.active ? 'Disattiva' : 'Riattiva'}
                       >
@@ -241,7 +241,7 @@ export default function AdminPostazioni() {
                       </button>
                       <button
                         onClick={() => { setEditingResource(res); setEditName(res.name); setEditServiceIds(res.services?.map(s => s.id) || []) }}
-                        className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-100 transition-colors"
+                        className="p-1.5 rounded-lg dark:text-stone-400 text-stone-500 dark:hover:bg-stone-700 hover:bg-stone-100 transition-colors"
                         title="Modifica"
                       >
                         <Pencil className="w-4 h-4" />
@@ -249,7 +249,7 @@ export default function AdminPostazioni() {
                       <button
                         onClick={() => handleDeleteResource(res.id)}
                         disabled={deletingResource === res.id}
-                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                        className="p-1.5 rounded-lg dark:text-red-400 text-red-500 dark:hover:bg-red-950/50 hover:bg-red-50 disabled:opacity-50 transition-colors"
                         title="Elimina"
                       >
                         {deletingResource === res.id ? (
@@ -265,8 +265,8 @@ export default function AdminPostazioni() {
 
               {/* Service assignment (expanded edit area) */}
               {editingResource?.id === res.id && shopServices.length > 0 && (
-                <div className="px-4 pb-4 border-t border-stone-100">
-                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mt-3 mb-2">
+                <div className="px-4 pb-4 border-t dark:border-stone-800 border-stone-100">
+                  <p className="text-xs font-semibold dark:text-stone-400 text-stone-500 uppercase tracking-wide mt-3 mb-2">
                     Servizi abilitati per questo operatore
                   </p>
                   <div className="space-y-1">
@@ -276,7 +276,7 @@ export default function AdminPostazioni() {
                         <label
                           key={svc.id}
                           className={`flex items-center gap-2.5 text-sm cursor-pointer py-2 px-3 rounded-lg transition-colors ${
-                            isChecked ? 'bg-stone-900 text-white' : 'text-stone-700 hover:bg-stone-50'
+                            isChecked ? 'dark:bg-stone-100 bg-stone-900 text-white' : 'dark:text-stone-300 text-stone-700 dark:hover:bg-stone-800 hover:bg-stone-50'
                           }`}
                         >
                           <input
@@ -291,16 +291,16 @@ export default function AdminPostazioni() {
                             }}
                             className={`w-4 h-4 rounded border-2 transition-colors ${
                               isChecked
-                                ? 'border-white bg-white checked:bg-stone-900'
-                                : 'border-stone-300 checked:bg-stone-900'
-                            } focus:ring-stone-500`}
+                                ? 'border-white dark:bg-stone-900 bg-white checked:bg-stone-900'
+                                : 'dark:border-stone-600 border-stone-300 checked:bg-stone-900'
+                            } dark:focus:ring-stone-400 focus:ring-stone-500`}
                           />
                           <span className="truncate">{svc.name}</span>
                         </label>
                       )
                     })}
                   </div>
-                  <p className="text-xs text-stone-400 mt-2">
+                  <p className="text-xs dark:text-stone-500 text-stone-400 mt-2">
                     {editServiceIds.length === 0
                       ? 'Nessun servizio selezionato = il collaboratore potra svolgere tutti i servizi.'
                       : `${editServiceIds.length} servizio${editServiceIds.length > 1 ? 'i selezionati' : ' selezionato'}`
@@ -314,10 +314,10 @@ export default function AdminPostazioni() {
       </div>
 
       {/* Add new resource section */}
-      <div className="bg-white rounded-xl border border-stone-200 p-6">
+      <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Plus className="w-5 h-5 text-stone-500" />
-          <h2 className="font-semibold text-stone-900">Nuova Postazione</h2>
+          <Plus className="w-5 h-5 dark:text-stone-400 text-stone-500" />
+          <h2 className="font-semibold dark:text-stone-100 text-stone-900">Nuova Postazione</h2>
         </div>
 
         <div className="flex gap-2 mb-4">
@@ -327,12 +327,12 @@ export default function AdminPostazioni() {
             onChange={(e) => setNewResourceName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddResource()}
             placeholder="Nome postazione (es. Poltrona 2, Dott. Rossi...)"
-            className="flex-1 px-4 py-2.5 rounded-xl border-2 border-stone-200 bg-white text-sm text-stone-900 placeholder-stone-400 outline-none focus:border-stone-900 transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-xl border-2 dark:border-stone-700 border-stone-200 dark:bg-stone-900 bg-white text-sm dark:text-stone-100 text-stone-900 dark:placeholder-stone-500 placeholder-stone-400 outline-none dark:focus:border-stone-100 focus:border-stone-900 transition-colors"
           />
           <button
             onClick={handleAddResource}
             disabled={addingResource || !newResourceName.trim()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl dark:bg-stone-100 bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-50 transition-all"
           >
             {addingResource ? (
               <div className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
@@ -347,8 +347,8 @@ export default function AdminPostazioni() {
 
         {/* Service selection for new resource */}
         {shopServices.length > 0 && (
-          <div className="p-4 rounded-xl bg-stone-50 border border-stone-100">
-            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
+          <div className="p-4 rounded-xl dark:bg-stone-800/50 bg-stone-50 border dark:border-stone-800 border-stone-100">
+            <p className="text-xs font-semibold dark:text-stone-400 text-stone-500 uppercase tracking-wide mb-2">
               Servizi per la nuova postazione (opzionale)
             </p>
             <div className="flex flex-wrap gap-2">
@@ -362,8 +362,8 @@ export default function AdminPostazioni() {
                     )}
                     className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
                       isChecked
-                        ? 'bg-stone-900 text-white border-stone-900'
-                        : 'border-stone-200 text-stone-600 hover:border-stone-300'
+                        ? 'dark:bg-stone-100 bg-stone-900 text-white border-stone-900'
+                        : 'dark:border-stone-700 border-stone-200 dark:text-stone-400 text-stone-600 dark:hover:border-stone-600 hover:border-stone-300'
                     }`}
                   >
                     {svc.name}
@@ -372,7 +372,7 @@ export default function AdminPostazioni() {
               })}
             </div>
             {newResourceServiceIds.length > 0 && (
-              <p className="text-xs text-stone-400 mt-2">
+              <p className="text-xs dark:text-stone-500 text-stone-400 mt-2">
                 {newResourceServiceIds.length} servizio{newResourceServiceIds.length > 1 ? 'i selezionati' : ' selezionato'}
               </p>
             )}
