@@ -248,9 +248,9 @@ export async function getAvailableSlots(
       const resource = resourcesWithAvail.find(r => r.id === b.resourceId)
       if (resource) {
         resource.bookedRanges.push(range)
-      } else {
-        unassignedRanges.push(range)
       }
+      // If the booking belongs to a DIFFERENT resource (not in our filtered set),
+      // it does NOT block this resource — skip it entirely.
     } else {
       unassignedRanges.push(range)
     }
@@ -732,7 +732,7 @@ export async function getBatchAvailability(
       if (b.resourceId) {
         const res = resourcesWithAvail.find(r => r.id === b.resourceId)
         if (res) res.bookedRanges.push(range)
-        else unassignedRanges.push(range)
+        // If the booking belongs to a DIFFERENT resource, skip — it doesn't block others.
       } else {
         unassignedRanges.push(range)
       }
