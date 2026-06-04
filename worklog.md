@@ -319,3 +319,32 @@ Stage Summary:
 - Style matches site aesthetic: stone-200 borders, rounded-xl, clean typography
 - Minimal/clean: no unnecessary animations, consistent with existing form fields
 - File modified: src/app/landing/page.tsx only
+
+---
+Task ID: dark-mode
+Agent: main + 5 subagents
+Task: Implement dark/light mode across entire IntelliGenda site
+
+Work Log:
+- Installed next-themes@0.4.6
+- Created src/components/ThemeProvider.tsx (client wrapper for next-themes)
+- Created src/components/ThemeToggle.tsx (elegant Sun/Moon toggle with animation)
+- Updated src/app/layout.tsx: suppressHydrationWarning on html, ThemeProvider wrapping body
+- Added .dark CSS variables block in globals.css (inverted oklch values for all shadcn/ui tokens)
+- Added dark scrollbar styles in globals.css
+- Updated CustomerNavbar.tsx: dark classes + ThemeToggle in top-right
+- Updated admin/layout.tsx: dark classes on sidebar + ThemeToggle in footer (subagent)
+- Updated landing/page.tsx: dark classes on all sections + ThemeToggle in navbar (subagent)
+- Updated all 8 admin pages: dashboard, calendario, clienti, servizi, impostazioni, postazioni, prenota, coupon (subagent)
+- Updated all 7 customer pages: page.tsx, prenota, cancella, account, profilo, login, register (subagent)
+- Updated superadmin, manutenzione, termini, privacy pages with dark classes + ThemeToggle (subagent)
+- Resolved merge conflicts with remote changes (rating UI fix, new files)
+- Build verified: 74/74 static pages, zero errors
+- Pushed to origin/main (commit 66152ae)
+
+Stage Summary:
+- 36 files modified, 1900+ insertions, 1500+ deletions
+- 1400+ dark: class instances across 27 files
+- ThemeToggle placed in: CustomerNavbar, admin sidebar, landing navbar, superadmin, manutenzione, termini, privacy
+- Default theme: light (configurable via ThemeProvider)
+- Zero logic changes — purely visual dark mode additions
