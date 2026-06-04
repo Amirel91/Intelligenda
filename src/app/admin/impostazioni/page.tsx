@@ -8,9 +8,12 @@ interface BusinessConfig {
   id: string
   shopName: string
   shopDescription: string
+  shortDescription: string
   shopPhone?: string
   shopEmail?: string
   shopAddress?: string
+  showAddress: boolean
+  showHours: boolean
   lunchBreakEnabled: boolean
   lunchBreakStart: string
   lunchBreakEnd: string
@@ -47,9 +50,12 @@ const defaultConfig: BusinessConfig = {
   id: '',
   shopName: '',
   shopDescription: '',
+  shortDescription: '',
   shopPhone: '',
   shopEmail: '',
   shopAddress: '',
+  showAddress: true,
+  showHours: true,
   lunchBreakEnabled: false,
   lunchBreakStart: '12:30',
   lunchBreakEnd: '14:00',
@@ -88,9 +94,12 @@ export default function AdminImpostazioni() {
             id: data.id || '',
             shopName: data.shopName || '',
             shopDescription: data.shopDescription || '',
+            shortDescription: data.shortDescription || '',
             shopPhone: data.shopPhone || '',
             shopEmail: data.shopEmail || '',
             shopAddress: data.shopAddress || '',
+            showAddress: data.showAddress !== undefined ? data.showAddress : true,
+            showHours: data.showHours !== undefined ? data.showHours : true,
             lunchBreakEnabled: data.lunchBreakEnabled || false,
             lunchBreakStart: data.lunchBreakStart || '12:30',
             lunchBreakEnd: data.lunchBreakEnd || '14:00',

@@ -3,10 +3,10 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   LayoutDashboard,
   CalendarDays,
-  Sparkles,
   Settings,
   LogOut,
   Menu,
@@ -18,6 +18,10 @@ import {
   UserCog,
   LifeBuoy,
   Tag,
+  CreditCard,
+  Sparkles,
+  ChevronRight,
+  AlertTriangle,
 } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
@@ -26,21 +30,42 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 interface AuthContextType {
   username: string | null
   loading: boolean
+  shopName: string
+  plan: string
+  trialDays: number
+  blocked: boolean
 }
 
-const AuthContext = createContext<AuthContextType>({ username: null, loading: true })
+const AuthContext = createContext<AuthContextType>({ username: null, loading: true, shopName: '', plan: 'free', trialDays: 0, blocked: false })
 
 export const useAuth = () => useContext(AuthContext)
 
-const navItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
-  { href: '/admin/prenota', label: 'Nuova Prenotazione', icon: Plus },
-  { href: '/admin/servizi', label: 'Servizi', icon: Sparkles },
-  { href: '/admin/postazioni', label: 'Postazioni', icon: UserCog },
-  { href: '/admin/clienti', label: 'Clienti', icon: Users },
-  { href: '/admin/coupon', label: 'Codici Sconto', icon: Tag },
+// ---- Navigation sections ----
+type NavItem = { href: string; label: string; icon: React.ElementType }
+
+const sections: { title: string; items: NavItem[] }[] = [
+  {
+    title: 'Panoramica',
+    items: [
+      { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'Gestione',
+    items: [
+      { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
+      { href: '/admin/prenota', label: 'Nuova Prenotazione', icon: Plus },
+      { href: '/admin/servizi', label: 'Servizi', icon: Sparkles },
+      { href: '/admin/postazioni', label: 'Postazioni', icon: UserCog },
+      { href: '/admin/clienti', label: 'Clienti', icon: Users },
+      { href: '/admin/coupon', label: 'Codici Sconto', icon: Tag },
+    ],
+  },
+]
+
+const settingsItems: NavItem[] = [
   { href: '/admin/impostazioni', label: 'Impostazioni', icon: Settings },
+  { href: '/admin/piano', label: 'Piano', icon: CreditCard },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -51,45 +76,50 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showIOSHint, setShowIOSHint] = useState(false)
   const [shopName, setShopName] = useState<string>('')
+  const [plan, setPlan] = useState<string>('free')
+  const [trialDays, setTrialDays] = useState(0)
+  const [blocked, setBlocked] = useState(false)
   const { canInstall: canInstallPWA, isIOS: isIOSSafari, promptInstall: promptPWAInstall, dismiss: dismissPWAInstall } = usePWAInstall()
 
-  const isLoginPage = pathname === '/admin/login'
   const isPublicPage = pathname === '/admin/login' || pathname === '/admin/forgot-password' || pathname === '/admin/reset-password'
 
   useEffect(() => {
-    // On public pages (login, forgot-password, reset-password), skip auth check entirely
     if (isPublicPage) {
       setLoading(false)
       return
     }
 
-    fetch('/api/auth/me')
-      .then(res => {
+    Promise.all([
+      fetch('/api/auth/me').then(res => {
         if (!res.ok) {
-          // Not authenticated → redirect to login
           router.replace('/admin/login')
           return null
         }
         return res.json()
-      })
-      .then(data => {
-        if (data && data.username) {
-          setUsername(data.username)
+      }),
+      fetch('/api/config').then(res => res.ok ? res.json() : null).catch(() => null),
+      fetch('/api/billing/status').then(res => res.ok ? res.json() : null).catch(() => null),
+    ])
+      .then(([authData, configData, billingData]) => {
+        if (authData?.username) setUsername(authData.username)
+        if (configData?.shopName) setShopName(configData.shopName)
+        if (configData?.plan) setPlan(configData.plan)
+        if (billingData) {
+          setTrialDays(billingData.trialDaysRemaining || 0)
+          setBlocked(billingData.blocked || false)
         }
-        // Always stop loading, even if not authenticated
         setLoading(false)
       })
       .catch(() => {
         router.replace('/admin/login')
         setLoading(false)
       })
-
-    // Fetch shop name for support link
-    fetch('/api/config')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data?.shopName) setShopName(data.shopName) })
-      .catch(() => {})
   }, [router, isPublicPage])
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
 
   const handleLogout = async () => {
     await fetch('/api/auth/me', { method: 'POST' })
@@ -97,7 +127,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/admin/login')
   }
 
-  // Show loading spinner only on non-public pages while checking auth
+  const getPageTitle = (): string => {
+    const allItems = [...sections.flatMap(s => s.items), ...settingsItems]
+    const match = allItems.find(n => pathname === n.href || (n.href !== '/admin/dashboard' && pathname.startsWith(n.href)))
+    return match?.label || 'Gestionale'
+  }
+
+  // ---- Loading state ----
   if (loading && !isPublicPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-800">
@@ -106,12 +142,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     )
   }
 
-  // On public pages, render children directly without sidebar
-  if (isPublicPage) {
-    return <>{children}</>
-  }
+  // Public pages render without sidebar
+  if (isPublicPage) return <>{children}</>
 
-  // Not authenticated and not on login page → show nothing (redirect will happen)
+  // Not authenticated
   if (!username) return null
 
   return (
@@ -120,12 +154,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Sidebar */}
+        {/* ---- Sidebar ---- */}
         <aside
           className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-stone-900 border-r border-stone-200 dark:border-stone-700 flex flex-col transition-transform lg:translate-x-0 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -172,18 +206,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 onClick={promptPWAInstall}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
               >
-                <Download className="w-5 h-5" />
-                Installa l'App sul Telefono
+                <Download className="w-4 h-4" />
+                <span>Installa App</span>
               </button>
             )}
-            {/* iOS Install Hint */}
             {canInstallPWA && isIOSSafari && !showIOSHint && (
               <button
                 onClick={() => setShowIOSHint(true)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-400 transition-colors"
               >
-                <Download className="w-5 h-5" />
-                Installa l'App sul Telefono
+                <Download className="w-4 h-4" />
+                <span>Installa App</span>
               </button>
             )}
             {canInstallPWA && isIOSSafari && showIOSHint && (
@@ -230,7 +263,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </aside>
 
-        {/* Main content */}
+        {/* ---- Main content ---- */}
         <div className="flex-1 min-w-0">
           {/* Mobile header */}
           <header className="lg:hidden sticky top-0 z-30 bg-white/80 dark:bg-stone-950/80 backdrop-blur-lg border-b border-stone-200 dark:border-stone-700 px-4 py-3 flex items-center gap-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -249,11 +282,68 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </header>
 
           {/* Page content */}
-          <main className="p-4 lg:p-8">
+          <main className="p-4 lg:p-8 max-w-[1400px]">
+            {/* Trial expiry warning */}
+            {(plan === 'free' || plan === 'trial') && trialDays > 0 && !blocked && (
+              <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-sm text-amber-800 flex-1">
+                  <span className="font-medium">Prova gratuita:</span> {trialDays} giorni rimanenti.{' '}
+                  <Link href="/admin/piano" className="underline font-medium hover:text-amber-900 transition-colors">
+                    Scegli un piano
+                  </Link>
+                </p>
+              </div>
+            )}
+            {/* Blocked warning */}
+            {blocked && (
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-3.5 flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                <p className="text-sm text-red-800 flex-1">
+                  <span className="font-medium">Abbonamento scaduto.</span> Il tuo sito e bloccato.{' '}
+                  <Link href="/admin/piano" className="underline font-medium hover:text-red-900 transition-colors">
+                    Rinnova ora
+                  </Link>
+                </p>
+              </div>
+            )}
             {children}
           </main>
         </div>
       </div>
     </AuthContext.Provider>
+  )
+}
+
+// ---- Reusable sidebar link ----
+function SidebarLink({ href, icon: Icon, label, isActive, onClick, badge }: {
+  href: string
+  icon: React.ElementType
+  label: string
+  isActive: boolean
+  onClick?: () => void
+  badge?: string
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors group ${
+        isActive
+          ? 'bg-stone-900 text-white'
+          : 'text-stone-600 hover:bg-stone-100'
+      }`}
+    >
+      <Icon className="w-4 h-4 shrink-0" />
+      <span className="flex-1 truncate">{label}</span>
+      {badge && !isActive && (
+        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-stone-100 text-stone-500 group-hover:bg-stone-200 transition-colors">
+          {badge}
+        </span>
+      )}
+      {isActive && (
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+      )}
+    </Link>
   )
 }

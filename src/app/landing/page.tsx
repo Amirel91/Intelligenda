@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   ArrowRight,
   Brain,
@@ -21,6 +21,9 @@ import {
   LogIn,
   Menu,
   ChevronDown,
+  ChevronRight,
+  Users,
+  MessageCircle,
 } from 'lucide-react'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 import { ACTIVITY_TYPES, ACTIVITY_GROUPS } from '@/lib/activity-types'
@@ -61,6 +64,11 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState('')
+
+  // Activity dropdown state
+  const [activityDropdownOpen, setActivityDropdownOpen] = useState(false)
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+  const activityDropdownRef = useRef<HTMLDivElement>(null)
 
   // Lead form state
   const [leadEmail, setLeadEmail] = useState('')
@@ -104,6 +112,24 @@ export default function LandingPage() {
       if (slugTimerRef.current) clearTimeout(slugTimerRef.current)
     }
   }, [form.slug])
+
+  // Click outside handler for activity dropdown
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (activityDropdownRef.current && !activityDropdownRef.current.contains(e.target as Node)) {
+        setActivityDropdownOpen(false)
+        setExpandedGroup(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Get selected activity display info
+  const selectedActivity = ACTIVITY_TYPES.find(a => a.id === form.activityType)
+  const selectedGroupEmoji = selectedActivity
+    ? ACTIVITY_GROUPS.find(g => g.id === selectedActivity.group)?.name.split(' ')[0] || ''
+    : ''
 
   // ==================== FORM HANDLING ====================
 
@@ -252,7 +278,7 @@ export default function LandingPage() {
               Registrati
             </a>
             <a
-              href="/login"
+              href="/accedi"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl hover:bg-stone-50 dark:hover:bg-stone-800 transition-all"
             >
@@ -524,7 +550,7 @@ export default function LandingPage() {
               {errors.slug && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.slug}</p>}
             </div>
 
-            {/* Tipo di Attività */}
+            {/* Tipo di Attività — Custom Grouped Dropdown */}
             <div>
               <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
                 Tipo di Attività

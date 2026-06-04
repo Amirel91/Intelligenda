@@ -53,6 +53,18 @@ model BusinessConfig {
   // Minimum notice hours: clients cannot book slots closer than X hours from now
   minNoticeHours     Int          @default(1)
   features           String[]     @default([])
+  // Short description for customer-facing pages (max 200 chars)
+  shortDescription    String       @default("")
+  // Location visibility toggle (show address on customer pages)
+  showAddress        Boolean      @default(true)
+  // Working hours visibility toggle
+  showHours          Boolean      @default(true)
+
+  // Billing & Subscription
+  plan               String       @default("free")
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  planExpiresAt       DateTime?
 
   workingHours    WorkingHours[]
   closedDates     ClosedDate[]

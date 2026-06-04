@@ -41,9 +41,12 @@ export const serviceSchema = z.object({
 export const configSchema = z.object({
   shopName: z.string().min(2, 'Il nome del negozio e obbligatorio'),
   shopDescription: z.string().default(''),
+  shortDescription: z.string().max(200, 'La descrizione breve non puo superare 200 caratteri').default(''),
   shopPhone: z.string().optional().default(''),
   shopEmail: z.string().email('Email non valida').optional().or(z.literal('')),
   shopAddress: z.string().optional().default(''),
+  showAddress: z.boolean().default(true),
+  showHours: z.boolean().default(true),
   lunchBreakEnabled: z.boolean().default(false),
   lunchBreakStart: z.string().regex(/^\d{2}:\d{2}$/).default('12:30'),
   lunchBreakEnd: z.string().regex(/^\d{2}:\d{2}$/).default('14:00'),

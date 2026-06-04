@@ -1,53 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, ensureDbSchema } from '@/lib/db'
-import { resolveTenantSlug } from '@/lib/tenant'
+import { ensureDbSchema } from '@/lib/db'
+import { getTenantSlugFromRequest, getTenantBillingStatus } from '@/lib/tenant'
+import { getTrialDaysRemaining, getMaxPostazioni } from '@/lib/plans'
 
-/**
- * GET /api/billing/status?slug=xxx
- * Returns the subscription status for the current tenant.
- * Accepts slug via cookie (subdomain) or ?slug= query param (main domain /account).
- */
+// GET /api/billing/status — Returns current plan, trial days remaining, limits
 export async function GET(request: NextRequest) {
   try {
     await ensureDbSchema()
-
-    const slug = resolveTenantSlug(request)
+    const slug = getTenantSlugFromRequest(request)
     if (!slug) {
-      return NextResponse.json({ error: 'Tenant non trovato' }, { status: 404 })
+      return NextResponse.json({ error: 'Nessun negozio' }, { status: 404 })
     }
 
-    const tenant = await db.tenant.findUnique({
-      where: { slug },
-      select: {
-        id: true,
-        slug: true,
-        businessName: true,
-        subscriptionStatus: true,
-        planEndDate: true,
-        createdAt: true,
-      },
-    })
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Tenant non trovato' }, { status: 404 })
+    const status = await getTenantBillingStatus(slug)
+    if (!status) {
+      return NextResponse.json({ error: 'Negozio non trovato' }, { status: 404 })
     }
 
-    // Determine if the plan has effectively expired
-    const now = new Date()
-    const isExpired = tenant.planEndDate && new Date(tenant.planEndDate) <= now
-    const effectiveStatus = isExpired && tenant.subscriptionStatus === 'cancelling'
-      ? 'suspended'
-      : tenant.subscriptionStatus
+    const trialDays = getTrialDaysRemaining(status.planEndDate)
+    const maxPostazioni = getMaxPostazioni(status.plan)
 
     return NextResponse.json({
-      status: effectiveStatus,
-      planEndDate: tenant.planEndDate,
-      isExpired,
-      createdAt: tenant.createdAt,
-      businessName: tenant.businessName,
+      plan: status.plan,
+      subscriptionStatus: status.subscriptionStatus,
+      blocked: status.blocked,
+      blockReason: status.reason,
+      trialDaysRemaining: trialDays,
+      planEndDate: status.planEndDate,
+      maxPostazioni,
     })
   } catch (error) {
     console.error('GET /api/billing/status error:', error)
-    return NextResponse.json({ error: 'Errore nel caricamento dello stato' }, { status: 500 })
+    return NextResponse.json({ error: 'Errore' }, { status: 500 })
   }
 }

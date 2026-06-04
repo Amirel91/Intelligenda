@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CalendarDays, Phone, Mail, MapPin, Star } from 'lucide-react'
+import { CalendarDays, Phone, Mail, MapPin, Star, Clock } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { CustomerNavbar } from '@/components/CustomerNavbar'
@@ -11,10 +11,12 @@ import { CustomerNavbar } from '@/components/CustomerNavbar'
 interface BusinessConfig {
   id: string
   shopName: string
-  shopDescription: string
+  shortDescription?: string
   shopPhone?: string
   shopEmail?: string
   shopAddress?: string
+  showAddress?: boolean
+  showHours?: boolean
   features?: string[]
 }
 
@@ -27,10 +29,20 @@ interface Service {
   featured?: boolean
 }
 
+interface WorkingHour {
+  dayOfWeek: number
+  openTime: string
+  closeTime: string
+  closed: boolean
+}
+
+const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+
 export default function HomePage() {
   const router = useRouter()
   const [config, setConfig] = useState<BusinessConfig | null>(null)
   const [featuredServices, setFeaturedServices] = useState<Service[]>([])
+  const [workingHours, setWorkingHours] = useState<WorkingHour[]>([])
 
   // Secret admin access: 5 consecutive taps on shop logo
   const tapCountRef = useRef(0)
@@ -82,11 +94,25 @@ export default function HomePage() {
       .catch(() => {})
   }, [])
 
+  // Fetch working hours if showHours is enabled
+  useEffect(() => {
+    if (config?.showHours !== false) {
+      fetch('/api/working-hours')
+        .then(res => res.json())
+        .then(data => { if (Array.isArray(data)) setWorkingHours(data) })
+        .catch(() => {})
+    }
+  }, [config?.showHours])
+
   const handleFeaturedClick = (service: Service) => {
     const prefillData = JSON.stringify({ serviceId: service.id })
     document.cookie = `ig_prefill_service=${encodeURIComponent(prefillData)};path=/prenota;max-age=300;samesite=lax`
     router.push('/prenota')
   }
+
+  // Get open days summary
+  const openDays = workingHours.filter(wh => !wh.closed)
+  const closedDays = workingHours.filter(wh => wh.closed)
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white dark:from-stone-800 dark:to-stone-900">
@@ -119,7 +145,7 @@ export default function HomePage() {
           )}
 
           {/* Contact Info */}
-          {(config?.shopPhone || config?.shopEmail || config?.shopAddress) && (
+          {(config?.shopPhone || config?.shopEmail || (config?.shopAddress && config?.showAddress !== false)) && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mb-8 space-y-2">
               {config?.shopPhone && (<a href={`tel:${config.shopPhone}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 transition-colors"><Phone className="w-4 h-4" />{config.shopPhone}</a>)}
               {config?.shopEmail && (<a href={`mailto:${config.shopEmail}`} className="flex items-center justify-center gap-2 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 transition-colors"><Mail className="w-4 h-4" />{config.shopEmail}</a>)}
@@ -188,6 +214,43 @@ export default function HomePage() {
               ))}
             </motion.div>
           )}
+
+          {/* Working Hours */}
+          {config?.showHours !== false && workingHours.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="mt-10 w-full"
+            >
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Clock className="w-3.5 h-3.5 text-stone-400" />
+                <h2 className="text-xs font-medium text-stone-400 uppercase tracking-widest">Orari</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 max-w-xs mx-auto text-xs">
+                {workingHours.map((wh) => (
+                  <div key={wh.dayOfWeek} className="flex justify-between items-center py-1">
+                    <span className="text-stone-500">{DAY_NAMES[wh.dayOfWeek - 1]}</span>
+                    {wh.closed ? (
+                      <span className="text-stone-300">Chiuso</span>
+                    ) : (
+                      <span className="text-stone-600 font-medium">{wh.openTime}–{wh.closeTime}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Powered by IntelliGenda */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            className="mt-16 text-center"
+          >
+            <p className="text-xs text-stone-300 select-none">Powered by IntelliGenda</p>
+          </motion.div>
         </motion.div>
       </main>
     </div>

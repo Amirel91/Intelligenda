@@ -218,3 +218,104 @@ Stage Summary:
 - 3 files changed: +106, -70 lines (deleted tailwind.config.ts)
 - Build errors resolved: no more tailwindcss-animate import, no more truncated JSX
 - Clear logo separation: brand image only on marketing site, Sparkling icon on all tenant customer pages
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Step 3 - Sidebar unificata + riorganizzazione rotte admin
+
+Work Log:
+- Verificato che Step 2 (JWT + jose + middleware) era già implementato
+- Letto e analizzato layout.tsx, dashboard, impostazioni, login esistenti
+- Redesign completo di admin/layout.tsx con sidebar sezionale minimal
+- Creata pagina /admin/piano/page.tsx per gestione piano
+- Aggiornata dashboard con stile coerente e piu pulito
+- Verificata build (nessun errore)
+- Commit e push su git
+
+Stage Summary:
+- Sidebar riorganizzata in sezioni: Panoramica (Dashboard), Gestione (Calendario/Prenota/Servizi/Postazioni/Clienti/Coupon)
+- Footer sidebar con Impostazioni + Piano + link sito/assistenza/logout
+- Badge piano attuale visibile nella sidebar
+- Admin-icon.png usato come logo nella sidebar tenant
+- Shop name dinamico nell'header sidebar
+- Componente SidebarLink riutilizzabile con supporto badge
+- Auto-close sidebar su navigazione mobile
+- Pagina Piano con 3 cards (Gratuito/Pro/Business), piano attuale, data scadenza
+- Dashboard stile compatto con cards piu piccole, link "Vedi tutti" servizi
+- Commit: 92ea278 "feat: Step 3 - sidebar unificata + pagina Piano"
+
+---
+Task ID: 3-fix
+Agent: Main Agent
+Task: Fix login "Negozio non trovato" da landing + registrazione senza nome negozio
+
+Work Log:
+- Analizzato screenshot: errore "Negozio non trovato" su www.intelligenda.it/login
+- Identificato causa: /login usa /api/auth/customer/login che richiede tenant_slug cookie (assente sul dominio principale)
+- Creato /api/auth/resolve-tenant per lookup tenant da ownerEmail
+- Riscritto /login page: business login con email lookup, mostra link redirect al subdomain admin
+- Riscritto /register page: form completo business (nome, negozio, slug, tipo attivita, email, password)
+- Verificato build e push
+
+Stage Summary:
+- Fix: Login da landing page non da piu "Negozio non trovato"
+- Nuovo: /login cerca tenant da email e mostra "Vai al pannello -> {slug}.intelligenda.it/admin/login"
+- Nuovo: /register ha campo Nome Negozio + Slug (.intelligenda.it) + Tipo Attivita
+- Endpoint: GET /api/auth/resolve-tenant?email=xxx → restituisce slug, businessName, adminUrl
+- Commit: bd7c95a
+---
+Task ID: 1
+Agent: main
+Task: Aggiungere "Powered by IntelliGenda", descrizione breve, posizione/indirizzo con toggle visibilità
+
+Work Log:
+- Esplorato il codebase: homepage (page.tsx), prenota/page.tsx, admin/impostazioni, Prisma schema, db.ts, validations.ts, api/config, api/bookings
+- Aggiunto "Powered by IntelliGenda" in basso-centro nella homepage (src/app/page.tsx)
+- Aggiunto "Powered by IntelliGenda" in basso nella pagina di prenotazione Step 5 (src/app/prenota/page.tsx)
+- Aggiunto "Powered by IntelliGenda" nella pagina di cancellazione prenotazione
+- Aggiunto campo `shortDescription` (String, max 200 char) in Prisma schema + DDL migration + Zod validation
+- Aggiunto campo `showAddress` (Boolean, default true) in Prisma schema + DDL migration + Zod validation
+- Aggiunto textarea "Descrizione Breve" con counter 200 char nella sezione Negozio delle impostazioni admin
+- Aggiunto toggle "Mostra indirizzo" sotto il campo Indirizzo nelle impostazioni admin
+- Aggiunto `shortDescription` mostrato sotto il nome del negozio nella homepage cliente (corsivo, grigio chiaro)
+- Aggioranto la condizione di visibilità dell'indirizzo nella homepage (rispetta `showAddress`)
+- Aggiunto box "Ti aspettiamo il [data] alle [ora] - [indirizzo]" nel riepilogo Step 5 della prenotazione
+- Aggiornato API /api/bookings POST per restituire shopAddress e showAddress
+- Aggiornato health-check db.ts da `plan` a `showAddress`
+- Build Next.js superata senza errori
+
+Stage Summary:
+- 3 funzionalità implementate: branding "Powered by", descrizione breve, posizione con toggle
+- File modificati: page.tsx, prenota/page.tsx, cancella/page.tsx, impostazioni/page.tsx, prisma/schema.prisma, db.ts, validations.ts, api/bookings/route.ts
+- Prisma generate eseguito con successo
+- Tutti i campi hanno validazione (Zod max 200 char per shortDescription) e migrazione DDL automatica
+
+---
+Task ID: custom-dropdown
+Agent: main
+Task: Replace native select with custom in-page grouped dropdown for activity type on landing page
+
+Work Log:
+- Analyzed current landing page (src/app/landing/page.tsx) — native <select> with <optgroup> for activity type at lines 664-685
+- Read activity-types.ts to understand data structure (ACTIVITY_GROUPS with emojis, ACTIVITY_TYPES with group mapping)
+- Added state: activityDropdownOpen, expandedGroup, activityDropdownRef for click-outside detection
+- Added useEffect for mousedown click-outside handler (closes dropdown + resets expanded group)
+- Added computed values: selectedActivity, selectedGroupEmoji for trigger display
+- Replaced native <select> with custom dropdown component:
+  - Trigger button: shows emoji + activity name, border highlights on open, chevron rotates
+  - Dropdown panel: absolute positioned, rounded, border, shadow, max-h-72 with scroll
+  - Group headers: clickable + hoverable, emoji + group name, check mark if contains selected item, chevron rotates on expand
+  - Group items: nested with pl-10 indent, selected item highlighted with bg-stone-100 + font-medium
+  - All groups start collapsed, expand on click/hover
+- Clicking an item: updates form.activityType, closes dropdown, resets expanded group
+- Added ChevronRight to lucide imports
+- Build verified: no errors, compiled successfully
+
+Stage Summary:
+- Custom dropdown replaces native <select> — no more browser popup on mobile
+- Groups collapsed by default, expand on click/hover with smooth CSS transition
+- Emojis preserved on both trigger button and group headers
+- Style matches site aesthetic: stone-200 borders, rounded-xl, clean typography
+- Minimal/clean: no unnecessary animations, consistent with existing form fields
+- File modified: src/app/landing/page.tsx only

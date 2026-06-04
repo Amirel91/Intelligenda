@@ -19,6 +19,9 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Simple step state for success animation
+  const [step, setStep] = useState<'form' | 'success'>('form')
+
   // Redirect already-logged-in users
   useEffect(() => {
     fetch('/api/auth/customer/me')
@@ -68,9 +71,6 @@ function RegisterContent() {
       setLoading(false)
     }
   }
-
-  // Simple step state for success animation
-  const [step, setStep] = useState<'form' | 'success'>('form')
 
   return (
     <div className="w-full max-w-sm">

@@ -215,6 +215,7 @@ export default function CancellaPrenotazione() {
             Torna alla Home
           </Link>
         )}
+        <p className="mt-8 text-center text-xs text-stone-300 select-none">Powered by IntelliGenda</p>
       </motion.div>
     </div>
   )

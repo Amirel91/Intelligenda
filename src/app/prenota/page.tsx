@@ -28,6 +28,7 @@ import {
   LogIn,
   Mail,
   Star,
+  MapPin,
 } from 'lucide-react'
 
 // ==================== TYPES ====================
@@ -87,6 +88,8 @@ export default function PrenotaPage() {
   const [step, setStep] = useState(1)
   const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null)
   const [shopName, setShopName] = useState<string>('')
+  const [shopAddress, setShopAddress] = useState<string>('')
+  const [showShopAddress, setShowShopAddress] = useState(true)
 
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -1560,6 +1563,9 @@ export default function PrenotaPage() {
           </motion.div>
         )}
       </motion.div>
+
+        {/* Powered by IntelliGenda */}
+        <p className="mt-12 text-center text-xs text-stone-300 select-none">Powered by IntelliGenda</p>
     </div>
   )
 
@@ -1610,6 +1616,8 @@ export default function PrenotaPage() {
       const createdBooking = await res.json()
       setConfirmedBookingId(createdBooking.id || null)
       setShopName(createdBooking.shopName || '')
+      setShopAddress(createdBooking.shopAddress || '')
+      setShowShopAddress(createdBooking.showAddress !== undefined ? createdBooking.showAddress : true)
 
       setStep(5) // Success step
 
