@@ -375,42 +375,55 @@ export default function PrenotaPage() {
 
   // ==================== STEP 1: SERVICES ====================
 
-  // Render a single service card (reused for featured, categorized, and uncategorized lists)
+  // Render a single service card — modern 3D hover + animated check
   const ServiceCard = ({ service }: { service: Service }) => {
     const isSelected = booking.serviceIds.includes(service.id)
     const hasDiscount = service.discountedPrice && service.discountedPrice > 0
     return (
       <motion.button
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ y: -2, scale: 1.005 }}
+        whileTap={{ scale: 0.97 }}
         onClick={() => toggleService(service.id)}
-        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+        className={`w-full text-left rounded-2xl border-2 transition-all duration-300 ${
           isSelected
-            ? 'border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800/50'
-            : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600'
+            ? 'border-stone-800 dark:border-stone-200 shadow-lg shadow-stone-900/12 dark:shadow-black/15 bg-gradient-to-br from-stone-50 via-stone-100/60 to-stone-50 dark:from-stone-800/50 dark:via-stone-800/30 dark:to-stone-800/50'
+            : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-md hover:shadow-stone-200/40'
         }`}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between p-4">
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <div
-                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0 ${
-                  isSelected ? 'bg-stone-900 dark:bg-stone-100 border-stone-900 dark:border-stone-100' : 'border-stone-300 dark:border-stone-600'
-                }`}
-              >
-                {isSelected && <Check className="w-3 h-3 text-white dark:text-stone-900" />}
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 shrink-0 ${
+                isSelected
+                  ? 'bg-stone-900 dark:bg-stone-100 shadow-md shadow-stone-900/25 dark:shadow-black/25'
+                  : 'bg-stone-100 dark:bg-stone-800 border-2 border-stone-300 dark:border-stone-600'
+              }`}>
+                <AnimatePresence mode="wait">
+                  {isSelected && (
+                    <motion.div
+                      key="check"
+                      initial={{ scale: 0, rotate: -90 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0, rotate: 90 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    >
+                      <Check className="w-3.5 h-3.5 text-white dark:text-stone-900" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-              <span className="font-medium text-stone-900 dark:text-stone-100">{service.name}</span>
+              <span className={`font-semibold transition-colors ${isSelected ? 'text-stone-900 dark:text-stone-100' : 'text-stone-800 dark:text-stone-200'}`}>{service.name}</span>
             </div>
             {service.description && (
-              <p className="text-stone-500 dark:text-stone-400 text-sm mt-1 ml-8">{service.description}</p>
+              <p className="text-stone-500 dark:text-stone-400 text-sm mt-1.5 ml-9 leading-relaxed">{service.description}</p>
             )}
           </div>
           <div className="text-right ml-4 shrink-0">
             {hasDiscount && (
               <div className="text-xs text-stone-400 dark:text-stone-500 line-through">€{service.price.toFixed(2)}</div>
             )}
-            <div className={`font-semibold ${hasDiscount ? 'text-green-600 dark:text-green-400' : 'text-stone-900 dark:text-stone-100'}`}>€{(hasDiscount ? service.discountedPrice! : service.price).toFixed(2)}</div>
-            <div className="text-stone-400 dark:text-stone-500 text-xs flex items-center gap-1 justify-end">
+            <div className={`font-bold text-lg ${hasDiscount ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-900 dark:text-stone-100'}`}>€{(hasDiscount ? service.discountedPrice! : service.price).toFixed(2)}</div>
+            <div className="text-stone-400 dark:text-stone-500 text-xs flex items-center gap-1 justify-end mt-0.5">
               <Clock className="w-3 h-3" />
               {service.durationMinutes} min
             </div>
@@ -587,16 +600,17 @@ export default function PrenotaPage() {
           </div>
         )}
 
-      {/* Selection summary */}
+      {/* Selection summary — modern glass-morphism bar */}
       {booking.serviceIds.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-between"
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className="mt-5 p-4 rounded-2xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 dark:from-stone-100 dark:via-stone-200 dark:to-stone-100 text-white dark:text-stone-900 flex items-center justify-between shadow-xl shadow-stone-900/25 dark:shadow-black/25"
         >
           <div>
-            <span className="text-stone-400 dark:text-stone-500 text-sm">Servizi selezionati</span>
-            <div className="font-semibold">
+            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">Servizi selezionati</span>
+            <div className="font-bold text-lg">
               {booking.serviceIds.length} servizio{booking.serviceIds.length > 1 ? 'i' : ''} · {formatDuration(totalDuration)}
             </div>
             {totalCleanupInList > 0 && (
@@ -604,8 +618,8 @@ export default function PrenotaPage() {
             )}
           </div>
           <div className="text-right">
-            <span className="text-stone-400 dark:text-stone-500 text-sm">Totale</span>
-            <div className="font-semibold">€{totalPrice.toFixed(2)}</div>
+            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">Totale</span>
+            <div className="font-bold text-xl">€{totalPrice.toFixed(2)}</div>
           </div>
         </motion.div>
       )}

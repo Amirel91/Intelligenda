@@ -377,12 +377,8 @@ export default function LandingPage() {
       </nav>
 
       {/* ==================== HERO ==================== */}
-      <section className="pt-24 pb-16 md:pt-36 md:pb-24 flex flex-col items-center text-center px-6">
-        {/* Large logo */}
-        <div className="mb-8">
-          <Image src="/logo.png" alt="IntelliGenda" width={120} height={120} className="object-contain" priority />
-        </div>
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-stone-900 leading-tight max-w-4xl" style={{ fontFamily: "'Jost', sans-serif" }}>
+      <section className="pt-12 pb-16 md:pt-20 md:pb-24 flex flex-col items-center text-center px-6">
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-stone-900 leading-[1.08] max-w-4xl" style={{ fontFamily: "'Jost', sans-serif" }}>
           Il tuo tempo,
           <br />
           <span className="text-stone-400">senza interruzioni.</span>
