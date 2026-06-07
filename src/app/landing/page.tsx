@@ -592,13 +592,8 @@ export default function LandingPage() {
                       : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'
                     }`}
                 >
-                  {plan.price === 0 ? 'Inizia Gratis' : 'Prova Gratuita'}
+                  {plan.price === 0 ? 'Inizia Gratis' : 'Scegli questo piano'}
                 </a>
-
-                {/* Postazioni info */}
-                <p className={`text-center text-[11px] mt-3 ${isDark ? 'text-stone-500' : 'text-stone-400'}`}>
-                  Fino a {plan.maxPostazioni} postazioni
-                </p>
               </div>
             )
           })}
