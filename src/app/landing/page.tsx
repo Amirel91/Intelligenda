@@ -24,6 +24,8 @@ import {
   Zap,
   Crown,
   Building2,
+  Settings,
+  Phone as PhoneIcon,
 } from 'lucide-react'
 import Image from 'next/image'
 import { ACTIVITY_TYPES, ACTIVITY_GROUPS } from '@/lib/activity-types'
@@ -119,6 +121,24 @@ const PRICING_PLANS = [
     borderColor: 'border-stone-300',
     icon: Building2,
   },
+  {
+    id: 'custom',
+    name: 'Custom',
+    price: -1,
+    description: 'Hai esigenze particolari? Più postazioni, integrazioni personalizzate o un pacchetto su misura per la tua attività.',
+    features: [
+      'Piano completamente su misura',
+      'Postazioni illimitate',
+      'Integrazioni personalizzate',
+      'Assistenza dedicata',
+      'Prezzo definito insieme',
+    ],
+    highlighted: false,
+    gradient: '',
+    borderColor: '',
+    icon: Settings,
+    isCustom: true,
+  },
 ]
 
 // ==================== NAV LINKS ====================
@@ -153,6 +173,14 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState('')
+
+  // Contact form state
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactSubmitting, setContactSubmitting] = useState(false)
+  const [contactSuccess, setContactSuccess] = useState(false)
+  const [contactError, setContactError] = useState('')
 
   // Lead form state
   const [leadEmail, setLeadEmail] = useState('')
@@ -519,10 +547,58 @@ export default function LandingPage() {
             30 giorni di prova gratuita per ogni piano.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 max-w-7xl mx-auto">
           {PRICING_PLANS.map(plan => {
             const IconComp = plan.icon
             const isDark = plan.highlighted
+            const isCustom = 'isCustom' in plan && plan.isCustom
+
+            if (isCustom) {
+              return (
+                <div
+                  key={plan.id}
+                  className="group relative overflow-hidden rounded-2xl border-2 border-dashed border-stone-300 hover:border-stone-400 p-6 bg-white
+                    transition-all duration-300 ease-out
+                    hover:shadow-2xl hover:shadow-stone-900/8 hover:-translate-y-3 hover:scale-[1.02]
+                    flex flex-col"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-stone-50/50 to-white/0 group-hover:to-stone-100/30 transition-all duration-500 pointer-events-none" />
+
+                  <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center mb-4">
+                    <IconComp className="w-5 h-5 text-stone-500" />
+                  </div>
+
+                  <h3 className="text-lg font-bold mb-1 text-stone-900" style={{ fontFamily: "'Jost', sans-serif" }}>
+                    {plan.name}
+                  </h3>
+
+                  <p className="text-xs leading-relaxed mb-4 text-stone-500">
+                    {plan.description}
+                  </p>
+
+                  <div className="mb-5">
+                    <span className="text-2xl font-extrabold text-stone-400">Su misura</span>
+                  </div>
+
+                  <ul className="space-y-2.5 mb-6 flex-1">
+                    {plan.features.map(feat => (
+                      <li key={feat} className="flex items-start gap-2.5 text-sm">
+                        <Check className="w-4 h-4 mt-0.5 shrink-0 text-stone-400" />
+                        <span className="text-stone-500">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <a
+                    href="#contattaci"
+                    className="block text-center py-3 rounded-xl text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg transition-all duration-200"
+                  >
+                    Contattaci
+                  </a>
+                </div>
+              )
+            }
+
             return (
               <div
                 key={plan.id}
@@ -534,33 +610,27 @@ export default function LandingPage() {
                     : `bg-gradient-to-br ${plan.gradient}`
                   }`}
               >
-                {/* Subtle shine overlay */}
                 <div className={`absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent
                   group-hover:to-white/10 transition-all duration-500 pointer-events-none ${isDark ? '' : 'group-hover:to-white/60'}`} />
 
-                {/* Popular badge */}
                 {plan.highlighted && (
                   <div className="absolute top-3 right-3 px-2.5 py-1 bg-white/15 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
                     Popolare
                   </div>
                 )}
 
-                {/* Icon */}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${isDark ? 'bg-white/10' : 'bg-white border border-stone-200 shadow-sm'}`}>
                   <IconComp className={`w-5 h-5 ${isDark ? 'text-white' : 'text-stone-900'}`} />
                 </div>
 
-                {/* Name */}
                 <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-stone-900'}`} style={{ fontFamily: "'Jost', sans-serif" }}>
                   {plan.name}
                 </h3>
 
-                {/* Description */}
                 <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-stone-300' : 'text-stone-500'}`}>
                   {plan.description}
                 </p>
 
-                {/* Price */}
                 <div className="mb-5">
                   <span className={`text-4xl font-extrabold ${isDark ? 'text-white' : 'text-stone-900'}`}>
                     {plan.price === 0 ? 'Gratis' : `${plan.price}€`}
@@ -573,7 +643,6 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                {/* Features */}
                 <ul className="space-y-2.5 mb-6">
                   {plan.features.map(feat => (
                     <li key={feat} className="flex items-start gap-2.5 text-sm">
@@ -583,7 +652,6 @@ export default function LandingPage() {
                   ))}
                 </ul>
 
-                {/* CTA */}
                 <a
                   href="#registrati"
                   className={`block text-center py-3 rounded-xl text-sm font-semibold transition-all duration-200
@@ -900,6 +968,138 @@ export default function LandingPage() {
           <p className="mt-6 text-xs text-stone-500">
             Niente spam. Solo una comunicazione quando saremo pronti per la tua zona.
           </p>
+        </div>
+      </section>
+
+      {/* ==================== CONTATTACI ==================== */}
+      <section id="contattaci" className="py-16 md:py-20 px-6 scroll-mt-16">
+        <div className="max-w-lg mx-auto">
+          <div className="text-center mb-8">
+            <div className="mx-auto mb-4 w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center">
+              <Mail className="w-6 h-6 text-stone-600" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 mb-2" style={{ fontFamily: "'Jost', sans-serif" }}>Contattaci</h2>
+            <p className="text-stone-500 text-sm max-w-md mx-auto leading-relaxed">
+              Hai bisogno di informazioni, hai una richiesta particolare o vuoi un piano personalizzato?
+              Scrivici e ti risponderemo il prima possibile.
+            </p>
+          </div>
+
+          {contactSuccess ? (
+            <div className="text-center py-10 bg-emerald-50 rounded-3xl border border-emerald-200">
+              <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+              </div>
+              <p className="text-emerald-700 font-semibold text-lg mb-1">Messaggio inviato!</p>
+              <p className="text-emerald-600 text-sm">Ti risponderemo al pi&ugrave; presto.</p>
+            </div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setContactError('')
+                if (!contactEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) {
+                  setContactError('Inserisci un\'email valida')
+                  return
+                }
+                if (!contactMessage.trim() || contactMessage.trim().length < 10) {
+                  setContactError('Il messaggio deve contenere almeno 10 caratteri')
+                  return
+                }
+                setContactSubmitting(true)
+                try {
+                  const res = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: contactEmail.trim(),
+                      phone: contactPhone.trim() || undefined,
+                      message: contactMessage.trim(),
+                    }),
+                  })
+                  const data = await res.json()
+                  if (!res.ok) {
+                    setContactError(data.error || 'Errore. Riprova.')
+                    return
+                  }
+                  setContactSuccess(true)
+                } catch {
+                  setContactError('Errore di connessione. Riprova.')
+                } finally {
+                  setContactSubmitting(false)
+                }
+              }}
+              className="space-y-4 bg-gradient-to-br from-stone-50 to-stone-100/80 rounded-3xl p-6 sm:p-8 border border-stone-200/60"
+            >
+              {contactError && (
+                <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm text-center flex items-center justify-center gap-2">
+                  <X className="w-4 h-4 shrink-0" />
+                  {contactError}
+                </div>
+              )}
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">Email *</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => { setContactEmail(e.target.value); setContactError('') }}
+                    placeholder="la-tua@email.com"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors border-stone-200 focus:border-stone-900"
+                  />
+                </div>
+              </div>
+
+              {/* Telefono */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                  Telefono <span className="text-stone-400 font-normal">(opzionale)</span>
+                </label>
+                <div className="relative">
+                  <PhoneIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="tel"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="+39 333 1234567"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors border-stone-200 focus:border-stone-900"
+                  />
+                </div>
+              </div>
+
+              {/* Messaggio */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">Messaggio *</label>
+                <textarea
+                  value={contactMessage}
+                  onChange={(e) => { setContactMessage(e.target.value); setContactError('') }}
+                  placeholder="Descrivi la tua richiesta o la tua esigenza..."
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl border-2 bg-white text-stone-900 placeholder-stone-400 outline-none transition-colors border-stone-200 focus:border-stone-900 resize-none"
+                />
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={contactSubmitting}
+                className="w-full py-4 rounded-2xl bg-stone-900 text-white text-lg font-medium flex items-center justify-center gap-2 hover:bg-stone-800 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 transition-all"
+              >
+                {contactSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Invio in corso...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" /> Invia messaggio
+                  </>
+                )}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, ChevronRight, X, Phone, Mail, Clock, Euro, User,
   CalendarX, CalendarCheck, Printer, Trash2, Plus, Calendar, List, Lock,
-  MessageCircle,
+  MessageCircle, LayoutGrid, UserIcon,
 } from 'lucide-react'
 
 interface BookingWithServices {
@@ -42,7 +42,15 @@ export default function AdminCalendario() {
   })
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedBooking, setSelectedBooking] = useState<BookingWithServices | null>(null)
-  const [viewMode, setViewMode] = useState<'month' | 'list'>('month')
+  const [viewMode, setViewMode] = useState<'month' | 'list' | 'agenda'>('month')
+  const [agendaWeekStart, setAgendaWeekStart] = useState(() => {
+    const now = new Date()
+    const day = now.getDay()
+    const diff = day === 0 ? 6 : day - 1 // Monday as start
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff)
+    monday.setHours(0, 0, 0, 0)
+    return monday
+  })
   const [closeDateModal, setCloseDateModal] = useState(false)
   const [closeReason, setCloseReason] = useState('')
   const [closingDate, setClosingDate] = useState('')
@@ -188,6 +196,60 @@ export default function AdminCalendario() {
   const statusColors: Record<string, string> = { confirmed: 'dark:bg-emerald-900/50 bg-emerald-100 dark:text-emerald-400 text-emerald-700', pending: 'dark:bg-amber-900/50 bg-amber-100 dark:text-amber-400 text-amber-700', cancelled: 'dark:bg-red-900/50 bg-red-100 dark:text-red-400 text-red-700', blocked: 'dark:bg-stone-700 bg-stone-200 dark:text-stone-400 text-stone-600' }
   const statusLabels: Record<string, string> = { confirmed: 'Confermata', pending: 'In attesa', cancelled: 'Annullata', blocked: 'Bloccato' }
 
+  // Agenda view helpers
+  const agendaDayNames = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+  const agendaSlotHeight = 48 // px per 30min slot
+  const agendaStartHour = 7
+  const agendaEndHour = 22
+  const agendaSlots = []
+  for (let h = agendaStartHour; h < agendaEndHour; h++) {
+    agendaSlots.push(`${String(h).padStart(2, '0')}:00`)
+    agendaSlots.push(`${String(h).padStart(2, '0')}:30`)
+  }
+
+  const getAgendaWeekDays = () => {
+    const days: Date[] = []
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(agendaWeekStart)
+      d.setDate(d.getDate() + i)
+      days.push(d)
+    }
+    return days
+  }
+
+  const agendaWeekDays = getAgendaWeekDays()
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+
+  const agendaNavigate = (dir: number) => {
+    setAgendaWeekStart(prev => {
+      const d = new Date(prev)
+      d.setDate(d.getDate() + dir * 7)
+      return d
+    })
+  }
+
+  const agendaGoToday = () => {
+    const now = new Date()
+    const day = now.getDay()
+    const diff = day === 0 ? 6 : day - 1
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff)
+    monday.setHours(0, 0, 0, 0)
+    setAgendaWeekStart(monday)
+  }
+
+  // Service color palette for agenda cards
+  const serviceColors = ['bg-emerald-600/80', 'bg-blue-600/80', 'bg-violet-600/80', 'bg-amber-600/80', 'bg-rose-600/80', 'bg-teal-600/80', 'bg-indigo-600/80', 'bg-orange-600/80']
+  const serviceColorMap = new Map<string, number>()
+  let colorIdx = 0
+  for (const b of bookings) {
+    for (const bs of b.services) {
+      if (!serviceColorMap.has(bs.service.name)) {
+        serviceColorMap.set(bs.service.name, colorIdx % serviceColors.length)
+        colorIdx++
+      }
+    }
+  }
+
   const openWhatsApp = (b: BookingWithServices) => {
     const phone = b.customerPhone.replace(/[^0-9]/g, '')
     const date = formatDisplayDate(b.startTime)
@@ -237,6 +299,13 @@ export default function AdminCalendario() {
           {/* View toggle - visible from sm+ */}
           <div className="print:hidden hidden sm:flex items-center gap-2 dark:bg-stone-900 bg-white rounded-lg border dark:border-stone-700 border-stone-200 p-1">
             <button
+              onClick={() => setViewMode('agenda')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'agenda' ? 'dark:bg-stone-100 bg-stone-900 text-white' : 'dark:text-stone-400 text-stone-600 dark:hover:bg-stone-700 hover:bg-stone-100'}`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="hidden md:inline">Agenda</span>
+            </button>
+            <button
               onClick={() => setViewMode('month')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewMode === 'month' ? 'dark:bg-stone-100 bg-stone-900 text-white' : 'dark:text-stone-400 text-stone-600 dark:hover:bg-stone-700 hover:bg-stone-100'}`}
             >
@@ -257,6 +326,13 @@ export default function AdminCalendario() {
       {/* Mobile compact toolbar: view toggle + print */}
       <div className="flex items-center justify-end gap-2 mb-4 sm:hidden print:hidden">
         <div className="flex items-center gap-1 dark:bg-stone-900 bg-white rounded-lg border dark:border-stone-700 border-stone-200 p-1">
+          <button
+            onClick={() => setViewMode('agenda')}
+            className={`p-2 rounded-md transition-colors ${viewMode === 'agenda' ? 'dark:bg-stone-100 bg-stone-900 text-white' : 'dark:text-stone-400 text-stone-600 dark:hover:bg-stone-700 hover:bg-stone-100'}`}
+            title="Vista Agenda"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
           <button
             onClick={() => setViewMode('month')}
             className={`p-2 rounded-md transition-colors ${viewMode === 'month' ? 'dark:bg-stone-100 bg-stone-900 text-white' : 'dark:text-stone-400 text-stone-600 dark:hover:bg-stone-700 hover:bg-stone-100'}`}
@@ -281,7 +357,180 @@ export default function AdminCalendario() {
         </button>
       </div>
 
-      {viewMode === 'month' ? (
+      {viewMode === 'agenda' ? (
+        <div className="dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 print:hidden">
+          {/* Agenda Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-stone-700 border-stone-200">
+            <button onClick={() => agendaNavigate(-1)} className="p-1.5 rounded-lg dark:hover:bg-stone-700 hover:bg-stone-100 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+            <div className="flex items-center gap-3">
+              <span className="font-semibold dark:text-stone-100 text-stone-900 text-sm">
+                {agendaWeekDays[0].toLocaleDateString('it-IT', { day: 'numeric', month: 'short', timeZone: 'Europe/Rome' })} – {agendaWeekDays[6].toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Rome' })}
+              </span>
+              <button onClick={agendaGoToday} className="text-xs px-3 py-1 rounded-lg dark:bg-stone-800 bg-stone-100 dark:text-stone-400 text-stone-600 font-medium dark:hover:bg-stone-700 hover:bg-stone-200 transition-colors">Oggi</button>
+            </div>
+            <button onClick={() => agendaNavigate(1)} className="p-1.5 rounded-lg dark:hover:bg-stone-700 hover:bg-stone-100 transition-colors"><ChevronRight className="w-5 h-5" /></button>
+          </div>
+
+          {/* Agenda Grid — Desktop: 3 visible days */}
+          <div className="hidden md:block overflow-x-auto">
+            <div className="min-w-[800px]">
+              {/* Day headers */}
+              <div className="flex border-b dark:border-stone-700 border-stone-200">
+                <div className="w-16 shrink-0" /> {/* Time column spacer */}
+                {agendaWeekDays.map((day, i) => {
+                  const dateStr = day.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })
+                  const isToday = day.getTime() === today.getTime()
+                  const isClosed = isDateClosed(dateStr)
+                  return (
+                    <div key={i} className={`flex-1 text-center py-2.5 border-l dark:border-stone-700 border-stone-200 ${isToday ? 'dark:bg-blue-950/30 bg-blue-50/50' : ''}`}>
+                      <div className={`text-xs font-bold uppercase ${isToday ? 'text-blue-600 dark:text-blue-400' : 'dark:text-stone-400 text-stone-500'}`}>{agendaDayNames[i]}</div>
+                      <div className={`text-sm font-semibold ${isToday ? 'text-blue-700 dark:text-blue-300' : 'dark:text-stone-200 text-stone-800'} mt-0.5`}>{day.getDate()}</div>
+                      {isClosed && <div className="text-[10px] text-red-500 dark:text-red-400">Chiuso</div>}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Time grid */}
+              <div className="relative">
+                {agendaSlots.map((slot, slotIdx) => {
+                  const [h] = slot.split(':').map(Number)
+                  const slotMinutes = h * 60 + parseInt(slot.split(':')[1])
+                  return (
+                    <div key={slot} className="flex border-b dark:border-stone-800/50 border-stone-100/50" style={{ minHeight: `${agendaSlotHeight}px` }}>
+                      {/* Time label */}
+                      <div className="w-16 shrink-0 text-right pr-2 pt-0">
+                        <span className={`text-[10px] font-medium ${slotMinutes % 60 === 0 ? 'dark:text-stone-400 text-stone-500' : 'dark:text-stone-600 text-stone-400'}`}>{slot}</span>
+                      </div>
+                      {/* Day columns */}
+                      {agendaWeekDays.map((day, di) => {
+                        const dateStr = day.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })
+                        const dayBks = bookingsByDate(dateStr)
+                        // Find bookings that overlap this slot
+                        const slotStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, parseInt(slot.split(':')[1]), 0)
+                        const slotEnd = new Date(slotStart.getTime() + 30 * 60000)
+                        const overlapping = dayBks.filter(b => {
+                          const bs = new Date(b.startTime)
+                          const be = new Date(b.endTime)
+                          return bs.getTime() < slotEnd.getTime() && be.getTime() > slotStart.getTime()
+                        })
+                        const firstInOverlap = overlapping.find(b => {
+                          const bs = new Date(b.startTime)
+                          return bs.getTime() >= slotStart.getTime() && bs.getTime() < slotEnd.getTime()
+                        })
+
+                        return (
+                          <div key={di} className="flex-1 border-l dark:border-stone-800/50 border-stone-100/50 relative">
+                            {firstInOverlap && overlapping.map(booking => {
+                              const bs = new Date(booking.startTime)
+                              const be = new Date(booking.endTime)
+                              const topOffset = (bs.getMinutes() - parseInt(slot.split(':')[1])) * (agendaSlotHeight / 30)
+                              const durationMin = Math.round((be.getTime() - bs.getTime()) / 60000)
+                              const height = (durationMin / 30) * agendaSlotHeight
+                              const mainService = booking.services[0]?.service.name || ''
+                              const colorIndex = serviceColorMap.get(mainService) || 0
+                              const cardColor = serviceColors[colorIndex]
+                              return (
+                                <button
+                                  key={booking.id}
+                                  onClick={() => setSelectedBooking(booking)}
+                                  className={`absolute left-1 right-1 rounded-lg ${cardColor} text-white p-2 text-left overflow-hidden transition-opacity hover:opacity-90 cursor-pointer`}
+                                  style={{
+                                    top: `${topOffset}px`,
+                                    height: `${Math.max(height, 40)}px`,
+                                    minHeight: '40px',
+                                    zIndex: 10,
+                                  }}
+                                >
+                                  <div className="text-[11px] font-bold uppercase tracking-wide truncate">{mainService}</div>
+                                  {(height >= 52) && (
+                                    <div className="flex items-center gap-1 mt-0.5 text-white/80">
+                                      <UserIcon className="w-3 h-3 shrink-0" />
+                                      <span className="text-[11px] truncate">{booking.customerName} {booking.customerSurname}</span>
+                                    </div>
+                                  )}
+                                  {(height >= 72) && (
+                                    <div className="flex items-center justify-between mt-1 text-[10px] text-white/60">
+                                      <span>{formatTime(booking.startTime)} – {formatTime(booking.endTime)}</span>
+                                      <span>EUR{(booking.finalPrice ?? booking.totalPrice).toFixed(0)}</span>
+                                    </div>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Agenda Grid — Mobile: scrollable */}
+          <div className="md:hidden">
+            {agendaWeekDays.map((day, di) => {
+              const dateStr = day.toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' })
+              const isToday = day.getTime() === today.getTime()
+              const isClosed = isDateClosed(dateStr)
+              const dayBks = bookingsByDate(dateStr).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+
+              return (
+                <div key={di} className={`border-b dark:border-stone-700 border-stone-200 last:border-b-0 ${isClosed ? 'opacity-50' : ''}`}>
+                  {/* Day header */}
+                  <div className={`flex items-center justify-between px-3 py-2 sticky top-0 dark:bg-stone-900 bg-white z-10 ${isToday ? 'dark:bg-blue-950/30 bg-blue-50/50' : ''}`}>
+                    <div>
+                      <span className={`text-xs font-bold uppercase ${isToday ? 'text-blue-600 dark:text-blue-400' : 'dark:text-stone-400 text-stone-500'}`}>{agendaDayNames[di]}</span>
+                      <span className={`text-sm font-semibold ml-2 ${isToday ? 'text-blue-700 dark:text-blue-300' : 'dark:text-stone-200 text-stone-800'}`}>{day.getDate()}</span>
+                      {isClosed && <span className="text-[10px] text-red-500 ml-2">Chiuso</span>}
+                    </div>
+                    <span className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'dark:text-stone-500 text-stone-400'}`}>
+                      {dayBks.length > 0 ? `${dayBks.length} prenotaz.` : 'Libero'}
+                    </span>
+                  </div>
+                  {/* Booking cards */}
+                  <div className="px-3 pb-2 space-y-2">
+                    {dayBks.length === 0 && !isClosed && (
+                      <p className="text-xs dark:text-stone-600 text-stone-400 py-3 text-center">Nessuna prenotazione</p>
+                    )}
+                    {dayBks.map(booking => {
+                      const mainService = booking.services[0]?.service.name || ''
+                      const colorIndex = serviceColorMap.get(mainService) || 0
+                      const cardColor = serviceColors[colorIndex]
+                      return (
+                        <button
+                          key={booking.id}
+                          onClick={() => setSelectedBooking(booking)}
+                          className={`w-full text-left rounded-lg ${cardColor} text-white p-3 transition-opacity hover:opacity-90`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-bold uppercase tracking-wide">{mainService}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm ${statusColors[booking.status] || ''}`}>{statusLabels[booking.status] || booking.status}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-white/80">
+                            <UserIcon className="w-3 h-3 shrink-0" />
+                            <span className="text-xs truncate">{booking.customerName} {booking.customerSurname}</span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1 text-[10px] text-white/60">
+                            <span>{formatTime(booking.startTime)} – {formatTime(booking.endTime)}</span>
+                            <span>EUR{(booking.finalPrice ?? booking.totalPrice).toFixed(0)}</span>
+                          </div>
+                          {booking.resource && (
+                            <div className="mt-1">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/15 text-white/70">{booking.resource.name}</span>
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : viewMode === 'month' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:grid-cols-1 print:gap-4">
           {/* Calendar */}
           <div className="lg:col-span-2 dark:bg-stone-900 bg-white rounded-xl border dark:border-stone-700 border-stone-200 p-2 sm:p-4 print:col-span-1 print:border print:border-stone-300 print:p-3">
