@@ -1579,7 +1579,17 @@ export default function PrenotaPage() {
       </motion.div>
 
         {/* Powered by IntelliGenda */}
-        <p className="mt-12 text-center text-xs text-stone-300 select-none">Powered by IntelliGenda</p>
+            <p className="mt-12 text-center text-xs text-stone-400">
+              Prenotazioni gestite da{' '}
+              <a
+                href="https://intelligenda.it/?ref=powered-badge"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium hover:text-stone-300 transition-colors"
+              >
+                IntelliGenda
+              </a>
+            </p>
     </div>
   )
 

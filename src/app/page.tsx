@@ -249,7 +249,14 @@ export default function HomePage() {
             transition={{ delay: 0.7, duration: 0.5 }}
             className="mt-16 text-center"
           >
-            <p className="text-xs text-stone-300 select-none">Powered by IntelliGenda</p>
+            <a
+              href="https://intelligenda.it/?ref=powered-badge"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-stone-300 hover:text-stone-400 transition-colors"
+            >
+              Prenotazioni gestite da <span className="font-medium">IntelliGenda</span>
+            </a>
           </motion.div>
         </motion.div>
       </main>
