@@ -42,101 +42,102 @@ const initialForm = {
   activityType: 'ALTRO',
 }
 
-// ==================== PRICING DATA (matches admin plans.ts) ====================
+// ==================== PRICING SWITCH TIERS ====================
 
-const PRICING_PLANS = [
+const SWITCH_TIERS = [
   {
-    id: 'trial',
-    name: 'Prova Gratuita',
-    price: 0,
-    period: '30 giorni',
-    maxPostazioni: 2,
-    description: 'Inizia subito senza carta di credito. Tutte le funzionalità incluse per 30 giorni.',
+    id: 'free',
+    label: 'Fino a 1',
+    planName: 'Free',
+    price: '0\u20ac/mese',
+    priceValue: 0,
+    description: 'La dimensione perfetta per chi inizia. Max 20 appuntamenti mensili, 1 postazione.',
     features: [
-      '30 giorni di prova gratuita',
-      'Tutte le funzionalità incluse',
-      'Fino a 2 postazioni',
+      'Fino a 20 appuntamenti/mese',
+      '1 postazione',
       'Sottodominio dedicato',
-      'Assistenza locale inclusa',
+      'Tutte le funzionalit\u00e0',
+      'Zero commissioni',
     ],
-    highlighted: false,
-    gradient: 'from-stone-50 to-stone-100',
-    borderColor: 'border-stone-200',
-    icon: Zap,
   },
   {
     id: 'starter',
-    name: 'Starter',
-    price: 39,
-    period: '/mese',
-    maxPostazioni: 2,
-    description: 'Ideale per liberi professionisti e piccoli studi con 1-2 postazioni.',
+    label: 'Fino a 2',
+    planName: 'Starter',
+    price: '39\u20ac/mese',
+    priceValue: 39,
+    description: 'Per liberi professionisti e piccoli studi. Appuntamenti illimitati, 2 postazioni.',
     features: [
-      'Fino a 2 postazioni',
+      'Appuntamenti illimitati',
+      'Fino a 2 postazioni/dipendenti',
       'Sottodominio dedicato',
-      'Assistenza locale inclusa',
-      'Zero commissioni',
+      'Assistenza inclusa',
       'Disdici quando vuoi',
     ],
     highlighted: false,
-    gradient: 'from-stone-100 to-stone-200',
-    borderColor: 'border-stone-300',
-    icon: Sparkles,
   },
   {
     id: 'pro',
-    name: 'Pro',
-    price: 49,
-    period: '/mese',
-    maxPostazioni: 4,
-    description: 'Per studi medi con più collaboratori e un volume crescente di prenotazioni.',
+    label: 'Fino a 4',
+    planName: 'Pro',
+    price: '49\u20ac/mese',
+    priceValue: 49,
+    description: 'Per studi medi con pi\u00f9 collaboratori e volume crescente di prenotazioni.',
     features: [
-      'Fino a 4 postazioni',
+      'Appuntamenti illimitati',
+      'Fino a 4 postazioni/dipendenti',
       'Sottodominio dedicato',
-      'Assistenza locale inclusa',
-      'Zero commissioni',
+      'Assistenza prioritaria',
       'Disdici quando vuoi',
     ],
     highlighted: true,
-    gradient: 'from-stone-900 to-stone-700',
-    borderColor: 'border-stone-800',
-    icon: Crown,
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 59,
-    period: '/mese',
-    maxPostazioni: 8,
-    description: 'Per grandi attività e centri con numerose postazioni e collaboratori.',
+    id: 'business',
+    label: 'Fino a 8',
+    planName: 'Business',
+    price: '69\u20ac/mese',
+    priceValue: 69,
+    description: 'Per attivit\u00e0 strutturate con team ampi e alta domanda quotidiana.',
     features: [
-      'Fino a 8 postazioni',
+      'Appuntamenti illimitati',
+      'Fino a 8 postazioni/dipendenti',
       'Sottodominio dedicato',
       'Assistenza prioritaria',
-      'Zero commissioni',
       'Disdici quando vuoi',
     ],
     highlighted: false,
-    gradient: 'from-stone-100 to-stone-50',
-    borderColor: 'border-stone-300',
-    icon: Building2,
+  },
+  {
+    id: 'enterprise',
+    label: 'Fino a 15',
+    planName: 'Enterprise',
+    price: '89\u20ac/mese',
+    priceValue: 89,
+    description: 'Per grandi centri e catene con numerosi collaboratori.',
+    features: [
+      'Appuntamenti illimitati',
+      'Fino a 15 postazioni/dipendenti',
+      'Sottodominio dedicato',
+      'Assistenza dedicata',
+      'Disdici quando vuoi',
+    ],
+    highlighted: false,
   },
   {
     id: 'custom',
-    name: 'Custom',
-    price: -1,
-    description: 'Hai esigenze particolari? Più postazioni, integrazioni personalizzate o un pacchetto su misura per la tua attività.',
+    label: 'Oltre 15',
+    planName: 'Custom',
+    price: 'Su misura',
+    priceValue: -1,
+    description: 'Pi\u00f9 di 15 postazioni? Integrazioni personalizzate o un pacchetto su misura per la tua realt\u00e0.',
     features: [
-      'Piano completamente su misura',
       'Postazioni illimitate',
       'Integrazioni personalizzate',
       'Assistenza dedicata',
       'Prezzo definito insieme',
+      'Contratto personalizzato',
     ],
-    highlighted: false,
-    gradient: '',
-    borderColor: '',
-    icon: Settings,
     isCustom: true,
   },
 ]
@@ -147,6 +148,7 @@ const NAV_LINKS = [
   { label: 'Panoramica', href: '#panoramica' },
   { label: 'Come Funziona', href: '#come-funziona' },
   { label: 'Prezzi', href: '#prezzi' },
+  { label: 'Contattaci', href: '#contattaci' },
   { label: 'Registrati', href: '#registrati' },
 ]
 
@@ -187,6 +189,9 @@ export default function LandingPage() {
   const [leadSubmitting, setLeadSubmitting] = useState(false)
   const [leadSuccess, setLeadSuccess] = useState(false)
   const [leadError, setLeadError] = useState('')
+
+  // Pricing switch state
+  const [selectedTier, setSelectedTier] = useState('pro')
 
   // Slug availability check (debounced)
   const slugTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -407,19 +412,20 @@ export default function LandingPage() {
       {/* ==================== HERO ==================== */}
       <section className="pt-12 pb-16 md:pt-20 md:pb-24 flex flex-col items-center text-center px-6">
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-stone-900 leading-[1.08] max-w-4xl" style={{ fontFamily: "'Jost', sans-serif" }}>
-          Il tuo tempo,
+          I tuoi clienti prenotano
           <br />
-          <span className="text-stone-400">senza interruzioni.</span>
+          <span className="text-stone-400">in 3 click. Senza app.</span>
         </h1>
         <p className="text-lg text-stone-500 max-w-2xl mx-auto mt-5 font-normal leading-relaxed">
-          IntelliGenda automatizza le prenotazioni della tua attivit&agrave;. L&apos;algoritmo smart incastra gli appuntamenti al millimetro. Tu ti concentri solo sul tuo lavoro.
+          L&apos;agenda intelligente per professionisti e attivit&agrave;. I clienti restano tuoi: nessun marketplace che ti ruba i contatti.
+          Zero app da scaricare, zero password da ricordare. Prenotano dallo smartphone e tu gestisci tutto da un unico pannello.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
             href="#registrati"
             className="inline-flex items-center justify-center px-8 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 hover:scale-105 active:scale-100 transition-all shadow-xl shadow-stone-900/20"
           >
-            Inizia la prova gratuita di 30 giorni
+            Prova gratis 30 giorni &mdash; senza carta
           </a>
         </div>
         <a
@@ -536,135 +542,103 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ==================== PREZZI (4 piani) ==================== */}
+      {/* ==================== PREZZI (Switch Buttons) ==================== */}
       <section id="prezzi" className="py-16 md:py-20 px-6 scroll-mt-16">
-        <div className="text-center mb-10">
+        <div className="text-center mb-8 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-extrabold text-stone-900 tracking-tight" style={{ fontFamily: "'Jost', sans-serif" }}>
-            Un unico piano. Nessuna sorpresa.
+            Prova gratis 30 giorni.
+            <br />
+            <span className="text-stone-400">Poi decidi tu.</span>
           </h2>
-          <p className="text-stone-500 mt-3 text-sm max-w-lg mx-auto">
-            Scegli il piano più adatto alla tua attività. Tutti includono l&apos;accesso completo a tutte le funzionalità.
-            30 giorni di prova gratuita per ogni piano.
+          <p className="text-stone-500 mt-3 text-sm leading-relaxed">
+            Nessuna carta di credito richiesta. Inizia con appuntamenti illimitati.
+            Al termine dei 30 giorni, resti Free fino a 20 appuntamenti al mese o scegli la dimensione della tua squadra.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 max-w-7xl mx-auto">
-          {PRICING_PLANS.map(plan => {
-            const IconComp = plan.icon
-            const isDark = plan.highlighted
-            const isCustom = 'isCustom' in plan && plan.isCustom
+
+        {/* Switch Buttons Bar */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-10 max-w-3xl mx-auto">
+          {SWITCH_TIERS.map(tier => (
+            <button
+              key={tier.id}
+              onClick={() => setSelectedTier(tier.id)}
+              className={`px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                selectedTier === tier.id
+                  ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+              }`}
+            >
+              {tier.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Dynamic Plan Card */}
+        <div className="max-w-md mx-auto">
+          {(() => {
+            const tier = SWITCH_TIERS.find(t => t.id === selectedTier)!
+            const isDark = tier.highlighted
+            const isCustom = 'isCustom' in tier && tier.isCustom
 
             if (isCustom) {
               return (
-                <div
-                  key={plan.id}
-                  className="group relative overflow-hidden rounded-2xl border-2 border-dashed border-stone-300 hover:border-stone-400 p-6 bg-white
-                    transition-all duration-300 ease-out
-                    hover:shadow-2xl hover:shadow-stone-900/8 hover:-translate-y-3 hover:scale-[1.02]
-                    flex flex-col"
-                >
+                <div className="group relative overflow-hidden rounded-2xl border-2 border-dashed border-stone-300 hover:border-stone-400 p-8 bg-white transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-stone-900/8">
                   <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-stone-50/50 to-white/0 group-hover:to-stone-100/30 transition-all duration-500 pointer-events-none" />
-
-                  <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center mb-4">
-                    <IconComp className="w-5 h-5 text-stone-500" />
+                  <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center mb-5">
+                    <Settings className="w-6 h-6 text-stone-500" />
                   </div>
-
-                  <h3 className="text-lg font-bold mb-1 text-stone-900" style={{ fontFamily: "'Jost', sans-serif" }}>
-                    {plan.name}
-                  </h3>
-
-                  <p className="text-xs leading-relaxed mb-4 text-stone-500">
-                    {plan.description}
-                  </p>
-
-                  <div className="mb-5">
-                    <span className="text-2xl font-extrabold text-stone-400">Su misura</span>
-                  </div>
-
-                  <ul className="space-y-2.5 mb-6 flex-1">
-                    {plan.features.map(feat => (
+                  <h3 className="text-2xl font-bold mb-1 text-stone-900" style={{ fontFamily: "'Jost', sans-serif" }}>{tier.planName}</h3>
+                  <p className="text-sm leading-relaxed mb-5 text-stone-500">{tier.description}</p>
+                  <div className="mb-6"><span className="text-3xl font-extrabold text-stone-400">{tier.price}</span></div>
+                  <ul className="space-y-3 mb-8">
+                    {tier.features.map(feat => (
                       <li key={feat} className="flex items-start gap-2.5 text-sm">
                         <Check className="w-4 h-4 mt-0.5 shrink-0 text-stone-400" />
-                        <span className="text-stone-500">{feat}</span>
+                        <span className="text-stone-600">{feat}</span>
                       </li>
                     ))}
                   </ul>
-
-                  <a
-                    href="#contattaci"
-                    className="block text-center py-3 rounded-xl text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg transition-all duration-200"
-                  >
-                    Contattaci
-                  </a>
+                  <a href="#contattaci" className="block text-center py-3.5 rounded-xl text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg transition-all duration-200">Contattaci</a>
                 </div>
               )
             }
 
             return (
-              <div
-                key={plan.id}
-                className={`group relative overflow-hidden rounded-2xl border ${plan.borderColor} p-6
-                  transition-all duration-300 ease-out
-                  hover:shadow-2xl hover:shadow-stone-900/12 hover:-translate-y-3 hover:scale-[1.02]
-                  ${isDark
-                    ? 'bg-gradient-to-br from-stone-900 via-stone-800 to-stone-700 text-white ring-2 ring-stone-700/50'
-                    : `bg-gradient-to-br ${plan.gradient}`
-                  }`}
-              >
-                <div className={`absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent
-                  group-hover:to-white/10 transition-all duration-500 pointer-events-none ${isDark ? '' : 'group-hover:to-white/60'}`} />
-
-                {plan.highlighted && (
-                  <div className="absolute top-3 right-3 px-2.5 py-1 bg-white/15 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">
-                    Popolare
-                  </div>
+              <div className={`group relative overflow-hidden rounded-2xl border p-8 transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-stone-900/12 ${
+                isDark
+                  ? 'bg-gradient-to-br from-stone-900 via-stone-800 to-stone-700 text-white ring-2 ring-stone-700/50 border-stone-800'
+                  : 'bg-gradient-to-br from-stone-50 to-stone-100 border-stone-200 hover:border-stone-300'
+              }`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent group-hover:to-white/10 transition-all duration-500 pointer-events-none" />
+                {tier.highlighted && (
+                  <div className="absolute top-4 right-4 px-2.5 py-1 bg-white/15 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">Consigliato</div>
                 )}
-
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${isDark ? 'bg-white/10' : 'bg-white border border-stone-200 shadow-sm'}`}>
-                  <IconComp className={`w-5 h-5 ${isDark ? 'text-white' : 'text-stone-900'}`} />
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${isDark ? 'bg-white/10' : 'bg-white border border-stone-200 shadow-sm'}`}>
+                  {tier.id === 'free' && <Zap className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                  {tier.id === 'starter' && <Sparkles className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                  {tier.id === 'pro' && <Crown className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                  {tier.id === 'business' && <Building2 className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                  {tier.id === 'enterprise' && <Building2 className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
                 </div>
-
-                <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-stone-900'}`} style={{ fontFamily: "'Jost', sans-serif" }}>
-                  {plan.name}
-                </h3>
-
-                <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-stone-300' : 'text-stone-500'}`}>
-                  {plan.description}
-                </p>
-
-                <div className="mb-5">
-                  <span className={`text-4xl font-extrabold ${isDark ? 'text-white' : 'text-stone-900'}`}>
-                    {plan.price === 0 ? 'Gratis' : `${plan.price}€`}
-                  </span>
-                  {plan.price > 0 && (
-                    <span className={`text-sm ${isDark ? 'text-stone-400' : 'text-stone-400'}`}> {plan.period}</span>
-                  )}
-                  {plan.price === 0 && (
-                    <p className={`text-xs mt-1 ${isDark ? 'text-stone-400' : 'text-stone-400'}`}>{plan.period}</p>
-                  )}
-                </div>
-
-                <ul className="space-y-2.5 mb-6">
-                  {plan.features.map(feat => (
+                <h3 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-stone-900'}`} style={{ fontFamily: "'Jost', sans-serif" }}>{tier.planName}</h3>
+                <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-stone-300' : 'text-stone-500'}`}>{tier.description}</p>
+                <div className="mb-6"><span className={`text-4xl font-extrabold ${isDark ? 'text-white' : 'text-stone-900'}`}>{tier.price}</span></div>
+                <ul className="space-y-3 mb-8">
+                  {tier.features.map(feat => (
                     <li key={feat} className="flex items-start gap-2.5 text-sm">
                       <Check className={`w-4 h-4 mt-0.5 shrink-0 ${isDark ? 'text-emerald-400' : 'text-stone-600'}`} />
                       <span className={isDark ? 'text-stone-200' : 'text-stone-600'}>{feat}</span>
                     </li>
                   ))}
                 </ul>
-
-                <a
-                  href="#registrati"
-                  className={`block text-center py-3 rounded-xl text-sm font-semibold transition-all duration-200
-                    ${isDark
-                      ? 'bg-white text-stone-900 hover:bg-stone-100 hover:shadow-lg'
-                      : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'
-                    }`}
-                >
-                  {plan.price === 0 ? 'Inizia Gratis' : 'Scegli questo piano'}
-                </a>
+                {tier.priceValue === 0 ? (
+                  <a href="#registrati" className={`block text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${isDark ? 'bg-white text-stone-900 hover:bg-stone-100 hover:shadow-lg' : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'}`}>Inizia Gratis &mdash; 30 giorni di prova</a>
+                ) : (
+                  <a href="#registrati" className={`block text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${isDark ? 'bg-white text-stone-900 hover:bg-stone-100 hover:shadow-lg' : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'}`}>Prova 30 giorni gratis</a>
+                )}
               </div>
             )
-          })}
+          })()}
         </div>
       </section>
 
