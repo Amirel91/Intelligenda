@@ -43,6 +43,7 @@ export default function HomePage() {
   const [config, setConfig] = useState<BusinessConfig | null>(null)
   const [featuredServices, setFeaturedServices] = useState<Service[]>([])
   const [workingHours, setWorkingHours] = useState<WorkingHour[]>([])
+  const [configError, setConfigError] = useState(false)
 
   // Secret admin access: 5 consecutive taps on shop logo
   const tapCountRef = useRef(0)
@@ -67,14 +68,26 @@ export default function HomePage() {
       fetch('/api/config')
         .then(res => {
           if (!res.ok) {
-            window.location.href = '/landing'
+            // On subdomain: show error instead of redirecting to landing
+            // On main domain: redirect to landing page
+            const hasTenantCookie = document.cookie.includes('tenant_slug=')
+            if (!hasTenantCookie) {
+              window.location.href = '/landing'
+            } else {
+              setConfigError(true)
+            }
             return null
           }
           return res.json()
         })
         .then(data => { if (data && typeof data === 'object') setConfig(data) })
         .catch(() => {
-          window.location.href = '/landing'
+          const hasTenantCookie = document.cookie.includes('tenant_slug=')
+          if (!hasTenantCookie) {
+            window.location.href = '/landing'
+          } else {
+            setConfigError(true)
+          }
         })
     }
     fetchConfig()
@@ -113,6 +126,31 @@ export default function HomePage() {
   // Get open days summary
   const openDays = workingHours.filter(wh => !wh.closed)
   const closedDays = workingHours.filter(wh => wh.closed)
+
+  // Error state: subdomain tenant not found
+  if (configError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-stone-50 to-white dark:from-stone-800 dark:to-stone-900">
+        <div className="text-center max-w-md">
+          <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+            <CalendarDays className="w-8 h-8 text-stone-400" />
+          </div>
+          <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 mb-3">
+            Negozio non trovato
+          </h1>
+          <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
+            Questo negozio non è al momento disponibile o non esiste.
+          </p>
+          <a
+            href="https://intelligenda.it"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Torna su IntelliGenda
+          </a>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-stone-50 to-white dark:from-stone-800 dark:to-stone-900">
