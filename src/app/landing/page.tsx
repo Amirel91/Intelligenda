@@ -74,7 +74,7 @@ const SWITCH_TIERS = [
       'Assistenza inclusa',
       'Disdici quando vuoi',
     ],
-    highlighted: false,
+    highlighted: true,
   },
   {
     id: 'pro',
@@ -90,7 +90,7 @@ const SWITCH_TIERS = [
       'Assistenza prioritaria',
       'Disdici quando vuoi',
     ],
-    highlighted: true,
+    highlighted: false,
   },
   {
     id: 'business',
@@ -610,7 +610,7 @@ export default function LandingPage() {
               }`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent group-hover:to-white/10 transition-all duration-500 pointer-events-none" />
                 {tier.highlighted && (
-                  <div className="absolute top-4 right-4 px-2.5 py-1 bg-white/15 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">Consigliato</div>
+                  <div className="absolute top-4 right-4 px-2.5 py-1 bg-white/15 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">Più scelto</div>
                 )}
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${isDark ? 'bg-white/10' : 'bg-white border border-stone-200 shadow-sm'}`}>
                   {tier.id === 'free' && <Zap className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}

@@ -110,7 +110,7 @@ export default function PianoPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {ALL_SELECTABLE_PLANS.map(plan => {
           const isCurrent = planInfo?.plan === plan.id
-          const isHighlighted = plan.id === 'pro'
+          const isHighlighted = plan.id === 'starter'
           const isCustom = plan.isCustom
           const IconComponent = PLAN_ICONS[plan.id] || Zap
 
@@ -169,7 +169,7 @@ export default function PianoPage() {
             >
               {isHighlighted && (
                 <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-stone-900 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
-                  Consigliato
+                  Più scelto
                 </div>
               )}
               <div className="mb-4">
