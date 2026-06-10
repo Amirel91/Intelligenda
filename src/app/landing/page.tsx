@@ -412,20 +412,19 @@ export default function LandingPage() {
       {/* ==================== HERO ==================== */}
       <section className="pt-12 pb-16 md:pt-20 md:pb-24 flex flex-col items-center text-center px-6">
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-stone-900 leading-[1.08] max-w-4xl" style={{ fontFamily: "'Jost', sans-serif" }}>
-          I tuoi clienti prenotano
+          Il tuo tempo,
           <br />
-          <span className="text-stone-400">in 3 click. Senza app.</span>
+          <span className="text-stone-400">senza interruzioni.</span>
         </h1>
         <p className="text-lg text-stone-500 max-w-2xl mx-auto mt-5 font-normal leading-relaxed">
-          L&apos;agenda intelligente per professionisti e attivit&agrave;. I clienti restano tuoi: nessun marketplace che ti ruba i contatti.
-          Zero app da scaricare, zero password da ricordare. Prenotano dallo smartphone e tu gestisci tutto da un unico pannello.
+          IntelliGenda automatizza le prenotazioni della tua attivit&agrave;. L&apos;algoritmo smart incastra gli appuntamenti al millimetro. Tu ti concentri solo sul tuo lavoro.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
             href="#registrati"
             className="inline-flex items-center justify-center px-8 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 hover:scale-105 active:scale-100 transition-all shadow-xl shadow-stone-900/20"
           >
-            Prova gratis 30 giorni &mdash; senza carta
+            Inizia la prova gratuita di 30 giorni
           </a>
         </div>
         <a

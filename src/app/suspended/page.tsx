@@ -53,11 +53,12 @@ export default function SuspendedPage() {
         </p>
 
         {/* Plans summary */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {[
             { name: 'Starter', price: '39', max: 2 },
             { name: 'Pro', price: '49', max: 4 },
-            { name: 'Enterprise', price: '59', max: 8 },
+            { name: 'Business', price: '69', max: 8 },
+            { name: 'Enterprise', price: '89', max: 15 },
           ].map(p => (
             <div key={p.name} className="bg-white rounded-xl border border-stone-200 p-4">
               <p className="text-xs text-stone-400 font-medium">{p.name}</p>
