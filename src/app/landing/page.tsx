@@ -191,7 +191,8 @@ export default function LandingPage() {
   const [leadError, setLeadError] = useState('')
 
   // Pricing switch state
-  const [selectedTier, setSelectedTier] = useState('pro')
+  const [selectedTier, setSelectedTier] = useState('free')
+  const swiperRef = useRef<HTMLDivElement>(null)
 
   // Slug availability check (debounced)
   const slugTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -560,7 +561,14 @@ export default function LandingPage() {
           {SWITCH_TIERS.map(tier => (
             <button
               key={tier.id}
-              onClick={() => setSelectedTier(tier.id)}
+              onClick={() => {
+                setSelectedTier(tier.id)
+                // Slide the card container to match
+                const idx = SWITCH_TIERS.findIndex(t => t.id === tier.id)
+                if (swiperRef.current) {
+                  swiperRef.current.scrollTo({ left: swiperRef.current.clientWidth * idx, behavior: 'smooth' })
+                }
+              }}
               className={`px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
                 selectedTier === tier.id
                   ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20'
@@ -572,72 +580,116 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Dynamic Plan Card */}
+        {/* Swipeable Plan Cards */}
         <div className="max-w-md mx-auto">
-          {(() => {
-            const tier = SWITCH_TIERS.find(t => t.id === selectedTier)!
-            const isDark = tier.highlighted
-            const isCustom = 'isCustom' in tier && tier.isCustom
+          <div
+            ref={swiperRef}
+            className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onTouchEnd={(e) => {
+              const el = swiperRef.current
+              if (!el) return
+              const idx = Math.round(el.scrollLeft / el.clientWidth)
+              const tier = SWITCH_TIERS[idx]
+              if (tier && tier.id !== selectedTier) {
+                setSelectedTier(tier.id)
+              }
+            }}
+            onMouseUp={() => {
+              const el = swiperRef.current
+              if (!el) return
+              const idx = Math.round(el.scrollLeft / el.clientWidth)
+              const tier = SWITCH_TIERS[idx]
+              if (tier && tier.id !== selectedTier) {
+                setSelectedTier(tier.id)
+              }
+            }}
+          >
+            {SWITCH_TIERS.map(tier => {
+              const isDark = tier.highlighted
+              const isCustom = 'isCustom' in tier && tier.isCustom
 
-            if (isCustom) {
               return (
-                <div className="group relative overflow-hidden rounded-2xl border-2 border-dashed border-stone-300 hover:border-stone-400 p-8 bg-white transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-stone-900/8">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-stone-50/50 to-white/0 group-hover:to-stone-100/30 transition-all duration-500 pointer-events-none" />
-                  <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center mb-5">
-                    <Settings className="w-6 h-6 text-stone-500" />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-1 text-stone-900" style={{ fontFamily: "'Jost', sans-serif" }}>{tier.planName}</h3>
-                  <p className="text-sm leading-relaxed mb-5 text-stone-500">{tier.description}</p>
-                  <div className="mb-6"><span className="text-3xl font-extrabold text-stone-400">{tier.price}</span></div>
-                  <ul className="space-y-3 mb-8">
-                    {tier.features.map(feat => (
-                      <li key={feat} className="flex items-start gap-2.5 text-sm">
-                        <Check className="w-4 h-4 mt-0.5 shrink-0 text-stone-400" />
-                        <span className="text-stone-600">{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <a href="#contattaci" className="block text-center py-3.5 rounded-xl text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg transition-all duration-200">Contattaci</a>
+                <div key={tier.id} className="snap-center w-full shrink-0 px-1">
+                  {isCustom ? (
+                    <div className="group relative overflow-hidden rounded-2xl border-2 border-dashed border-stone-300 hover:border-stone-400 p-8 bg-white transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-stone-900/8">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-stone-50/50 to-white/0 group-hover:to-stone-100/30 transition-all duration-500 pointer-events-none" />
+                      <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center mb-5">
+                        <Settings className="w-6 h-6 text-stone-500" />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-1 text-stone-900" style={{ fontFamily: "'Jost', sans-serif" }}>{tier.planName}</h3>
+                      <p className="text-sm leading-relaxed mb-5 text-stone-500">{tier.description}</p>
+                      <div className="mb-6"><span className="text-3xl font-extrabold text-stone-400">{tier.price}</span></div>
+                      <ul className="space-y-3 mb-8">
+                        {tier.features.map(feat => (
+                          <li key={feat} className="flex items-start gap-2.5 text-sm">
+                            <Check className="w-4 h-4 mt-0.5 shrink-0 text-stone-400" />
+                            <span className="text-stone-600">{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <a href="#contattaci" className="block text-center py-3.5 rounded-xl text-sm font-semibold bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg transition-all duration-200">Contattaci</a>
+                    </div>
+                  ) : (
+                    <div className={`group relative overflow-hidden rounded-2xl border p-8 transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-stone-900/12 ${
+                      isDark
+                        ? 'bg-gradient-to-br from-stone-900 via-stone-800 to-stone-700 text-white ring-2 ring-stone-700/50 border-stone-800'
+                        : 'bg-gradient-to-br from-stone-50 to-stone-100 border-stone-200 hover:border-stone-300'
+                    }`}>
+                      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent group-hover:to-white/10 transition-all duration-500 pointer-events-none" />
+                      {tier.highlighted && (
+                        <div className="absolute top-4 right-4 px-2.5 py-1 bg-white/15 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">Più scelto</div>
+                      )}
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${isDark ? 'bg-white/10' : 'bg-white border border-stone-200 shadow-sm'}`}>
+                        {tier.id === 'free' && <Zap className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                        {tier.id === 'starter' && <Sparkles className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                        {tier.id === 'pro' && <Crown className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                        {tier.id === 'business' && <Building2 className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                        {tier.id === 'enterprise' && <Building2 className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
+                      </div>
+                      <h3 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-stone-900'}`} style={{ fontFamily: "'Jost', sans-serif" }}>{tier.planName}</h3>
+                      <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-stone-300' : 'text-stone-500'}`}>{tier.description}</p>
+                      <div className="mb-6"><span className={`text-4xl font-extrabold ${isDark ? 'text-white' : 'text-stone-900'}`}>{tier.price}</span></div>
+                      <ul className="space-y-3 mb-8">
+                        {tier.features.map(feat => (
+                          <li key={feat} className="flex items-start gap-2.5 text-sm">
+                            <Check className={`w-4 h-4 mt-0.5 shrink-0 ${isDark ? 'text-emerald-400' : 'text-stone-600'}`} />
+                            <span className={isDark ? 'text-stone-200' : 'text-stone-600'}>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {tier.priceValue === 0 ? (
+                        <a href="#registrati" className={`block text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${isDark ? 'bg-white text-stone-900 hover:bg-stone-100 hover:shadow-lg' : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'}`}>Inizia Gratis &mdash; 30 giorni di prova</a>
+                      ) : (
+                        <a href="#registrati" className={`block text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${isDark ? 'bg-white text-stone-900 hover:bg-stone-100 hover:shadow-lg' : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'}`}>Prova 30 giorni gratis</a>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
-            }
-
-            return (
-              <div className={`group relative overflow-hidden rounded-2xl border p-8 transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-stone-900/12 ${
-                isDark
-                  ? 'bg-gradient-to-br from-stone-900 via-stone-800 to-stone-700 text-white ring-2 ring-stone-700/50 border-stone-800'
-                  : 'bg-gradient-to-br from-stone-50 to-stone-100 border-stone-200 hover:border-stone-300'
-              }`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent group-hover:to-white/10 transition-all duration-500 pointer-events-none" />
-                {tier.highlighted && (
-                  <div className="absolute top-4 right-4 px-2.5 py-1 bg-white/15 rounded-full text-[10px] font-bold uppercase tracking-wider text-white/90 backdrop-blur-sm">Più scelto</div>
-                )}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${isDark ? 'bg-white/10' : 'bg-white border border-stone-200 shadow-sm'}`}>
-                  {tier.id === 'free' && <Zap className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
-                  {tier.id === 'starter' && <Sparkles className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
-                  {tier.id === 'pro' && <Crown className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
-                  {tier.id === 'business' && <Building2 className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
-                  {tier.id === 'enterprise' && <Building2 className={`w-6 h-6 ${isDark ? 'text-white' : 'text-stone-900'}`} />}
-                </div>
-                <h3 className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-stone-900'}`} style={{ fontFamily: "'Jost', sans-serif" }}>{tier.planName}</h3>
-                <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-stone-300' : 'text-stone-500'}`}>{tier.description}</p>
-                <div className="mb-6"><span className={`text-4xl font-extrabold ${isDark ? 'text-white' : 'text-stone-900'}`}>{tier.price}</span></div>
-                <ul className="space-y-3 mb-8">
-                  {tier.features.map(feat => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm">
-                      <Check className={`w-4 h-4 mt-0.5 shrink-0 ${isDark ? 'text-emerald-400' : 'text-stone-600'}`} />
-                      <span className={isDark ? 'text-stone-200' : 'text-stone-600'}>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-                {tier.priceValue === 0 ? (
-                  <a href="#registrati" className={`block text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${isDark ? 'bg-white text-stone-900 hover:bg-stone-100 hover:shadow-lg' : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'}`}>Inizia Gratis &mdash; 30 giorni di prova</a>
-                ) : (
-                  <a href="#registrati" className={`block text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 ${isDark ? 'bg-white text-stone-900 hover:bg-stone-100 hover:shadow-lg' : 'bg-stone-900 text-white hover:bg-stone-800 hover:shadow-lg'}`}>Prova 30 giorni gratis</a>
-                )}
-              </div>
-            )
-          })()}
+            })}
+          </div>
+          {/* Swipe hint dots */}
+          <div className="flex items-center justify-center gap-1.5 mt-5">
+            {SWITCH_TIERS.map(tier => (
+              <button
+                key={tier.id}
+                onClick={() => {
+                  setSelectedTier(tier.id)
+                  const idx = SWITCH_TIERS.findIndex(t => t.id === tier.id)
+                  if (swiperRef.current) {
+                    swiperRef.current.scrollTo({ left: swiperRef.current.clientWidth * idx, behavior: 'smooth' })
+                  }
+                }}
+                className={`rounded-full transition-all duration-300 ${
+                  selectedTier === tier.id
+                    ? 'w-6 h-2 bg-stone-900'
+                    : 'w-2 h-2 bg-stone-300 hover:bg-stone-400'
+                }`}
+                aria-label={tier.planName}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
