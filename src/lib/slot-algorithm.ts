@@ -209,10 +209,14 @@ export async function getAvailableSlots(
   const resourceAvail = await db.resourceAvailability.findMany({
     where: { resourceId: { in: resources.map(r => r.id) } },
   })
-  const resourcesWithAvail = mergeResourceAvailability(resources, resourceAvail)
+  let resourcesWithAvail = mergeResourceAvailability(resources, resourceAvail)
+
+  // FALLBACK: If no resources exist, treat the shop as a single virtual resource.
+  // This provides backward-compat for tenants who haven't set up postazioni yet.
+  const noResourcesFallback = resourcesWithAvail.length === 0 && !resourceId
 
   // If a specific resourceId was requested and it has custom availability but is closed this day
-  if (resourceId && resourcesWithAvail.length === 1 && resourcesWithAvail[0].hasCustomAvailability) {
+  if (!noResourcesFallback && resourceId && resourcesWithAvail.length === 1 && resourcesWithAvail[0].hasCustomAvailability) {
     const dayAvail = resourcesWithAvail[0].availability.get(dayOfWeek)
     if (!dayAvail) {
       return { date: dateStr, slots: [], availability: 'none' }
@@ -297,34 +301,43 @@ export async function getAvailableSlots(
     // Check if this slot is free on at least ONE resource
     let hasFreeResource = false
 
-    for (const resource of resourcesWithAvail) {
-      // Check against unassigned (legacy) bookings — block all resources
-      let blockedByUnassigned = false
+    if (noResourcesFallback) {
+      // No postazioni configured: slot is free if no unassigned bookings block it
+      let blocked = false
       for (const range of unassignedRanges) {
-        if (t < range.end && slotEnd > range.start) {
-          blockedByUnassigned = true
+        if (t < range.end && slotEnd > range.start) { blocked = true; break }
+      }
+      if (!blocked) hasFreeResource = true
+    } else {
+      for (const resource of resourcesWithAvail) {
+        // Check against unassigned (legacy) bookings — block all resources
+        let blockedByUnassigned = false
+        for (const range of unassignedRanges) {
+          if (t < range.end && slotEnd > range.start) {
+            blockedByUnassigned = true
+            break
+          }
+        }
+        if (blockedByUnassigned) continue
+
+        // Check resource's own availability window
+        if (!isResourceAvailableForSlot(resource, dayOfWeek, t, slotEnd, openMinutes, closeMinutes)) {
+          continue
+        }
+
+        // Check against this resource's own bookings
+        let isFree = true
+        for (const range of resource.bookedRanges) {
+          if (t < range.end && slotEnd > range.start) {
+            isFree = false
+            break
+          }
+        }
+
+        if (isFree) {
+          hasFreeResource = true
           break
         }
-      }
-      if (blockedByUnassigned) continue
-
-      // Check resource's own availability window
-      if (!isResourceAvailableForSlot(resource, dayOfWeek, t, slotEnd, openMinutes, closeMinutes)) {
-        continue
-      }
-
-      // Check against this resource's own bookings
-      let isFree = true
-      for (const range of resource.bookedRanges) {
-        if (t < range.end && slotEnd > range.start) {
-          isFree = false
-          break
-        }
-      }
-
-      if (isFree) {
-        hasFreeResource = true
-        break
       }
     }
 
@@ -444,7 +457,27 @@ export async function findFreeResource(
     select: { id: true },
   })
 
-  if (resources.length === 0) return null
+  // FALLBACK: No postazioni configured — check unassigned bookings only
+  if (resources.length === 0) {
+    const dayStart = createInRome(dateStr, '00:00')
+    const dayEnd = createInRome(dateStr, '23:59')
+    const bookings = await db.booking.findMany({
+      where: {
+        startTime: { gte: dayStart, lte: dayEnd },
+        status: { in: ['confirmed', 'pending', 'blocked'] },
+        configId,
+      },
+      select: { startTime: true, endTime: true },
+    })
+    const unassignedBlocked = bookings
+      .filter(b => !b.resourceId)
+      .some(b => {
+        const bs = getMinutesFromMidnightRome(new Date(b.startTime))
+        const be = getMinutesFromMidnightRome(new Date(b.endTime))
+        return slotStart < be && slotEnd > bs
+      })
+    return unassignedBlocked ? null : '__virtual__'
+  }
 
   // Load per-resource availability (single query)
   const resourceAvail = await db.resourceAvailability.findMany({
@@ -635,6 +668,9 @@ export async function getBatchAvailability(
   })
   const resourcesWithAvail = mergeResourceAvailability(resources, resourceAvail)
 
+  // FALLBACK: If no resources exist, treat the shop as a single virtual resource.
+  const noResourcesFallback = resourcesWithAvail.length === 0 && !resourceId
+
   // 3. ALL bookings in the date range (single query with composite index)
   const rangeStart = createInRome(startDate, '00:00')
   const rangeEnd = createInRome(endDate, '23:59')
@@ -763,23 +799,32 @@ export async function getBatchAvailability(
       if (lunchStart >= 0 && lunchEnd >= 0 && t < lunchEnd && slotEnd > lunchStart) continue
 
       let hasFree = false
-      for (const resource of resourcesWithAvail) {
+      if (noResourcesFallback) {
+        // No postazioni: slot is free if no unassigned bookings block it
         let blocked = false
         for (const range of unassignedRanges) {
           if (t < range.end && slotEnd > range.start) { blocked = true; break }
         }
-        if (blocked) continue
+        if (!blocked) hasFree = true
+      } else {
+        for (const resource of resourcesWithAvail) {
+          let blocked = false
+          for (const range of unassignedRanges) {
+            if (t < range.end && slotEnd > range.start) { blocked = true; break }
+          }
+          if (blocked) continue
 
-        // Check resource's own availability window
-        if (!isResourceAvailableForSlot(resource, dayOfWeek, t, slotEnd, shopOpenMinutes, shopCloseMinutes)) {
-          continue
-        }
+          // Check resource's own availability window
+          if (!isResourceAvailableForSlot(resource, dayOfWeek, t, slotEnd, shopOpenMinutes, shopCloseMinutes)) {
+            continue
+          }
 
-        let isFree = true
-        for (const range of resource.bookedRanges) {
-          if (t < range.end && slotEnd > range.start) { isFree = false; break }
+          let isFree = true
+          for (const range of resource.bookedRanges) {
+            if (t < range.end && slotEnd > range.start) { isFree = false; break }
+          }
+          if (isFree) { hasFree = true; break }
         }
-        if (isFree) { hasFree = true; break }
       }
       if (hasFree) availableCount++
     }
@@ -870,6 +915,28 @@ export async function isSlotAvailable(
     where: { resourceId: { in: resources.map(r => r.id) } },
   })
   const resourcesWithAvail = mergeResourceAvailability(resources, resourceAvail)
+
+  // FALLBACK: No postazioni configured — check unassigned bookings only
+  if (resourcesWithAvail.length === 0 && !resourceId) {
+    const dayStart = createInRome(dateStr, '00:00')
+    const dayEnd = createInRome(dateStr, '23:59')
+    const bookings = await db.booking.findMany({
+      where: {
+        startTime: { gte: dayStart, lte: dayEnd },
+        status: { in: ['confirmed', 'pending', 'blocked'] },
+        configId: config.id,
+      },
+      select: { startTime: true, endTime: true, resourceId: true },
+    })
+    const unassignedBlocked = bookings
+      .filter(b => !b.resourceId)
+      .some(b => {
+        const bs = getMinutesFromMidnightRome(new Date(b.startTime))
+        const be = getMinutesFromMidnightRome(new Date(b.endTime))
+        return slotStart < be && slotEnd > bs
+      })
+    return !unassignedBlocked
+  }
 
   // Filter resources that are available for this slot
   const availableResources = resourcesWithAvail.filter(r =>

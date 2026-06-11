@@ -185,7 +185,9 @@ export async function POST(request: NextRequest) {
     const endTime = new Date(startTime.getTime() + totalDuration * 60 * 1000)
 
     // Assign resource: use client's preferred resourceId if provided, otherwise auto-assign
-    const resourceId = await findFreeResource(data.date, data.time, totalDuration, config.id, data.resourceId)
+    let resourceId = await findFreeResource(data.date, data.time, totalDuration, config.id, data.resourceId)
+    // Normalize virtual fallback (no postazioni configured) to null
+    if (resourceId === '__virtual__') resourceId = null
 
     // Check if customer is logged in (optional CustomerUser account)
     const customerSession = await getCustomerSession()
