@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
         config: {
           select: {
             id: true,
+            plan: true,
+            planExpiresAt: true,
             _count: {
               select: {
                 bookings: true,
@@ -69,6 +71,8 @@ export async function GET(request: NextRequest) {
         hasConfig: !!t.config,
         // Billing fields
         subscriptionStatus: t.subscriptionStatus,
+        plan: t.config?.plan || 'free',
+        configPlanExpiresAt: t.config?.planExpiresAt || null,
         planEndDate: t.planEndDate,
         cancelReason: t.cancelReason,
         cancelledAt: t.cancelledAt,

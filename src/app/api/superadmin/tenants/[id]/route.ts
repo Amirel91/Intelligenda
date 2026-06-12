@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, ensureDbSchema } from '@/lib/db'
 import { requireSuperAdmin } from '@/lib/auth'
+import { PLANS } from '@/lib/plans'
+
+const VALID_PLANS = Object.keys(PLANS)
+const VALID_STATUSES = ['trial', 'active', 'cancelling', 'suspended']
 
 /**
  * PATCH /api/superadmin/tenants/[id]
- * Toggle tenant active/suspended status.
+ * Toggle tenant active/suspended status OR change plan/subscription.
  */
 export async function PATCH(
   request: NextRequest,
@@ -16,15 +20,80 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { active } = body
 
-    if (typeof active !== 'boolean') {
-      return NextResponse.json({ error: 'Campo "active" obbligatorio (boolean)' }, { status: 400 })
-    }
-
-    const tenant = await db.tenant.findUnique({ where: { id } })
+    const tenant = await db.tenant.findUnique({
+      where: { id },
+      include: { config: true },
+    })
     if (!tenant) {
       return NextResponse.json({ error: 'Tenant non trovato' }, { status: 404 })
+    }
+
+    // ---- Plan change (SuperAdmin grant) ----
+    if (body.plan !== undefined) {
+      const planId = body.plan
+      if (!VALID_PLANS.includes(planId)) {
+        return NextResponse.json(
+          { error: `Piano non valido. Valori ammessi: ${VALID_PLANS.join(', ')}` },
+          { status: 400 },
+        )
+      }
+
+      const subscriptionStatus = body.subscriptionStatus || 'active'
+      const planEndDate = body.planEndDate || null // ISO string or null (permanent)
+
+      // Build update data
+      const tenantUpdate: Record<string, unknown> = {
+        subscriptionStatus,
+      }
+      if (planEndDate) {
+        tenantUpdate.planEndDate = new Date(planEndDate)
+      } else {
+        tenantUpdate.planEndDate = null // Permanent — no expiry
+      }
+
+      // If the plan was cancelling, clear cancelReason
+      if (subscriptionStatus !== 'cancelling') {
+        tenantUpdate.cancelReason = null
+        tenantUpdate.cancelledAt = null
+      }
+
+      // Ensure BusinessConfig exists
+      let config = tenant.config
+      if (!config) {
+        config = await db.businessConfig.create({
+          data: { tenantId: id, plan: planId },
+        })
+      } else {
+        await db.businessConfig.update({
+          where: { tenantId: id },
+          data: {
+            plan: planId,
+            planExpiresAt: planEndDate ? new Date(planEndDate) : null,
+          },
+        })
+      }
+
+      const updated = await db.tenant.update({
+        where: { id },
+        data: tenantUpdate,
+      })
+
+      return NextResponse.json({
+        id: updated.id,
+        slug: updated.slug,
+        businessName: updated.businessName,
+        active: updated.active,
+        plan: planId,
+        subscriptionStatus: updated.subscriptionStatus,
+        planEndDate: updated.planEndDate,
+      })
+    }
+
+    // ---- Simple active toggle (legacy behavior) ----
+    const { active } = body
+    if (typeof active !== 'boolean') {
+      return NextResponse.json({ error: 'Nessuna azione valida specificata' }, { status: 400 })
     }
 
     const updated = await db.tenant.update({

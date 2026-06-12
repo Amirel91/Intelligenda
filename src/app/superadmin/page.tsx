@@ -29,10 +29,13 @@ import {
   Wrench,
   Zap,
   Activity,
+  Crown,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { IntelliGendaLogo } from '@/components/IntelliGendaLogo'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { PLANS, PAID_PLANS } from '@/lib/plans'
 
 // ==================== AUTH HELPER ====================
 
@@ -70,6 +73,8 @@ interface TenantRow {
   adminCount: number
   hasConfig: boolean
   subscriptionStatus: string | null
+  plan: string
+  configPlanExpiresAt: string | null
   planEndDate: string | null
   cancelReason: string | null
   cancelledAt: string | null
@@ -123,6 +128,204 @@ function SubscriptionBadge({ status, planEndDate }: { status: string | null; pla
   )
 }
 
+// ==================== PLAN BADGE ====================
+
+const PLAN_BADGE_STYLES: Record<string, { color: string; bg: string }> = {
+  free:      { color: 'text-stone-600 dark:text-stone-400',      bg: 'bg-stone-100 dark:bg-stone-800' },
+  trial:     { color: 'text-blue-700 dark:text-blue-400',        bg: 'bg-blue-50 dark:bg-blue-950/50' },
+  starter:   { color: 'text-violet-700 dark:text-violet-400',    bg: 'bg-violet-50 dark:bg-violet-950/50' },
+  pro:       { color: 'text-indigo-700 dark:text-indigo-400',    bg: 'bg-indigo-50 dark:bg-indigo-950/50' },
+  business:  { color: 'text-amber-700 dark:text-amber-400',      bg: 'bg-amber-50 dark:bg-amber-950/50' },
+  enterprise:{ color: 'text-emerald-700 dark:text-emerald-400',  bg: 'bg-emerald-50 dark:bg-emerald-950/50' },
+  custom:    { color: 'text-rose-700 dark:text-rose-400',        bg: 'bg-rose-50 dark:bg-rose-950/50' },
+}
+
+function PlanBadge({ planId }: { planId: string }) {
+  const tier = PLANS[planId] || PLANS.free
+  const style = PLAN_BADGE_STYLES[planId] || PLAN_BADGE_STYLES.free
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold w-fit ${style.bg} ${style.color}`}>
+      <Crown className="w-3 h-3" />
+      {tier.name}
+      {tier.price > 0 && <span className="font-normal opacity-70">{tier.price}€</span>}
+    </span>
+  )
+}
+
+// ==================== PLAN CHANGE MODAL ====================
+
+const CHANGEABLE_PLANS = [PLANS.free, ...PAID_PLANS, PLANS.custom]
+
+interface PlanModalState {
+  open: boolean
+  tenant: TenantRow | null
+}
+
+function PlanChangeModal({
+  state,
+  onClose,
+  onConfirm,
+  loading,
+}: {
+  state: PlanModalState
+  onClose: () => void
+  onConfirm: (tenantId: string, plan: string, endDate: string | null) => void
+  loading: boolean
+}) {
+  const [selectedPlan, setSelectedPlan] = useState('free')
+  const [duration, setDuration] = useState<'permanent' | '1m' | '3m' | '6m' | '1y' | 'custom'>('permanent')
+  const [customDate, setCustomDate] = useState('')
+
+  useEffect(() => {
+    if (state.open && state.tenant) {
+      setSelectedPlan(state.tenant.plan || 'free')
+      setDuration('permanent')
+      setCustomDate('')
+    }
+  }, [state.open, state.tenant])
+
+  if (!state.open || !state.tenant) return null
+
+  const getEndDate = (): string | null => {
+    if (duration === 'permanent') return null
+    if (duration === 'custom') return customDate || null
+    const now = new Date()
+    const months = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 }[duration] || 0
+    now.setMonth(now.getMonth() + months)
+    return now.toISOString()
+  }
+
+  const handleSave = () => {
+    onConfirm(state.tenant!.id, selectedPlan, getEndDate())
+  }
+
+  const isFree = selectedPlan === 'free'
+  const endDate = getEndDate()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      {/* Modal */}
+      <div className="relative bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 shadow-xl w-full max-w-md p-6 space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-950/50 flex items-center justify-center">
+              <Crown className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-stone-900 dark:text-stone-100">Cambia Piano</h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400">{state.tenant.businessName}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Plan selector */}
+        <div>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Piano</label>
+          <div className="grid grid-cols-3 gap-2">
+            {CHANGEABLE_PLANS.map(p => {
+              const isSelected = selectedPlan === p.id
+              const style = PLAN_BADGE_STYLES[p.id] || PLAN_BADGE_STYLES.free
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPlan(p.id)}
+                  className={`px-2 py-2.5 rounded-xl border-2 text-center transition-all ${
+                    isSelected
+                      ? `${style.bg} ${style.color} border-current`
+                      : 'border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600'
+                  }`}
+                >
+                  <p className="text-xs font-semibold leading-tight">{p.name}</p>
+                  <p className="text-[10px] mt-0.5 opacity-70">
+                    {p.isCustom ? 'Personalizzato' : p.price === 0 ? 'Gratuito' : `${p.price}€/mese`}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Duration selector */}
+        {!isFree && (
+          <div>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Durata</label>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { value: 'permanent' as const, label: 'Per sempre' },
+                { value: '1m' as const, label: '1 mese' },
+                { value: '3m' as const, label: '3 mesi' },
+                { value: '6m' as const, label: '6 mesi' },
+                { value: '1y' as const, label: '1 anno' },
+                { value: 'custom' as const, label: 'Data personalizzata' },
+              ]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDuration(opt.value)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                    duration === opt.value
+                      ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-100'
+                      : 'border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:border-stone-300 dark:hover:border-stone-600'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {duration === 'custom' && (
+              <input
+                type="date"
+                value={customDate}
+                onChange={e => setCustomDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="mt-2 w-full px-3 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-sm text-stone-900 dark:text-stone-100 outline-none focus:border-stone-400"
+              />
+            )}
+          </div>
+        )}
+
+        {/* Summary */}
+        <div className="bg-stone-50 dark:bg-stone-800 rounded-xl p-3 space-y-1">
+          <p className="text-xs text-stone-500 dark:text-stone-400">Riepilogo</p>
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+            {PLANS[selectedPlan]?.name} {isFree ? '(gratuito)' : `— ${PLANS[selectedPlan]?.price}€/mese`}
+          </p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            {isFree
+              ? 'Il tenant passerà al piano gratuito'
+              : endDate
+                ? `Valido fino al ${new Date(endDate).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}`
+                : 'Assegnazione permanente (nessuna scadenza)'}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={loading || (duration === 'custom' && !customDate)}
+            className="px-4 py-2 rounded-xl text-sm font-medium bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
+            {isFree ? 'Imposta Free' : 'Assegna Piano'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ==================== TAB CONFIG ====================
 
 const tabs = [
@@ -157,6 +360,8 @@ export default function SuperAdminDashboard() {
   const [search, setSearch] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [planModal, setPlanModal] = useState<PlanModalState>({ open: false, tenant: null })
+  const [planChanging, setPlanChanging] = useState(false)
   const [expandedTenant, setExpandedTenant] = useState<string | null>(null)
   const [showEmailSettings, setShowEmailSettings] = useState(false)
   const [emailSubject, setEmailSubject] = useState('')
@@ -483,6 +688,54 @@ export default function SuperAdminDashboard() {
     router.replace('/superadmin/login')
   }
 
+  // ===== PLAN CHANGE (SuperAdmin grant) =====
+
+  const handlePlanChange = async (tenantId: string, plan: string, endDate: string | null) => {
+    setPlanChanging(true)
+    try {
+      const headers = authHeaders()
+      const body: Record<string, unknown> = { plan }
+      if (plan === 'free') {
+        body.subscriptionStatus = 'trial'
+      } else {
+        body.subscriptionStatus = 'active'
+      }
+      if (endDate) {
+        body.planEndDate = endDate
+      } else if (plan !== 'free') {
+        // No expiry = permanent grant, explicitly null to clear any previous date
+        body.planEndDate = null
+      }
+
+      const res = await fetch(`/api/superadmin/tenants/${tenantId}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Errore')
+        return
+      }
+
+      // Update local state
+      setTenants(prev => prev.map(t => {
+        if (t.id !== tenantId) return t
+        return {
+          ...t,
+          plan,
+          subscriptionStatus: body.subscriptionStatus as string,
+          planEndDate: body.planEndDate as string | null,
+        }
+      }))
+      setPlanModal({ open: false, tenant: null })
+    } catch {
+      alert('Errore di connessione')
+    } finally {
+      setPlanChanging(false)
+    }
+  }
+
   // ==================== FILTER ====================
 
   const filtered = tenants.filter(t =>
@@ -749,7 +1002,8 @@ export default function SuperAdminDashboard() {
                       <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400">Attività</th>
                       <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400 hidden md:table-cell">Titolare</th>
                       <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400">Sottodominio</th>
-                      <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400 hidden sm:table-cell">Pren.</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400 hidden sm:table-cell">Piano</th>
+                      <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400 hidden lg:table-cell">Pren.</th>
                       <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400 hidden lg:table-cell">Abbonamento</th>
                       <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400">Stato</th>
                       <th className="px-4 py-3 font-medium text-stone-500 dark:text-stone-400 hidden xl:table-cell">Utilizzo</th>
@@ -759,7 +1013,7 @@ export default function SuperAdminDashboard() {
                   <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-12 text-center text-stone-400 dark:text-stone-500">
+                        <td colSpan={9} className="px-4 py-12 text-center text-stone-400 dark:text-stone-500">
                           {search ? 'Nessuna attività corrisponde alla ricerca' : 'Nessuna attività registrata'}
                         </td>
                       </tr>
@@ -799,6 +1053,9 @@ export default function SuperAdminDashboard() {
                               </a>
                             </td>
                             <td className="px-4 py-3 hidden sm:table-cell">
+                              <PlanBadge planId={tenant.plan} />
+                            </td>
+                            <td className="px-4 py-3 hidden lg:table-cell">
                               <span className="inline-flex items-center gap-1 text-stone-600 dark:text-stone-400">
                                 <CalendarCheck className="w-3.5 h-3.5" />
                                 {tenant.bookingCount}
@@ -836,6 +1093,14 @@ export default function SuperAdminDashboard() {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center justify-end gap-1">
+                                {/* Change plan button */}
+                                <button
+                                  onClick={() => setPlanModal({ open: true, tenant })}
+                                  className="p-2 rounded-lg text-violet-500 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/50 transition-colors"
+                                  title="Cambia piano"
+                                >
+                                  <Crown className="w-4 h-4" />
+                                </button>
                                 {/* Impersonate button */}
                                 <button
                                   onClick={() => handleImpersonate(tenant)}
@@ -895,7 +1160,7 @@ export default function SuperAdminDashboard() {
                           {/* Expanded row: cancel reason details */}
                           {expandedTenant === tenant.id && tenant.cancelReason && (
                             <tr className="bg-orange-50/50 dark:bg-orange-950/30">
-                              <td colSpan={8} className="px-4 py-3">
+                              <td colSpan={9} className="px-4 py-3">
                                 <div className="flex items-start gap-3 ml-2">
                                   <MessageSquareOff className="w-4 h-4 text-orange-500 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                                   <div className="space-y-1">
@@ -1347,6 +1612,14 @@ export default function SuperAdminDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Plan Change Modal */}
+      <PlanChangeModal
+        state={planModal}
+        onClose={() => setPlanModal({ open: false, tenant: null })}
+        onConfirm={handlePlanChange}
+        loading={planChanging}
+      />
     </div>
   )
 }
