@@ -370,3 +370,29 @@ Stage Summary:
 - Commit d91733c pushed to main
 - Feature complete: per-resource weekly availability scheduling
 - Backward compatible: resources without custom schedule follow shop's global hours
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Rimuovere vecchio logo, aggiungere gestione piani SuperAdmin, mostrare piano nella lista tenant
+
+Work Log:
+- Sostituite tutte le icone (favicon.ico, favicon-16x16, favicon-32x32, apple-touch-icon, icon-192x192, icon-512x512, logo.png, logo-square.png, og-image.png) con versioni generate dall'originale in download/intelligenda-logo-original.jpeg
+- Modificato GET /api/superadmin/tenants per includere i campi `plan` e `configPlanExpiresAt` da BusinessConfig
+- Esteso PATCH /api/superadmin/tenants/[id] per accettare cambio piano (plan, subscriptionStatus, planEndDate)
+  - Valida il piano contro PLANS da plans.ts
+  - Aggiorna sia Tenant (subscriptionStatus, planEndDate) che BusinessConfig (plan, planExpiresAt)
+  - Se il piano era in cancelling, pulisce cancelReason/cancelledAt
+  - Crea BusinessConfig se non esiste
+- Aggiunto al SuperAdmin UI:
+  - Interfaccia TenantRow con campi `plan` e `configPlanExpiresAt`
+  - PlanBadge component con colori unici per ogni piano (free=grigio, starter=viola, pro=indigo, business=ambra, enterprise=verde, custom=rosa)
+  - Colonna "Piano" nella tabella tenant (visibile da sm+)
+  - Pulsante Crown (viola) nelle azioni per ogni tenant
+  - PlanChangeModal con: selezione piano (griglia 3 colonne), selettore durata (per sempre / 1m / 3m / 6m / 1y / data custom), riepilogo live, pulsanti annulla/conferma
+  - handlePlanChange: aggiorna localmente lo stato dopo successo API
+
+Stage Summary:
+- Build Next.js superata senza errori
+- Commit locale: ec4752e (push fallito per token GitHub scaduto)
+- 11 file modificati, 357 righe aggiunte
