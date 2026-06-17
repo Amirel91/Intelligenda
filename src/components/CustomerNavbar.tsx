@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { User, CalendarDays, LogIn, UserPlus, ClipboardList, LogOut, X } from 'lucide-react'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { useT } from '@/lib/tenant-i18n'
 
 interface CustomerData {
   id: string
@@ -17,6 +18,7 @@ export function CustomerNavbar() {
   const [authChecked, setAuthChecked] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const t = useT()
 
   // Check session on mount
   useEffect(() => {
@@ -67,7 +69,7 @@ export function CustomerNavbar() {
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              aria-label="Menu utente"
+              aria-label={t('Menu utente')}
             >
               {customer ? (
                 <>
@@ -77,7 +79,7 @@ export function CustomerNavbar() {
                     </span>
                   </div>
                   <span className="text-sm font-medium text-stone-700 dark:text-stone-300 max-w-[120px] truncate hidden sm:block">
-                    {customer.nome?.split(' ')[0] || 'Profilo'}
+                    {customer.nome?.split(' ')[0] || t('Profilo')}
                   </span>
                 </>
               ) : (
@@ -99,7 +101,7 @@ export function CustomerNavbar() {
                         <p className="text-xs text-stone-500 dark:text-stone-400 truncate">{customer.email}</p>
                       </div>
                     ) : (
-                      <p className="text-sm text-stone-500 dark:text-stone-400">Menu utente</p>
+                      <p className="text-sm text-stone-500 dark:text-stone-400">{t('Menu utente')}</p>
                     )}
                   </div>
 
@@ -111,7 +113,7 @@ export function CustomerNavbar() {
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                     >
                       <CalendarDays className="w-4 h-4 text-stone-400 dark:text-stone-500" />
-                      Prenota un appuntamento
+                      {t('Prenota un appuntamento')}
                     </Link>
 
                     {customer ? (
@@ -122,7 +124,7 @@ export function CustomerNavbar() {
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                         >
                           <ClipboardList className="w-4 h-4 text-stone-400 dark:text-stone-500" />
-                          I miei appuntamenti
+                          {t('I miei appuntamenti')}
                         </Link>
                         <div className="border-t border-stone-100 dark:border-stone-800 mt-1 pt-1">
                           <button
@@ -130,7 +132,7 @@ export function CustomerNavbar() {
                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
                           >
                             <LogOut className="w-4 h-4" />
-                            Disconnettiti
+                            {t('Disconnettiti')}
                           </button>
                         </div>
                       </>
@@ -142,7 +144,7 @@ export function CustomerNavbar() {
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                         >
                           <LogIn className="w-4 h-4 text-stone-400 dark:text-stone-500" />
-                          Accedi
+                          {t('Accedi')}
                         </Link>
                         <Link
                           href="/register"
@@ -150,7 +152,7 @@ export function CustomerNavbar() {
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                         >
                           <UserPlus className="w-4 h-4 text-stone-400 dark:text-stone-500" />
-                          Registrati
+                          {t('Registrati')}
                         </Link>
                       </>
                     )}

@@ -7,6 +7,7 @@ import { CalendarDays, Phone, Mail, MapPin, Star, Clock } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { CustomerNavbar } from '@/components/CustomerNavbar'
+import { useT } from '@/lib/tenant-i18n'
 
 interface BusinessConfig {
   id: string
@@ -36,7 +37,8 @@ interface WorkingHour {
   closed: boolean
 }
 
-const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+const DAY_NAMES_IT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+const DAY_NAMES_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export default function HomePage() {
   const router = useRouter()
@@ -44,6 +46,7 @@ export default function HomePage() {
   const [featuredServices, setFeaturedServices] = useState<Service[]>([])
   const [workingHours, setWorkingHours] = useState<WorkingHour[]>([])
   const [configError, setConfigError] = useState(false)
+  const t = useT()
 
   // Secret admin access: 5 consecutive taps on shop logo
   const tapCountRef = useRef(0)
@@ -136,16 +139,16 @@ export default function HomePage() {
             <CalendarDays className="w-8 h-8 text-stone-400" />
           </div>
           <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 mb-3">
-            Negozio non trovato
+            {t('Negozio non trovato')}
           </h1>
           <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
-            Questo negozio non è al momento disponibile o non esiste.
+            {t('Questo negozio non è al momento disponibile o non esiste.')}
           </p>
           <a
             href="https://intelligenda.it"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Torna su IntelliGenda
+            {t('Torna su IntelliGenda')}
           </a>
         </div>
       </div>
@@ -175,7 +178,7 @@ export default function HomePage() {
           </motion.div>
 
           <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 mb-3">
-            {config?.shopName || 'Caricamento...'}
+            {config?.shopName || t('Caricamento...')}
           </h1>
 
           {config?.shopDescription && (
@@ -199,7 +202,7 @@ export default function HomePage() {
               className="inline-flex items-center justify-center gap-3 w-full max-w-xs mx-auto px-8 py-5 rounded-2xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-lg font-medium shadow-lg shadow-stone-900/20 dark:shadow-black/20 hover:shadow-xl hover:shadow-stone-900/30 dark:hover:shadow-black/30 transition-shadow cursor-pointer"
             >
               <CalendarDays className="w-6 h-6" />
-              Prenota un appuntamento
+              {t('Prenota un appuntamento')}
             </motion.div>
           </Link>
 
@@ -213,7 +216,7 @@ export default function HomePage() {
             >
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                <h2 className="text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-widest">In evidenza</h2>
+                <h2 className="text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-widest">{t('In evidenza')}</h2>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
                 {featuredServices.map((service, i) => (
@@ -263,14 +266,14 @@ export default function HomePage() {
             >
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Clock className="w-3.5 h-3.5 text-stone-400" />
-                <h2 className="text-xs font-medium text-stone-400 uppercase tracking-widest">Orari</h2>
+                <h2 className="text-xs font-medium text-stone-400 uppercase tracking-widest">{t('Orari')}</h2>
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 max-w-xs mx-auto text-xs">
                 {workingHours.map((wh) => (
                   <div key={wh.dayOfWeek} className="flex justify-between items-center py-1">
-                    <span className="text-stone-500">{DAY_NAMES[wh.dayOfWeek - 1]}</span>
+                    <span className="text-stone-500">{(t('Orari') === 'Hours' ? DAY_NAMES_EN : DAY_NAMES_IT)[wh.dayOfWeek - 1]}</span>
                     {wh.closed ? (
-                      <span className="text-stone-300">Chiuso</span>
+                      <span className="text-stone-300">{t('Chiuso')}</span>
                     ) : (
                       <span className="text-stone-600 font-medium">{wh.openTime}–{wh.closeTime}</span>
                     )}
@@ -293,7 +296,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="text-xs text-stone-300 hover:text-stone-400 transition-colors"
             >
-              Prenotazioni gestite da <span className="font-medium">IntelliGenda</span>
+              {t('Prenotazioni gestite da')} <span className="font-medium">IntelliGenda</span>
             </a>
           </motion.div>
         </motion.div>

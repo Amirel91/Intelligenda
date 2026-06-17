@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
+import { useT, EN_MONTHS, EN_DAYS } from '@/lib/tenant-i18n'
 import { createInRome } from '@/lib/timezone'
 import { CalendarSkeleton, SlotsSkeleton } from '@/components/ui/calendar-skeleton'
 import { RatingInteraction } from '@/components/ui/rating-interaction'
@@ -468,8 +469,8 @@ export default function PrenotaPage() {
     return (
       <div>
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli i servizi</h2>
-          <p className="text-stone-500 dark:text-stone-400 text-sm">Seleziona uno o piu servizi per il tuo appuntamento</p>
+          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli i servizi')}</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-sm">{t('Seleziona uno o piu servizi per il tuo appuntamento')}</p>
         </div>
 
         {/* Search bar — Apple/iOS style */}
@@ -479,7 +480,7 @@ export default function PrenotaPage() {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Cerca un servizio..."
+            placeholder={t('Cerca un servizio...')}
             className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 text-sm outline-none focus:bg-stone-200/70 dark:focus:bg-stone-700/70 transition-colors"
           />
           {searchQuery && (
@@ -501,7 +502,7 @@ export default function PrenotaPage() {
           return (
             <div>
               {filtered.length === 0 && (
-                <p className="text-stone-400 dark:text-stone-500 text-sm text-center py-6">Nessun servizio trovato per &ldquo;{searchQuery.trim()}&rdquo;</p>
+                <p className="text-stone-400 dark:text-stone-500 text-sm text-center py-6">t('Nessun servizio trovato per "{searchQuery}"').replace('{searchQuery}', searchQuery.trim())</p>
               )}
               <div className="space-y-3">
                 {filtered.map(s => <ServiceCard key={s.id} service={s} />)}
@@ -530,7 +531,7 @@ export default function PrenotaPage() {
                   >
                     <div className="flex items-center gap-2.5">
                       <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">{category}</h3>
-                      <span className="text-xs text-stone-400 dark:text-stone-500">{items.length} servizi</span>
+                      <span className="text-xs text-stone-400 dark:text-stone-500">{items.length} {t('servizi')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {selectedCount > 0 && (
@@ -568,8 +569,8 @@ export default function PrenotaPage() {
                   className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
-                    <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">Altri servizi</h3>
-                    <span className="text-xs text-stone-400 dark:text-stone-500">{uncategorized.length} servizi</span>
+                    <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">{t('Altri servizi')}</h3>
+                    <span className="text-xs text-stone-400 dark:text-stone-500">{uncategorized.length} {t('servizi')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {countSelected(uncategorized) > 0 && (
@@ -609,16 +610,16 @@ export default function PrenotaPage() {
           className="mt-5 p-4 rounded-2xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 dark:from-stone-100 dark:via-stone-200 dark:to-stone-100 text-white dark:text-stone-900 flex items-center justify-between shadow-xl shadow-stone-900/25 dark:shadow-black/25"
         >
           <div>
-            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">Servizi selezionati</span>
+            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">{t('Servizi selezionati')}</span>
             <div className="font-bold text-lg">
-              {booking.serviceIds.length} servizio{booking.serviceIds.length > 1 ? 'i' : ''} · {formatDuration(totalDuration)}
+              {booking.serviceIds.length} {t('servizio')}{booking.serviceIds.length > 1 ? (t('servizi') !== 'services' ? 'i' : 's') : ''} · {formatDuration(totalDuration)}
             </div>
             {totalCleanupInList > 0 && (
-              <div className="text-stone-400 dark:text-stone-500 text-xs mt-0.5">incl. {totalCleanupInList} min di pulizia/organizzazione</div>
+              <div className="text-stone-400 dark:text-stone-500 text-xs mt-0.5">t('incl. {n} min di pulizia/organizzazione').replace('{n}', String(totalCleanupInList))</div>
             )}
           </div>
           <div className="text-right">
-            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">Totale</span>
+            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">{t('Totale')}</span>
             <div className="font-bold text-xl">€{totalPrice.toFixed(2)}</div>
           </div>
         </motion.div>
@@ -643,8 +644,8 @@ export default function PrenotaPage() {
       return (
         <div>
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli un operatore</h2>
-            <p className="text-stone-500 dark:text-stone-400 text-sm">Caricamento operatori disponibili...</p>
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli un operatore')}</h2>
+            <p className="text-stone-500 dark:text-stone-400 text-sm">{t('Caricamento operatori disponibili...')}</p>
           </div>
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -658,8 +659,8 @@ export default function PrenotaPage() {
     return (
       <div>
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli un operatore</h2>
-          <p className="text-stone-500 dark:text-stone-400 text-sm">Seleziona chi ti assistera, oppure scegli il primo disponibile</p>
+          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli un operatore')}</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-sm">{t('Seleziona chi ti assistera, oppure scegli il primo disponibile')}</p>
         </div>
 
         <div className="space-y-3">
@@ -682,8 +683,8 @@ export default function PrenotaPage() {
                 <Users className="w-4 h-4" />
               </div>
               <div className="flex-1">
-                <div className="font-medium text-stone-900 dark:text-stone-100">Qualsiasi operatore disponibile</div>
-                <div className="text-stone-500 dark:text-stone-400 text-xs mt-0.5">Verra assegnato il primo operatore libero</div>
+                <div className="font-medium text-stone-900 dark:text-stone-100">{t('Qualsiasi operatore disponibile')}</div>
+                <div className="text-stone-500 dark:text-stone-400 text-xs mt-0.5">{t('Verra assegnato il primo operatore libero')}</div>
               </div>
               {!booking.resourceId && <Check className="w-5 h-5 text-stone-900 dark:text-stone-100 shrink-0" />}
             </div>
@@ -837,7 +838,7 @@ export default function PrenotaPage() {
   const StepCalendar = () => (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">Scegli data e ora</h2>
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli data e ora')}</h2>
         <p className="text-stone-500 dark:text-stone-400 text-sm">
           Durata totale: {formatDuration(totalDuration)} · {totalPrice.toFixed(2)}€
           {booking.resourceId && (
@@ -848,10 +849,10 @@ export default function PrenotaPage() {
 
       {/* Legend */}
       <div className="flex flex-wrap gap-3 mb-4 text-xs text-stone-500 dark:text-stone-400">
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> Disponibile</div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500" /> Pochi posti</div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-500" /> Completo</div>
-        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-300 border border-red-400" /> Chiuso</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> {t('Disponibile')}</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500" /> {t('Pochi posti')}</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-500" /> {t('Completo')}</div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-300 border border-red-400" /> {t('Chiuso')}</div>
       </div>
 
       {/* Calendar */}
@@ -928,7 +929,7 @@ export default function PrenotaPage() {
           {loadingSlots ? (
             <SlotsSkeleton />
           ) : availableSlots.length === 0 ? (
-            <p className="text-stone-400 dark:text-stone-500 text-sm">Nessun orario disponibile per questa data</p>
+            <p className="text-stone-400 dark:text-stone-500 text-sm">{t('Nessun orario disponibile per questa data')}</p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {availableSlots.map(slot => (
@@ -973,7 +974,7 @@ export default function PrenotaPage() {
             <p className="text-sm font-medium text-blue-900 dark:text-blue-200 truncate">
               Account connesso{customerAuth.email ? ` — ${customerAuth.email}` : ''}
             </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">Completa i dati qui sotto per confermare la prenotazione.</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400">{t('Completa i dati qui sotto per confermare la prenotazione.')}</p>
           </div>
         </motion.div>
       )
@@ -991,7 +992,7 @@ export default function PrenotaPage() {
         {/* Divider line with text */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
-          <span className="text-xs text-stone-400 dark:text-stone-500 whitespace-nowrap">oppure</span>
+          <span className="text-xs text-stone-400 dark:text-stone-500 whitespace-nowrap">{t('oppure')}</span>
           <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
         </div>
 
@@ -1003,8 +1004,8 @@ export default function PrenotaPage() {
             <LogIn className="w-4 h-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">Hai gia un account?</p>
-            <p className="text-xs text-amber-600 dark:text-amber-400">Accedi per gestire le tue prenotazioni.</p>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('Hai gia un account?')}</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400">{t('Accedi per gestire le tue prenotazioni.')}</p>
           </div>
           <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
         </Link>
@@ -1020,18 +1021,18 @@ export default function PrenotaPage() {
     if (hasCompleteProfile) return true
 
     const errors: Record<string, string> = {}
-    if (!booking.customer.customerName.trim()) errors.customerName = 'Nome obbligatorio'
+    if (!booking.customer.customerName.trim()) errors.customerName = t('Nome obbligatorio')
     // customerSurname is optional (not all cultures use surnames)
-    if (!booking.customer.customerPhone.trim()) errors.customerPhone = 'Telefono obbligatorio'
-    else if (!/^[+]?[\d\s()-]{8,}$/.test(booking.customer.customerPhone)) errors.customerPhone = 'Telefono non valido'
+    if (!booking.customer.customerPhone.trim()) errors.customerPhone = t('Telefono obbligatorio')
+    else if (!/^[+]?[\d\s()-]{8,}$/.test(booking.customer.customerPhone)) errors.customerPhone = t('Telefono non valido')
     if (booking.customer.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(booking.customer.customerEmail)) {
-      errors.customerEmail = 'Email non valida'
+      errors.customerEmail = t('Email non valida')
     }
     // Registration password validation
     if (wantRegister) {
-      if (!booking.customer.customerEmail.trim()) errors.customerEmail = 'Email obbligatoria per la registrazione'
-      if (!regPassword || regPassword.length < 6) errors.regPassword = 'La password deve avere almeno 6 caratteri'
-      if (regPassword !== regPasswordConfirm) errors.regPasswordConfirm = 'Le password non coincidono'
+      if (!booking.customer.customerEmail.trim()) errors.customerEmail = t('Email obbligatoria per la registrazione')
+      if (!regPassword || regPassword.length < 6) errors.regPassword = t('La password deve avere almeno 6 caratteri')
+      if (regPassword !== regPasswordConfirm) errors.regPasswordConfirm = t('Le password non coincidono')
     }
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -1051,10 +1052,10 @@ export default function PrenotaPage() {
         setCouponValid(true)
         setCouponDiscount(data.discountAmount)
       } else {
-        setCouponError(data.error || 'Codice non valido')
+        setCouponError(data.error || t('Codice non valido'))
       }
     } catch {
-      setCouponError('Errore nella verifica')
+      setCouponError(t('Errore nella verifica'))
     } finally {
       setCouponLoading(false)
     }
@@ -1070,7 +1071,7 @@ export default function PrenotaPage() {
   // Reusable booking summary block (shared by logged-in and guest views)
   const BookingSummaryBlock = () => (
     <div className="mb-6 p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
-      <div className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Riepilogo</div>
+      <div className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{t('Riepilogo')}</div>
       <div className="space-y-1 text-sm">
         {booking.resourceId && (
           <div className="flex justify-between">
@@ -1087,7 +1088,7 @@ export default function PrenotaPage() {
           <span className="font-medium text-stone-900 dark:text-stone-100">{booking.time}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-stone-500 dark:text-stone-400">Durata</span>
+          <span className="text-stone-500 dark:text-stone-400">{t('Durata')}</span>
           <span className="font-medium text-stone-900 dark:text-stone-100">{formatDuration(totalServiceDuration)}{totalCleanupInList > 0 ? ` + ${totalCleanupInList} min pulizia` : ''}</span>
         </div>
         <div className="border-t border-stone-200 dark:border-stone-700 pt-1 mt-1">
@@ -1105,7 +1106,7 @@ export default function PrenotaPage() {
         </div>
         {discountAmount > 0 && (
           <div className="flex justify-between text-emerald-600 dark:text-emerald-400 pt-1">
-            <span className="font-medium">Sconto</span>
+            <span className="font-medium">{t('Sconto')}</span>
             <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
           </div>
         )}
@@ -1121,7 +1122,7 @@ export default function PrenotaPage() {
   const CouponInputBlock = () => (
     <div>
       <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-        Hai un codice sconto? <span className="text-stone-400 dark:text-stone-500 font-normal">(opzionale)</span>
+        {t('Hai un codice sconto?')} <span className="text-stone-400 dark:text-stone-500 font-normal">{t('(opzionale)')}</span>
       </label>
       {couponValid ? (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50">
@@ -1147,7 +1148,7 @@ export default function PrenotaPage() {
               if (couponError) setCouponError('')
             }}
             onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), validateCoupon())}
-            placeholder="SCONTO10"
+            placeholder={t('SCONTO10')}
             className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors uppercase ${
               couponError ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
@@ -1169,7 +1170,7 @@ export default function PrenotaPage() {
   const StepCustomerInfo = () => (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">I tuoi dati</h2>
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('I tuoi dati')}</h2>
         <p className="text-stone-500 dark:text-stone-400 text-sm">
           {hasCompleteProfile ? 'Conferma la tua prenotazione' : 'Inserisci i tuoi dati per confermare la prenotazione'}
         </p>
@@ -1195,7 +1196,7 @@ export default function PrenotaPage() {
                   Bentornato, {customerAuth.nome?.split(' ')[0] || 'Cliente'}!
                 </p>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
-                  Convalidiamo la tua prenotazione utilizzando i dati del tuo profilo.
+                  {t('Convalidiamo la tua prenotazione utilizzando i dati del tuo profilo.')}
                 </p>
               </div>
             </div>
@@ -1237,7 +1238,7 @@ export default function PrenotaPage() {
           {/* Guest form */}
           <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Nome *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Nome *')}</label>
           <input
             type="text"
             value={booking.customer.customerName}
@@ -1245,7 +1246,7 @@ export default function PrenotaPage() {
               setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerName: e.target.value } }))
               if (formErrors.customerName) setFormErrors(prev => ({ ...prev, customerName: '' }))
             }}
-            placeholder="Mario"
+            placeholder={t('Mario')}
             className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
               formErrors.customerName ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
@@ -1254,7 +1255,7 @@ export default function PrenotaPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Cognome *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Cognome *')}</label>
           <input
             type="text"
             value={booking.customer.customerSurname}
@@ -1262,7 +1263,7 @@ export default function PrenotaPage() {
               setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerSurname: e.target.value } }))
               if (formErrors.customerSurname) setFormErrors(prev => ({ ...prev, customerSurname: '' }))
             }}
-            placeholder="Rossi"
+            placeholder={t('Rossi')}
             className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
               formErrors.customerSurname ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
@@ -1271,7 +1272,7 @@ export default function PrenotaPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Telefono *</label>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Telefono *')}</label>
           <input
             type="tel"
             value={booking.customer.customerPhone}
@@ -1279,7 +1280,7 @@ export default function PrenotaPage() {
               setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerPhone: e.target.value } }))
               if (formErrors.customerPhone) setFormErrors(prev => ({ ...prev, customerPhone: '' }))
             }}
-            placeholder="+39 333 1234567"
+            placeholder="+1 555 1234567"
             className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
               formErrors.customerPhone ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
@@ -1289,7 +1290,7 @@ export default function PrenotaPage() {
 
         <div>
           <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
-            Email <span className="text-stone-400 dark:text-stone-500 font-normal">(opzionale)</span>
+            {t('Email')} <span className="text-stone-400 dark:text-stone-500 font-normal">{t('(opzionale)')}</span>
           </label>
           <input
             type="email"
@@ -1298,7 +1299,7 @@ export default function PrenotaPage() {
               setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerEmail: e.target.value } }))
               if (formErrors.customerEmail) setFormErrors(prev => ({ ...prev, customerEmail: '' }))
             }}
-            placeholder="mario@email.com"
+            placeholder="name@email.com"
             className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
               formErrors.customerEmail ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
             }`}
@@ -1318,7 +1319,7 @@ export default function PrenotaPage() {
               onChange={e => setRememberMe(e.target.checked)}
               className="w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-stone-900 dark:text-stone-100 focus:ring-stone-900 dark:focus:ring-stone-100"
             />
-            <span className="text-sm text-stone-600 dark:text-stone-400">Ricordami per la prossima prenotazione</span>
+            <span className="text-sm text-stone-600 dark:text-stone-400">{t('Ricordami per la prossima prenotazione')}</span>
           </label>
         )}
           </div>
@@ -1349,7 +1350,7 @@ export default function PrenotaPage() {
                 />
                 <div>
                   <span className="text-sm font-medium text-stone-700 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors">
-                    Voglio registrarmi per salvare i miei dati
+                    {t('Voglio registrarmi per salvare i miei dati')}
                   </span>
                   <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
                     Crea un account per gestire le tue prenotazioni in futuro. Ti invieremo i dati di accesso via email.
@@ -1369,7 +1370,7 @@ export default function PrenotaPage() {
                   >
                     <div className="mt-3 space-y-3 pl-6 border-l-2 border-amber-200 dark:border-amber-800">
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Crea Password *</label>
+                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Crea Password *')}</label>
                         <input
                           type="password"
                           value={regPassword}
@@ -1377,7 +1378,7 @@ export default function PrenotaPage() {
                             setRegPassword(e.target.value)
                             if (formErrors.regPassword) setFormErrors(prev => ({ ...prev, regPassword: '' }))
                           }}
-                          placeholder="Almeno 6 caratteri"
+                          placeholder={t('Almeno 6 caratteri')}
                           className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
                             formErrors.regPassword ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
                           }`}
@@ -1385,7 +1386,7 @@ export default function PrenotaPage() {
                         {formErrors.regPassword && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.regPassword}</p>}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Conferma Password *</label>
+                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Conferma Password *')}</label>
                         <input
                           type="password"
                           value={regPasswordConfirm}
@@ -1393,7 +1394,7 @@ export default function PrenotaPage() {
                             setRegPasswordConfirm(e.target.value)
                             if (formErrors.regPasswordConfirm) setFormErrors(prev => ({ ...prev, regPasswordConfirm: '' }))
                           }}
-                          placeholder="Ripeti la password"
+                          placeholder={t('Ripeti la password')}
                           className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
                             formErrors.regPasswordConfirm ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
                           }`}
@@ -1432,8 +1433,8 @@ export default function PrenotaPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h2 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 mb-2">Prenotazione confermata!</h2>
-        <p className="text-stone-500 dark:text-stone-400 mb-8">Grazie, ti aspettiamo!</p>
+        <h2 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 mb-2">{t('Prenotazione confermata!')}</h2>
+        <p className="text-stone-500 dark:text-stone-400 mb-8">{t('Grazie, ti aspettiamo!')}</p>
 
         <div className="text-left max-w-sm mx-auto p-5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-2 text-sm">
           <div className="flex justify-between">
@@ -1451,7 +1452,7 @@ export default function PrenotaPage() {
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-stone-500 dark:text-stone-400">Cliente</span>
+            <span className="text-stone-500 dark:text-stone-400">{t('Cliente')}</span>
             <span className="font-medium text-stone-900 dark:text-stone-100">{booking.customer.customerName} {booking.customer.customerSurname}</span>
           </div>
           <div className="border-t border-stone-200 dark:border-stone-700 pt-2 space-y-1">
@@ -1463,7 +1464,7 @@ export default function PrenotaPage() {
             ))}
             {discountAmount > 0 && (
               <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                <span className="font-medium">Sconto applicato</span>
+                <span className="font-medium">{t('Sconto applicato')}</span>
                 <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
               </div>
             )}
@@ -1484,7 +1485,7 @@ export default function PrenotaPage() {
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
           >
             <Calendar className="w-4 h-4" />
-            Aggiungi al Calendario
+            {t('Aggiungi al Calendario')}
             <ExternalLink className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
           </a>
 
@@ -1503,7 +1504,7 @@ export default function PrenotaPage() {
               }}
               className="block w-full text-center px-4 py-2.5 rounded-xl text-stone-400 dark:text-stone-500 text-xs hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
             >
-              Annulla questa prenotazione
+              {t('Annulla questa prenotazione')}
             </button>
           )}
         </div>
@@ -1532,7 +1533,7 @@ export default function PrenotaPage() {
           onClick={() => router.push('/')}
           className="mt-6 px-8 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors print:hidden"
         >
-          Torna alla Home
+          {t('Torna alla Home')}
         </button>
 
         {/* PWA Install Prompt */}
@@ -1554,7 +1555,7 @@ export default function PrenotaPage() {
             ) : isIOSSafari && showIOSHint ? (
               <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/50 text-sm text-blue-800 dark:text-blue-300 text-left space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold">Installa IntelliGenda</span>
+                  <span className="font-semibold">{t('Installa IntelliGenda')}</span>
                   <button onClick={dismissPWAInstall} className="p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50">
                     <X className="w-4 h-4" />
                   </button>
@@ -1634,7 +1635,7 @@ export default function PrenotaPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Errore nella prenotazione')
+        throw new Error(data.error || t('Errore nella prenotazione'))
       }
 
       const createdBooking = await res.json()
@@ -1660,7 +1661,7 @@ export default function PrenotaPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore nella prenotazione')
+      setError(err instanceof Error ? err.message : t('Errore nella prenotazione'))
     } finally {
       setSubmitting(false)
     }
@@ -1702,7 +1703,7 @@ export default function PrenotaPage() {
   }
 
   function buildGoogleCalendarUrl(): string {
-    const serviceName = selectedServices.map(s => s.name).join(', ') || 'Appuntamento'
+    const serviceName = selectedServices.map(s => s.name).join(', ') || t('Appuntamento')
     const title = encodeURIComponent(`${serviceName} — ${shopName || 'IntelliGenda'}`)
 
     // Create dates explicitly in Europe/Rome timezone
@@ -1723,10 +1724,10 @@ export default function PrenotaPage() {
   // ==================== RENDER ====================
 
   const stepLabels = [
-    { num: 1, label: 'Servizi', icon: <Calendar className="w-4 h-4" /> },
-    { num: 2, label: 'Operatore', icon: <Users className="w-4 h-4" /> },
-    { num: 3, label: 'Data', icon: <Clock className="w-4 h-4" /> },
-    { num: 4, label: 'Dati', icon: <User className="w-4 h-4" /> },
+    { num: 1, label: t('Servizi'), icon: <Calendar className="w-4 h-4" /> },
+    { num: 2, label: t('Operatore'), icon: <Users className="w-4 h-4" /> },
+    { num: 3, label: t('Data'), icon: <Clock className="w-4 h-4" /> },
+    { num: 4, label: t('Dati'), icon: <User className="w-4 h-4" /> },
   ]
 
   if (loading) {
@@ -1748,7 +1749,7 @@ export default function PrenotaPage() {
           >
             <ArrowLeft className="w-5 h-5 text-stone-600 dark:text-stone-400" />
           </button>
-          <h1 className="font-semibold text-stone-900 dark:text-stone-100">Prenota</h1>
+          <h1 className="font-semibold text-stone-900 dark:text-stone-100">{t('Prenota')}</h1>
         </div>
 
         {/* Steps indicator — 4 steps (confirmation is step 5, shown separately) */}
@@ -1813,7 +1814,7 @@ export default function PrenotaPage() {
             {/* Selected services badge (step 2+) */}
             {step >= 2 && booking.serviceIds.length > 0 && (
               <div className="mb-3 text-xs text-stone-500 dark:text-stone-400 text-center">
-                {booking.serviceIds.length} servizio{booking.serviceIds.length > 1 ? 'i' : ''} · {formatDuration(totalDuration)} · €{totalPrice.toFixed(2)}
+                {booking.serviceIds.length} {t('servizio')}{booking.serviceIds.length > 1 ? (t('servizi') !== 'services' ? 'i' : 's') : ''} · {formatDuration(totalDuration)} · €{totalPrice.toFixed(2)}
               </div>
             )}
 
@@ -1825,13 +1826,13 @@ export default function PrenotaPage() {
               {submitting ? (
                 <>
                   <div className="animate-spin w-5 h-5 border-2 border-white/30 dark:border-stone-900/30 border-t-white dark:border-stone-900 rounded-full" />
-                  Prenotazione in corso...
+                  {t('Prenotazione in corso...')}
                 </>
               ) : step === 4 ? (
-                hasCompleteProfile ? 'Conferma e Prenota' : 'Finalizza Prenotazione'
+                hasCompleteProfile ? t('Conferma e Prenota') : t('Finalizza Prenotazione')
               ) : (
                 <>
-                  Continua
+                  {t('Continua')}
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
