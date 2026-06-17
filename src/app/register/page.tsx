@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Check, Loader2, User, Phone, Mail, Lock } from 'lucide-react'
 import { CustomerNavbar } from '@/components/CustomerNavbar'
+import { useT } from '@/lib/tenant-i18n'
 
 function RegisterContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callback') || '/'
+  const t = useT()
 
   const [nome, setNome] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -38,11 +40,11 @@ function RegisterContent() {
 
     if (!nome.trim() || !telefono.trim() || !email.trim() || !password.trim()) return
     if (password.length < 6) {
-      setError('La password deve avere almeno 6 caratteri')
+      setError(t('La password deve avere almeno 6 caratteri'))
       return
     }
     if (password !== passwordConfirm) {
-      setError('Le password non coincidono')
+      setError(t('Le password non coincidono'))
       return
     }
 
@@ -60,13 +62,13 @@ function RegisterContent() {
       })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Errore nella registrazione')
+        throw new Error(data.error || t('Errore nella registrazione'))
       }
 
       setStep('success')
       setTimeout(() => router.push(callbackUrl), 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore')
+      setError(err instanceof Error ? err.message : t('Errore'))
     } finally {
       setLoading(false)
     }
@@ -79,13 +81,13 @@ function RegisterContent() {
         className="inline-flex items-center gap-1.5 text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors mb-8"
       >
         <ArrowLeft className="w-4 h-4" />
-        Torna indietro
+        {t('Torna indietro')}
       </Link>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">Registrati</h1>
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">{t('Registrati')}</h1>
         <p className="text-stone-500 dark:text-stone-400 text-sm mt-1.5 leading-relaxed">
-          Crea il tuo account per gestire le tue prenotazioni.
+          {t('Crea il tuo account per gestire le tue prenotazioni.')}
         </p>
       </div>
 
@@ -93,7 +95,7 @@ function RegisterContent() {
         {step === 'form' && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Nome completo *</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Nome completo *')}</label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
                 <input
@@ -109,7 +111,7 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Telefono *</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Telefono *')}</label>
               <div className="relative">
                 <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
                 <input
@@ -124,7 +126,7 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email *</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Email')} *</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
                 <input
@@ -139,14 +141,14 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Crea Password *</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Crea Password *')}</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
                 <input
                   type="password"
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError('') }}
-                  placeholder="Almeno 6 caratteri"
+                  placeholder={t('Almeno 6 caratteri')}
                   required
                   minLength={6}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none focus:border-stone-900 dark:focus:border-stone-100 transition-colors text-sm"
@@ -155,14 +157,14 @@ function RegisterContent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Conferma Password *</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Conferma Password *')}</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
                 <input
                   type="password"
                   value={passwordConfirm}
                   onChange={e => { setPasswordConfirm(e.target.value); setError('') }}
-                  placeholder="Ripeti la password"
+                  placeholder={t('Ripeti la password')}
                   required
                   minLength={6}
                   className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none focus:border-stone-900 dark:focus:border-stone-100 transition-colors text-sm"
@@ -176,9 +178,9 @@ function RegisterContent() {
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-semibold hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />Registrazione in corso...</>
+                <><Loader2 className="w-4 h-4 animate-spin" />{t('Registrazione in corso...')}</>
               ) : (
-                <><Check className="w-4 h-4" />Crea account</>
+                <><Check className="w-4 h-4" />{t('Crea account')}</>
               )}
             </button>
           </form>
@@ -189,8 +191,8 @@ function RegisterContent() {
             <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mx-auto mb-4">
               <Check className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-1">Account creato!</h3>
-            <p className="text-sm text-stone-500 dark:text-stone-400">Reindirizzamento in corso...</p>
+            <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Account creato!')}</h3>
+            <p className="text-sm text-stone-500 dark:text-stone-400">{t('Reindirizzamento in corso...')}</p>
           </div>
         )}
 
@@ -202,9 +204,9 @@ function RegisterContent() {
       </div>
 
       <p className="text-center text-sm text-stone-400 dark:text-stone-500 mt-6">
-        Hai gia un account?{' '}
+        {t('Hai gia un account?')}{' '}
         <Link href={`/login?callback=${encodeURIComponent(callbackUrl)}`} className="text-stone-900 dark:text-stone-100 font-medium hover:underline">
-          Accedi qui
+          {t('Accedi qui')}
         </Link>
       </p>
     </div>

@@ -27,7 +27,6 @@ const EN: Record<string, string> = {
   // --- CustomerNavbar.tsx ---
   'Menu utente': 'User menu',
   'Profilo': 'Profile',
-  'Prenota un appuntamento\n': 'Book an appointment\n', // not needed, handled above
   'I miei appuntamenti': 'My appointments',
   'Disconnettiti': 'Log out',
   'Accedi': 'Log in',
@@ -67,6 +66,8 @@ const EN: Record<string, string> = {
   'Completo': 'Full',
   'Caricamento orari...': 'Loading times...',
   'Nessun orario disponibile per questa data': 'No times available for this date',
+  'Durata totale:': 'Total duration:',
+  'Orari disponibili per': 'Available times for',
 
   // Step 4 — Details
   'Riepilogo': 'Summary',
@@ -78,6 +79,7 @@ const EN: Record<string, string> = {
   '(opzionale)': '(optional)',
   '-\u20AC{n} applicato': '-\u20AC{n} applied',
   'Applica': 'Apply',
+  'applicato': 'applied',
   'I tuoi dati': 'Your details',
   'Conferma la tua prenotazione': 'Confirm your booking',
   'Inserisci i tuoi dati per confermare la prenotazione': 'Enter your details to confirm your booking',
@@ -120,13 +122,19 @@ const EN: Record<string, string> = {
   'Aggiungi al Calendario': 'Add to Calendar',
   'Annulla questa prenotazione': 'Cancel this booking',
   'Torna alla Home': 'Back to Home',
+  'Ora': 'Time',
+  'min': 'min',
 
   // PWA install
   "Scarica l'app sul tuo telefono": "Install the app on your phone",
   'Installa IntelliGenda': 'Install IntelliGenda',
-  'Tocca il pulsante Condividi in basso': 'Tap the Share button at the bottom',
-  'Seleziona Aggiungi a Home': 'Select Add to Home Screen',
-  'Conferma con Aggiungi': 'Confirm with Add',
+  'Tocca il pulsante': 'Tap the',
+  'Condividi': 'Share',
+  'in basso': 'at the bottom',
+  'Seleziona': 'Select',
+  'Aggiungi a Home': 'Add to Home Screen',
+  'Conferma con': 'Confirm with',
+  'Aggiungi': 'Add',
 
   // Submit
   'Prenotazione in corso...': 'Booking in progress...',
@@ -140,6 +148,7 @@ const EN: Record<string, string> = {
 
   // Account connected
   'Account connesso \u2014 {email}': 'Account connected \u2014 {email}',
+  'Account connesso': 'Account connected',
   'Completa i dati qui sotto per confermare la prenotazione.': 'Complete the details below to confirm your booking.',
   'oppure': 'or',
   'Hai gia un account?': 'Already have an account?',
@@ -154,6 +163,65 @@ const EN: Record<string, string> = {
 
   // Page header
   'Prenota': 'Book',
+
+  // --- login/page.tsx ---
+  'Torna indietro': 'Go back',
+  'Inserisci le tue credenziali per accedere al tuo account.': 'Enter your credentials to access your account.',
+  'Password': 'Password',
+  'La tua password': 'Your password',
+  'Accesso in corso...': 'Signing in...',
+  'Credenziali non valide': 'Invalid credentials',
+  'Errore': 'Error',
+  'Non hai ancora un account?': "Don't have an account yet?",
+  'Registrati qui': 'Sign up here',
+
+  // --- register/page.tsx ---
+  'Crea il tuo account per gestire le tue prenotazioni.': 'Create your account to manage your bookings.',
+  'Nome completo *': 'Full name *',
+  'Crea Password': 'Create password',
+  'Conferma Password': 'Confirm password',
+  'La password deve avere almeno 6 caratteri': 'Password must be at least 6 characters',
+  'Le password non coincidono': 'Passwords do not match',
+  'Errore nella registrazione': 'Registration error',
+  'Registrazione in corso...': 'Creating account...',
+  'Crea account': 'Create account',
+  'Account creato!': 'Account created!',
+  'Reindirizzamento in corso...': 'Redirecting...',
+  'Hai gia un account?': 'Already have an account?',
+  'Accedi qui': 'Log in here',
+
+  // --- profilo/page.tsx ---
+  'Torna alla home': 'Back to home',
+  'Il tuo profilo': 'Your profile',
+  'Non impostato': 'Not set',
+  'Errore nel caricamento dei dati': 'Error loading data',
+  'Vuoi annullare questa prenotazione?': 'Do you want to cancel this booking?',
+  'Errore nella cancellazione': 'Cancellation error',
+  'Prenotazione annullata con successo': 'Booking cancelled successfully',
+  'Prossimi appuntamenti': 'Upcoming appointments',
+  'Nessun appuntamento programmato': 'No upcoming appointments',
+  'Prenota ora': 'Book now',
+  'Confermato': 'Confirmed',
+  'euro': 'euro',
+  'Annulla': 'Cancel',
+  'Storico': 'History',
+  'Annullato': 'Cancelled',
+  'Completato': 'Completed',
+
+  // --- prenota/cancella/[bookingId]/page.tsx ---
+  'Prenotazione non trovata o scaduta': 'Booking not found or expired',
+  'Prenotazione Annullata': 'Booking Cancelled',
+  'La tua prenotazione e stata cancellata con successo.': 'Your booking has been successfully cancelled.',
+  'Lo slot e ora di nuovo disponibile per gli altri utenti.': 'The slot is now available again for other users.',
+  'Annulla Prenotazione': 'Cancel Booking',
+  'Conferma per liberare lo slot sul calendario': 'Confirm to free the calendar slot',
+  'Data e Ora': 'Date & Time',
+  'Questa azione e irreversibile. Lo slot verra liberato immediatamente e altri utenti potranno prenotarlo.': 'This action is irreversible. The slot will be freed immediately and other users will be able to book it.',
+  'Torna Indietro': 'Go Back',
+  'Annullamento...': 'Cancelling...',
+  'Conferma Cancellazione': 'Confirm Cancellation',
+  'Errore durante la cancellazione': 'Error during cancellation',
+  'Errore di connessione. Riprova.': 'Connection error. Please try again.',
 }
 
 // English month/day names for calendar
@@ -163,18 +231,21 @@ export const EN_DAYS = ['Mo','Tu','We','Th','Fr','Sa','Su']
 // ==================== HOOK ====================
 
 /**
+ * Returns whether the current tenant should display English.
+ * Only true for "marualisa" — every other tenant returns false.
+ */
+export function useIsEn(): boolean {
+  if (typeof document === 'undefined') return false
+  const match = document.cookie.match(/(?:^|;\s*)tenant_slug=([^;]*)/)
+  return decodeURIComponent(match?.[1] || '') === 'marualisa'
+}
+
+/**
  * Returns a translation function `t(key: string) => string`.
  * If the current tenant is not "marualisa", returns the key unchanged.
  */
 export function useT(): (key: string) => string {
-  // Read tenant slug from cookie (set by middleware)
-  let slug = ''
-  if (typeof document !== 'undefined') {
-    const match = document.cookie.match(/(?:^|;\s*)tenant_slug=([^;]*)/)
-    if (match) slug = decodeURIComponent(match[1])
-  }
-
-  const isEn = slug === 'marualisa'
+  const isEn = useIsEn()
 
   return (key: string): string => {
     if (!isEn) return key

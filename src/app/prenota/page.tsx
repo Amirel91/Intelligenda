@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
-import { useT, EN_MONTHS, EN_DAYS } from '@/lib/tenant-i18n'
+import { useT, useIsEn, EN_MONTHS, EN_DAYS } from '@/lib/tenant-i18n'
 import { createInRome } from '@/lib/timezone'
 import { CalendarSkeleton, SlotsSkeleton } from '@/components/ui/calendar-skeleton'
 import { RatingInteraction } from '@/components/ui/rating-interaction'
@@ -84,6 +84,7 @@ interface CustomerAuthData {
 
 export default function PrenotaPage() {
   const router = useRouter()
+  const t = useT()
   const { canInstall: canInstallPWA, isIOS: isIOSSafari, promptInstall: promptPWAInstall, dismiss: dismissPWAInstall } = usePWAInstall()
   const [showIOSHint, setShowIOSHint] = useState(false)
   const [step, setStep] = useState(1)
@@ -832,15 +833,16 @@ export default function PrenotaPage() {
     return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50'
   }
 
-  const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
-  const dayNames = ['Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa', 'Do']
+  const isEn = useIsEn()
+  const monthNames = isEn ? EN_MONTHS : ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+  const dayNames = isEn ? EN_DAYS : ['Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa', 'Do']
 
   const StepCalendar = () => (
     <div>
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli data e ora')}</h2>
         <p className="text-stone-500 dark:text-stone-400 text-sm">
-          Durata totale: {formatDuration(totalDuration)} · {totalPrice.toFixed(2)}€
+          {t('Durata totale:')} {formatDuration(totalDuration)} · {totalPrice.toFixed(2)}€
           {booking.resourceId && (
             <span className="ml-1">· {selectedOperatorName}</span>
           )}
@@ -923,7 +925,7 @@ export default function PrenotaPage() {
           className="mt-4"
         >
           <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-3">
-            {loadingSlots ? 'Caricamento orari...' : `Orari disponibili per ${formatDisplayDate(booking.date)}`}
+            {loadingSlots ? t('Caricamento orari...') : `${t('Orari disponibili per')} ${formatDisplayDate(booking.date)}`}
           </h3>
 
           {loadingSlots ? (
@@ -972,7 +974,7 @@ export default function PrenotaPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-blue-900 dark:text-blue-200 truncate">
-              Account connesso{customerAuth.email ? ` — ${customerAuth.email}` : ''}
+              {t('Account connesso')}{customerAuth.email ? ` — ${customerAuth.email}` : ''}
             </p>
             <p className="text-xs text-blue-600 dark:text-blue-400">{t('Completa i dati qui sotto per confermare la prenotazione.')}</p>
           </div>
@@ -1111,7 +1113,7 @@ export default function PrenotaPage() {
           </div>
         )}
         <div className="border-t border-stone-200 dark:border-stone-700 pt-1 mt-1 flex justify-between">
-          <span className="font-semibold text-stone-900 dark:text-stone-100">{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
+          <span className="font-semibold text-stone-900 dark:text-stone-100">{discountAmount > 0 ? t('Totale scontato') : t('Totale')}</span>
           <span className="font-semibold text-stone-900 dark:text-stone-100">€{finalTotalPrice.toFixed(2)}</span>
         </div>
       </div>
@@ -1128,7 +1130,7 @@ export default function PrenotaPage() {
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50">
           <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span className="flex-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-            -€{couponDiscount!.toFixed(2)} applicato
+            -€{couponDiscount!.toFixed(2)} {t('applicato')}
           </span>
           <button
             type="button"
@@ -1159,7 +1161,7 @@ export default function PrenotaPage() {
             disabled={couponLoading || !couponCode.trim()}
             className="px-4 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
           >
-            {couponLoading ? '...' : 'Applica'}
+            {couponLoading ? '...' : t('Applica')}
           </button>
         </div>
       )}
@@ -1172,7 +1174,7 @@ export default function PrenotaPage() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('I tuoi dati')}</h2>
         <p className="text-stone-500 dark:text-stone-400 text-sm">
-          {hasCompleteProfile ? 'Conferma la tua prenotazione' : 'Inserisci i tuoi dati per confermare la prenotazione'}
+          {hasCompleteProfile ? t('Conferma la tua prenotazione') : t('Inserisci i tuoi dati per confermare la prenotazione')}
         </p>
       </div>
 
@@ -1193,7 +1195,7 @@ export default function PrenotaPage() {
               </div>
               <div>
                 <p className="text-base font-semibold text-stone-900 dark:text-stone-100">
-                  Bentornato, {customerAuth.nome?.split(' ')[0] || 'Cliente'}!
+                  {customerAuth.nome?.split(' ')[0] ? t('Bentornato, {name}!').replace('{name}', customerAuth.nome.split(' ')[0]) : t('Bentornato, {name}!').replace('{name}', 'Cliente')}
                 </p>
                 <p className="text-sm text-stone-500 dark:text-stone-400">
                   {t('Convalidiamo la tua prenotazione utilizzando i dati del tuo profilo.')}
@@ -1438,16 +1440,16 @@ export default function PrenotaPage() {
 
         <div className="text-left max-w-sm mx-auto p-5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-stone-500 dark:text-stone-400">Data</span>
+            <span className="text-stone-500 dark:text-stone-400">{t('Data')}</span>
             <span className="font-medium text-stone-900 dark:text-stone-100">{formatDisplayDate(booking.date)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-stone-500 dark:text-stone-400">Ora</span>
+            <span className="text-stone-500 dark:text-stone-400">{t('Ora')}</span>
             <span className="font-medium text-stone-900 dark:text-stone-100">{booking.time}</span>
           </div>
           {booking.resourceId && (
             <div className="flex justify-between">
-              <span className="text-stone-500 dark:text-stone-400">Operatore</span>
+              <span className="text-stone-500 dark:text-stone-400">{t('Operatore')}</span>
               <span className="font-medium text-stone-900 dark:text-stone-100">{selectedOperatorName}</span>
             </div>
           )}
@@ -1469,7 +1471,7 @@ export default function PrenotaPage() {
               </div>
             )}
             <div className="flex justify-between font-semibold pt-1 border-t border-stone-200 dark:border-stone-700">
-              <span>{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
+              <span>{discountAmount > 0 ? t('Totale scontato') : t('Totale')}</span>
               <span>€{finalTotalPrice.toFixed(2)}</span>
             </div>
           </div>
@@ -1561,9 +1563,9 @@ export default function PrenotaPage() {
                   </button>
                 </div>
                 <ol className="space-y-1 list-decimal list-inside text-blue-700 dark:text-blue-400">
-                  <li>Tocca il pulsante <strong>Condividi</strong> in basso</li>
-                  <li>Seleziona <strong>Aggiungi a Home</strong></li>
-                  <li>Conferma con <strong>Aggiungi</strong></li>
+              <li>{t('Tocca il pulsante')} <strong>{t('Condividi')}</strong> {t('in basso')}</li>
+                  <li>{t('Seleziona')} <strong>{t('Aggiungi a Home')}</strong></li>
+                  <li>{t('Conferma con')} <strong>{t('Aggiungi')}</strong></li>
                 </ol>
               </div>
             ) : (
@@ -1572,7 +1574,7 @@ export default function PrenotaPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
               >
                 <Download className="w-4 h-4" />
-                Scarica l&apos;app per le prossime prenotazioni
+                {t("Scarica l'app per le prossime prenotazioni")}
               </button>
             )}
           </motion.div>
@@ -1581,7 +1583,7 @@ export default function PrenotaPage() {
 
         {/* Powered by IntelliGenda */}
             <p className="mt-12 text-center text-xs text-stone-400">
-              Prenotazioni gestite da{' '}
+              {t('Prenotazioni gestite da')}{' '}
               <a
                 href="https://intelligenda.it/?ref=powered-badge"
                 target="_blank"
@@ -1692,7 +1694,7 @@ export default function PrenotaPage() {
     if (!dateStr) return ''
     const [y, m, d] = dateStr.split('-').map(Number)
     const date = new Date(y, m - 1, d)
-    return date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return date.toLocaleDateString(isEn ? 'en-GB' : 'it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   }
 
   function formatDuration(minutes: number): string {

@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Lock, Loader2 } from 'lucide-react'
 import { CustomerNavbar } from '@/components/CustomerNavbar'
+import { useT } from '@/lib/tenant-i18n'
 
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callback') || '/'
+  const t = useT()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -40,11 +42,11 @@ function LoginContent() {
       })
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Credenziali non valide')
+        throw new Error(data.error || t('Credenziali non valide'))
       }
       router.push(callbackUrl)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore')
+      setError(err instanceof Error ? err.message : t('Errore'))
     } finally {
       setLoading(false)
     }
@@ -58,21 +60,21 @@ function LoginContent() {
         className="inline-flex items-center gap-1.5 text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors mb-8"
       >
         <ArrowLeft className="w-4 h-4" />
-        Torna indietro
+        {t('Torna indietro')}
       </Link>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">Accedi</h1>
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">{t('Accedi')}</h1>
         <p className="text-stone-500 dark:text-stone-400 text-sm mt-1.5 leading-relaxed">
-          Inserisci le tue credenziali per accedere al tuo account.
+          {t('Inserisci le tue credenziali per accedere al tuo account.')}
         </p>
       </div>
 
       <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6 shadow-sm">
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Email')}</label>
             <input
               type="email"
               value={email}
@@ -85,14 +87,14 @@ function LoginContent() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Password')}</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500" />
               <input
                 type="password"
                 value={password}
                 onChange={e => { setPassword(e.target.value); setError('') }}
-                placeholder="La tua password"
+                placeholder={t('La tua password')}
                 required
                 className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none focus:border-stone-900 dark:focus:border-stone-100 transition-colors text-sm"
               />
@@ -107,10 +109,10 @@ function LoginContent() {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Accesso in corso...
+                {t('Accesso in corso...')}
               </>
             ) : (
-              'Accedi'
+              t('Accedi')
             )}
           </button>
         </form>
@@ -125,9 +127,9 @@ function LoginContent() {
 
       {/* Register link */}
       <p className="text-center text-sm text-stone-400 dark:text-stone-500 mt-6">
-        Non hai ancora un account?{' '}
+        {t('Non hai ancora un account?')}{' '}
         <Link href="/register" className="text-stone-900 dark:text-stone-100 font-medium hover:underline">
-          Registrati qui
+          {t('Registrati qui')}
         </Link>
       </p>
     </div>

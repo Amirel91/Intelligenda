@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { CalendarX, ArrowLeft, Clock, AlertTriangle, Check, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { useT, useIsEn } from '@/lib/tenant-i18n'
 
 interface BookingDetail {
   id: string
@@ -22,6 +23,8 @@ export default function CancellaPrenotazione() {
   const params = useParams()
   const router = useRouter()
   const bookingId = params.bookingId as string
+  const t = useT()
+  const isEn = useIsEn()
 
   const [booking, setBooking] = useState<BookingDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -31,8 +34,6 @@ export default function CancellaPrenotazione() {
 
   useEffect(() => {
     if (!bookingId) return
-    // Fetch booking details — we use the cancel API just to read, or we can add a GET
-    // For simplicity, we'll create a lightweight read via a dedicated endpoint
     fetch(`/api/bookings/cancel`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,9 +45,8 @@ export default function CancellaPrenotazione() {
       if (data.booking) setBooking(data.booking)
       setLoading(false)
     }).catch(() => {
-      // Fallback: try fetching from the public bookings lookup
       setLoading(false)
-      setError('Prenotazione non trovata o scaduta')
+      setError(t('Prenotazione non trovata o scaduta'))
     })
   }, [bookingId])
 
@@ -62,13 +62,13 @@ export default function CancellaPrenotazione() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Errore durante la cancellazione')
+        setError(data.error || t('Errore durante la cancellazione'))
         return
       }
 
       setCancelled(true)
     } catch {
-      setError('Errore di connessione. Riprova.')
+      setError(t('Errore di connessione. Riprova.'))
     } finally {
       setCancelling(false)
     }
@@ -76,12 +76,12 @@ export default function CancellaPrenotazione() {
 
   const formatDateTime = (isoStr: string) => {
     const d = new Date(isoStr)
-    return d.toLocaleDateString('it-IT', {
+    return d.toLocaleDateString(isEn ? 'en-GB' : 'it-IT', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-    }) + ' alle ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+    }) + (isEn ? ' at ' : ' alle ') + d.toLocaleTimeString(isEn ? 'en-GB' : 'it-IT', { hour: '2-digit', minute: '2-digit' })
   }
 
   if (loading) {
@@ -103,17 +103,18 @@ export default function CancellaPrenotazione() {
           <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
             <Check className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-2">Prenotazione Annullata</h1>
+          <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-2">{t('Prenotazione Annullata')}</h1>
           <p className="text-stone-500 dark:text-stone-400 text-sm mb-6">
-            La tua prenotazione e stata cancellata con successo.
-            Lo slot e ora di nuovo disponibile per gli altri utenti.
+            {t('La tua prenotazione e stata cancellata con successo.')}
+            <br />
+            {t('Lo slot e ora di nuovo disponibile per gli altri utenti.')}
           </p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Torna alla Home
+            {t('Torna alla Home')}
           </Link>
         </motion.div>
       </div>
@@ -132,8 +133,8 @@ export default function CancellaPrenotazione() {
             <CalendarX className="w-5 h-5 text-red-500 dark:text-red-400" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">Annulla Prenotazione</h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400">Conferma per liberare lo slot sul calendario</p>
+            <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">{t('Annulla Prenotazione')}</h1>
+            <p className="text-xs text-stone-500 dark:text-stone-400">{t('Conferma per liberare lo slot sul calendario')}</p>
           </div>
         </div>
 
@@ -147,11 +148,11 @@ export default function CancellaPrenotazione() {
           <>
             <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-2 text-sm mb-6">
               <div className="flex justify-between">
-                <span className="text-stone-500 dark:text-stone-400">Cliente</span>
+                <span className="text-stone-500 dark:text-stone-400">{t('Cliente')}</span>
                 <span className="font-medium text-stone-900 dark:text-stone-100">{booking.customerName} {booking.customerSurname}</span>
               </div>
               <div className="flex justify-between items-start">
-                <span className="text-stone-500 dark:text-stone-400">Data e Ora</span>
+                <span className="text-stone-500 dark:text-stone-400">{t('Data e Ora')}</span>
                 <span className="font-medium text-stone-900 dark:text-stone-100 text-right">{formatDateTime(booking.startTime)}</span>
               </div>
               {booking.services && booking.services.length > 0 && (
@@ -165,7 +166,7 @@ export default function CancellaPrenotazione() {
                 </div>
               )}
               <div className="flex justify-between font-semibold border-t border-stone-200 dark:border-stone-700 pt-2">
-                <span>Totale</span>
+                <span>{t('Totale')}</span>
                 <span>€{booking.totalPrice.toFixed(2)}</span>
               </div>
             </div>
@@ -173,7 +174,7 @@ export default function CancellaPrenotazione() {
             {/* Warning */}
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 mb-6">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-              <p>Questa azione e irreversibile. Lo slot verra liberato immediatamente e altri utenti potranno prenotarlo.</p>
+              <p>{t('Questa azione e irreversibile. Lo slot verra liberato immediatamente e altri utenti potranno prenotarlo.')}</p>
             </div>
 
             {error && (
@@ -187,7 +188,7 @@ export default function CancellaPrenotazione() {
                 href="/"
                 className="flex-1 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-center"
               >
-                Torna Indietro
+                {t('Torna Indietro')}
               </Link>
               <button
                 onClick={handleCancel}
@@ -197,10 +198,10 @@ export default function CancellaPrenotazione() {
                 {cancelling ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Annullamento...
+                    {t('Annullamento...')}
                   </>
                 ) : (
-                  'Conferma Cancellazione'
+                  t('Conferma Cancellazione')
                 )}
               </button>
             </div>
@@ -212,7 +213,7 @@ export default function CancellaPrenotazione() {
             href="/"
             className="block w-full py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-center"
           >
-            Torna alla Home
+            {t('Torna alla Home')}
           </Link>
         )}
         <p className="mt-8 text-center text-xs text-stone-300 select-none">Powered by IntelliGenda</p>
