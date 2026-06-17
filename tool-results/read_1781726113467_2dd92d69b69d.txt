@@ -1,0 +1,1846 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback, useMemo } from 'react'
+     4→     4→import { useRouter } from 'next/navigation'
+     5→     5→import Link from 'next/link'
+     6→     6→import { motion, AnimatePresence } from 'framer-motion'
+     7→     7→import { usePWAInstall } from '@/hooks/use-pwa-install'
+     8→     8→import { useT, EN_MONTHS, EN_DAYS } from '@/lib/tenant-i18n'
+     9→     9→import { createInRome } from '@/lib/timezone'
+    10→    10→import { CalendarSkeleton, SlotsSkeleton } from '@/components/ui/calendar-skeleton'
+    11→    11→import { RatingInteraction } from '@/components/ui/rating-interaction'
+    12→    12→import {
+    13→    13→  ArrowLeft,
+    14→    14→  ArrowRight,
+    15→    15→  Check,
+    16→    16→  Clock,
+    17→    17→  Calendar,
+    18→    18→  User,
+    19→    19→  Users,
+    20→    20→  ChevronLeft,
+    21→    21→  ChevronRight,
+    22→    22→  ChevronDown,
+    23→    23→  Search,
+    24→    24→  PartyPopper,
+    25→    25→  CalendarX,
+    26→    26→  Download,
+    27→    27→  X,
+    28→    28→  ExternalLink,
+    29→    29→  LogIn,
+    30→    30→  Mail,
+    31→    31→  Star,
+    32→    32→  MapPin,
+    33→    33→} from 'lucide-react'
+    34→    34→
+    35→    35→// ==================== TYPES ====================
+    36→    36→
+    37→    37→interface Service {
+    38→    38→  id: string
+    39→    39→  name: string
+    40→    40→  description?: string
+    41→    41→  category?: string
+    42→    42→  price: number
+    43→    43→  discountedPrice?: number
+    44→    44→  durationMinutes: number
+    45→    45→  cleanupMinutes: number
+    46→    46→  bufferMinutes: number
+    47→    47→  featured: boolean
+    48→    48→  active: boolean
+    49→    49→}
+    50→    50→
+    51→    51→interface ResourceOption {
+    52→    52→  id: string
+    53→    53→  name: string
+    54→    54→}
+    55→    55→
+    56→    56→interface BookingData {
+    57→    57→  serviceIds: string[]
+    58→    58→  resourceId?: string | null
+    59→    59→  date: string
+    60→    60→  time: string
+    61→    61→  customer: {
+    62→    62→    customerName: string
+    63→    63→    customerSurname: string
+    64→    64→    customerPhone: string
+    65→    65→    customerEmail: string
+    66→    66→  }
+    67→    67→}
+    68→    68→
+    69→    69→type AvailabilityLevel = 'high' | 'medium' | 'low' | 'none'
+    70→    70→
+    71→    71→interface DayAvailability {
+    72→    72→  date: string
+    73→    73→  availability: AvailabilityLevel
+    74→    74→}
+    75→    75→
+    76→    76→interface CustomerAuthData {
+    77→    77→  id: string
+    78→    78→  nome: string
+    79→    79→  telefono: string
+    80→    80→  email: string
+    81→    81→}
+    82→    82→
+    83→    83→// ==================== MAIN COMPONENT ====================
+    84→    84→
+    85→    85→export default function PrenotaPage() {
+    86→    86→  const router = useRouter()
+    87→    87→  const { canInstall: canInstallPWA, isIOS: isIOSSafari, promptInstall: promptPWAInstall, dismiss: dismissPWAInstall } = usePWAInstall()
+    88→    88→  const [showIOSHint, setShowIOSHint] = useState(false)
+    89→    89→  const [step, setStep] = useState(1)
+    90→    90→  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null)
+    91→    91→  const [shopName, setShopName] = useState<string>('')
+    92→    92→  const [shopAddress, setShopAddress] = useState<string>('')
+    93→    93→  const [showShopAddress, setShowShopAddress] = useState(true)
+    94→    94→
+    95→    95→  const [services, setServices] = useState<Service[]>([])
+    96→    96→  const [loading, setLoading] = useState(true)
+    97→    97→  const [submitting, setSubmitting] = useState(false)
+    98→    98→  const [error, setError] = useState('')
+    99→    99→
+   100→   100→  // Operator / Resource selection state
+   101→   101→  const [availableResources, setAvailableResources] = useState<ResourceOption[]>([])
+   102→   102→  const [loadingResources, setLoadingResources] = useState(false)
+   103→   103→
+   104→   104→  const [booking, setBooking] = useState<BookingData>({
+   105→   105→    serviceIds: [],
+   106→   106→    resourceId: null,
+   107→   107→    date: '',
+   108→   108→    time: '',
+   109→   109→    customer: {
+   110→   110→      customerName: '',
+   111→   111→      customerSurname: '',
+   112→   112→      customerPhone: '',
+   113→   113→      customerEmail: '',
+   114→   114→    },
+   115→   115→  })
+   116→   116→
+   117→   117→  const [rememberMe, setRememberMe] = useState(false)
+   118→   118→  const STORAGE_KEY = 'booking_remember'
+   119→   119→
+   120→   120→  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+   121→   121→  const [dayAvailabilities, setDayAvailabilities] = useState<Record<string, AvailabilityLevel>>({})
+   122→   122→  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+   123→   123→  const [loadingSlots, setLoadingSlots] = useState(false)
+   124→   124→  const [closedDates, setClosedDates] = useState<string[]>([])
+   125→   125→
+   126→   126→  // Customer authentication state
+   127→   127→  const [customerAuth, setCustomerAuth] = useState<CustomerAuthData | null>(null)
+   128→   128→  const [authChecked, setAuthChecked] = useState(false)
+   129→   129→
+   130→   130→  // Optional registration during booking (password-based)
+   131→   131→  const [wantRegister, setWantRegister] = useState(false)
+   132→   132→  const [regPassword, setRegPassword] = useState('')
+   133→   133→  const [regPasswordConfirm, setRegPasswordConfirm] = useState('')
+   134→   134→
+   135→   135→  // Coupon state
+   136→   136→  const [couponCode, setCouponCode] = useState('')
+   137→   137→  const [couponDiscount, setCouponDiscount] = useState<number | null>(null)
+   138→   138→  const [couponValid, setCouponValid] = useState(false)
+   139→   139→  const [couponLoading, setCouponLoading] = useState(false)
+   140→   140→  const [couponError, setCouponError] = useState('')
+   141→   141→
+   142→   142→  // Utility: split a full name into firstName / lastName.
+   143→   143→  // Handles single-word names gracefully (e.g. "Amir" → firstName="Amir", lastName="").
+   144→   144→  // Handles multi-word names (e.g. "Mario Rossi" → firstName="Mario", lastName="Rossi").
+   145→   145→  const splitNome = (nome: string | undefined | null): { firstName: string; lastName: string } => {
+   146→   146→    if (!nome || !nome.trim()) return { firstName: '', lastName: '' }
+   147→   147→    const parts = nome.trim().split(/\s+/)
+   148→   148→    return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') }
+   149→   149→  }
+   150→   150→
+   151→   151→  // Derive whether the logged-in user has a complete profile that will pass
+   152→   152→  // BOTH the Zod server-side validation AND the UI logic.
+   153→   153→  // Requirements: firstName >= 2 chars, phone >= 8 digits (no temp).
+   154→   154→  // Surname is optional in Zod (not all cultures use surnames).
+   155→   155→  const hasCompleteProfile = !!(
+   156→   156→    customerAuth &&
+   157→   157→    (() => {
+   158→   158→      const { firstName } = splitNome(customerAuth.nome)
+   159→   159→      return (
+   160→   160→        firstName.length >= 2 &&
+   161→   161→        customerAuth.telefono &&
+   162→   162→        !customerAuth.telefono.startsWith('temp_') &&
+   163→   163→        customerAuth.telefono.replace(/\s/g, '').length >= 8
+   164→   164→      )
+   165→   165→    })()
+   166→   166→  )
+   167→   167→
+   168→   168→  // Check if customer is already logged in on mount
+   169→   169→  useEffect(() => {
+   170→   170→    fetch('/api/auth/customer/me')
+   171→   171→      .then(r => r.json())
+   172→   172→      .then(data => {
+   173→   173→        if (data.authenticated && data.customer) {
+   174→   174→          setCustomerAuth(data.customer)
+   175→   175→          // Pre-fill form fields with saved customer data
+   176→   176→          const { firstName, lastName } = splitNome(data.customer.nome)
+   177→   177→          const phone = data.customer.telefono?.startsWith('temp_') ? '' : (data.customer.telefono || '')
+   178→   178→          const email = data.customer.email || ''
+   179→   179→          setBooking(prev => ({
+   180→   180→            ...prev,
+   181→   181→            customer: {
+   182→   182→              ...prev.customer,
+   183→   183→              customerName: firstName,
+   184→   184→              customerSurname: lastName,
+   185→   185→              customerPhone: phone,
+   186→   186→              customerEmail: email,
+   187→   187→            },
+   188→   188→          }))
+   189→   189→        }
+   190→   190→        setAuthChecked(true)
+   191→   191→      })
+   192→   192→      .catch(() => setAuthChecked(true))
+   193→   193→  }, [])
+   194→   194→
+   195→   195→  // Keep form fields in sync whenever customerAuth changes (e.g. after login redirect)
+   196→   196→  useEffect(() => {
+   197→   197→    if (!customerAuth) return
+   198→   198→    const { firstName, lastName } = splitNome(customerAuth.nome)
+   199→   199→    const phone = customerAuth.telefono?.startsWith('temp_') ? '' : (customerAuth.telefono || '')
+   200→   200→    const email = customerAuth.email || ''
+   201→   201→    setBooking(prev => {
+   202→   202→      // Only update if the new values are non-empty (don't overwrite user edits with blanks)
+   203→   203→      if (
+   204→   204→        prev.customer.customerName === firstName &&
+   205→   205→        prev.customer.customerSurname === lastName &&
+   206→   206→        prev.customer.customerPhone === phone &&
+   207→   207→        prev.customer.customerEmail === email
+   208→   208→      ) return prev
+   209→   209→      return {
+   210→   210→        ...prev,
+   211→   211→        customer: {
+   212→   212→          customerName: firstName || prev.customer.customerName,
+   213→   213→          customerSurname: lastName || prev.customer.customerSurname,
+   214→   214→          customerPhone: phone || prev.customer.customerPhone,
+   215→   215→          customerEmail: email || prev.customer.customerEmail,
+   216→   216→        },
+   217→   217→      }
+   218→   218→    })
+   219→   219→  }, [customerAuth])
+   220→   220→
+   221→   221→  // Load remembered customer data on mount (only if not already logged in)
+   222→   222→  useEffect(() => {
+   223→   223→    if (customerAuth) return // Don't overwrite with localStorage if logged in
+   224→   224→    try {
+   225→   225→      const saved = localStorage.getItem(STORAGE_KEY)
+   226→   226→      if (saved) {
+   227→   227→        const data = JSON.parse(saved)
+   228→   228→        setBooking(prev => ({
+   229→   229→          ...prev,
+   230→   230→          customer: {
+   231→   231→            ...prev.customer,
+   232→   232→            customerName: data.customerName || '',
+   233→   233→            customerSurname: data.customerSurname || '',
+   234→   234→            customerPhone: data.customerPhone || '',
+   235→   235→          },
+   236→   236→        }))
+   237→   237→        setRememberMe(true)
+   238→   238→      }
+   239→   239→    } catch {}
+   240→   240→  }, [customerAuth])
+   241→   241→
+   242→   242→  // Fetch services on mount
+   243→   243→  useEffect(() => {
+   244→   244→    fetch('/api/services')
+   245→   245→      .then(res => res.json())
+   246→   246→      .then(data => {
+   247→   247→        setServices(Array.isArray(data) ? data : [])
+   248→   248→        setLoading(false)
+   249→   249→      })
+   250→   250→      .catch(() => setLoading(false))
+   251→   251→  }, [])
+   252→   252→
+   253→   253→  // Prefill service from homepage featured click
+   254→   254→  useEffect(() => {
+   255→   255→    try {
+   256→   256→      const cookie = document.cookie
+   257→   257→        .split('; ')
+   258→   258→        .find(row => row.startsWith('ig_prefill_service='))
+   259→   259→      if (cookie) {
+   260→   260→        const json = decodeURIComponent(cookie.split('=')[1])
+   261→   261→        const { serviceId } = JSON.parse(json)
+   262→   262→        if (serviceId) {
+   263→   263→          document.cookie = 'ig_prefill_service=;path=/prenota;max-age=0'
+   264→   264→          setBooking(prev => ({ ...prev, serviceIds: [serviceId] }))
+   265→   265→          setStep(2) // Jump to operator/date selection
+   266→   266→        }
+   267→   267→      }
+   268→   268→    } catch {}
+   269→   269→  }, [])
+   270→   270→
+   271→   271→  // Fetch resources when entering step 2 (operator selection)
+   272→   272→  // Filtered by the services selected in step 1
+   273→   273→  useEffect(() => {
+   274→   274→    if (step === 2 && booking.serviceIds.length > 0) {
+   275→   275→      setLoadingResources(true)
+   276→   276→      const serviceIdsParam = booking.serviceIds.join(',')
+   277→   277→      fetch(`/api/resources/public?serviceIds=${serviceIdsParam}`)
+   278→   278→        .then(res => res.json())
+   279→   279→        .then(data => {
+   280→   280→          const list = Array.isArray(data) ? data as ResourceOption[] : []
+   281→   281→          setAvailableResources(list)
+   282→   282→          setLoadingResources(false)
+   283→   283→          // If there are no resources at all, auto-skip to calendar (step 3)
+   284→   284→          if (list.length === 0) {
+   285→   285→            setStep(3)
+   286→   286→          }
+   287→   287→        })
+   288→   288→        .catch(() => {
+   289→   289→          setAvailableResources([])
+   290→   290→          setLoadingResources(false)
+   291→   291→        })
+   292→   292→    }
+   293→   293→  }, [step, booking.serviceIds])
+   294→   294→
+   295→   295→  // Fetch closed dates and closed periods when entering step 3 (calendar)
+   296→   296→  useEffect(() => {
+   297→   297→    if (step === 3) {
+   298→   298→      // Fetch single closed dates
+   299→   299→      const closedDatesPromise = fetch('/api/closed-dates')
+   300→   300→        .then(r => r.json())
+   301→   301→        .then(data => Array.isArray(data) ? data.map((d: { date: string }) => d.date) : [] as string[])
+   302→   302→        .catch(() => [] as string[])
+   303→   303→
+   304→   304→      // Fetch closed periods (vacations etc.) and expand to individual dates
+   305→   305→      const closedPeriodsPromise = fetch('/api/closed-periods')
+   306→   306→        .then(r => r.json())
+   307→   307→        .then((periods: Array<{ startDate: string; endDate: string }>) => {
+   308→   308→          if (!Array.isArray(periods)) return [] as string[]
+   309→   309→          const dates: string[] = []
+   310→   310→          for (const p of periods) {
+   311→   311→            let cur = new Date(p.startDate + 'T00:00:00')
+   312→   312→            const end = new Date(p.endDate + 'T00:00:00')
+   313→   313→            while (cur <= end) {
+   314→   314→              dates.push(cur.toISOString().split('T')[0])
+   315→   315→              cur.setDate(cur.getDate() + 1)
+   316→   316→            }
+   317→   317→          }
+   318→   318→          return dates
+   319→   319→        })
+   320→   320→        .catch(() => [] as string[])
+   321→   321→
+   322→   322→      Promise.all([closedDatesPromise, closedPeriodsPromise]).then(([singleDates, periodDates]) => {
+   323→   323→        setClosedDates([...new Set([...singleDates, ...periodDates])])
+   324→   324→      })
+   325→   325→    }
+   326→   326→  }, [step])
+   327→   327→
+   328→   328→  const closedDatesSet = useMemo(() => new Set(closedDates), [closedDates])
+   329→   329→  const isDayClosed = useCallback((dateStr: string) => closedDatesSet.has(dateStr), [closedDatesSet])
+   330→   330→
+   331→   331→  const totalServiceDuration = useMemo(() => booking.serviceIds.reduce((sum, id) => {
+   332→   332→    const s = services.find(sv => sv.id === id)
+   333→   333→    return sum + (s?.durationMinutes || 0)
+   334→   334→  }, 0), [booking.serviceIds, services])
+   335→   335→  const totalCleanupDuration = useMemo(() => booking.serviceIds.reduce((sum, id) => {
+   336→   336→    const s = services.find(sv => sv.id === id)
+   337→   337→    return sum + ((s as Service)?.cleanupMinutes || 0)
+   338→   338→  }, 0), [booking.serviceIds, services])
+   339→   339→  const totalBufferDuration = useMemo(() => booking.serviceIds.reduce((sum, id) => {
+   340→   340→    const s = services.find(sv => sv.id === id)
+   341→   341→    return sum + ((s as Service)?.bufferMinutes || 0)
+   342→   342→  }, 0), [booking.serviceIds, services])
+   343→   343→  // Duration shown to customer (service + cleanup)
+   344→   344→  const totalDuration = totalServiceDuration + totalCleanupDuration
+   345→   345→  // Duration used for slot calculation (includes invisible buffer)
+   346→   346→  const totalSlotDuration = useMemo(() => totalDuration + totalBufferDuration, [totalDuration, totalBufferDuration])
+   347→   347→
+   348→   348→  const totalPrice = useMemo(() => booking.serviceIds.reduce((sum, id) => {
+   349→   349→    const s = services.find(sv => sv.id === id)
+   350→   350→    return sum + (s?.discountedPrice && s.discountedPrice > 0 ? s.discountedPrice : (s?.price || 0))
+   351→   351→  }, 0), [booking.serviceIds, services])
+   352→   352→  const discountAmount = couponValid && couponDiscount ? Math.min(couponDiscount, totalPrice) : 0
+   353→   353→  const finalTotalPrice = totalPrice - discountAmount
+   354→   354→
+   355→   355→  const selectedServices = useMemo(() => booking.serviceIds.map(id => services.find(s => s.id === id)).filter(Boolean) as Service[], [booking.serviceIds, services])
+   356→   356→
+   357→   357→  const totalCleanupInList = selectedServices.reduce((sum, s) => sum + (s.cleanupMinutes || 0), 0)
+   358→   358→
+   359→   359→  // Name of the selected operator (for summaries)
+   360→   360→  const selectedOperatorName = booking.resourceId
+   361→   361→    ? availableResources.find(r => r.id === booking.resourceId)?.name || ''
+   362→   362→    : ''
+   363→   363→
+   364→   364→  // Toggle service selection — also resets resourceId and date/time since operator availability depends on services
+   365→   365→  const toggleService = (id: string) => {
+   366→   366→    setBooking(prev => ({
+   367→   367→      ...prev,
+   368→   368→      serviceIds: prev.serviceIds.includes(id)
+   369→   369→        ? prev.serviceIds.filter(sid => sid !== id)
+   370→   370→        : [...prev.serviceIds, id],
+   371→   371→      resourceId: null,
+   372→   372→      date: '',
+   373→   373→      time: '',
+   374→   374→    }))
+   375→   375→  }
+   376→   376→
+   377→   377→  // ==================== STEP 1: SERVICES ====================
+   378→   378→
+   379→   379→  // Render a single service card — modern 3D hover + animated check
+   380→   380→  const ServiceCard = ({ service }: { service: Service }) => {
+   381→   381→    const isSelected = booking.serviceIds.includes(service.id)
+   382→   382→    const hasDiscount = service.discountedPrice && service.discountedPrice > 0
+   383→   383→    return (
+   384→   384→      <motion.button
+   385→   385→        whileHover={{ y: -2, scale: 1.005 }}
+   386→   386→        whileTap={{ scale: 0.97 }}
+   387→   387→        onClick={() => toggleService(service.id)}
+   388→   388→        className={`w-full text-left rounded-2xl border-2 transition-all duration-300 ${
+   389→   389→          isSelected
+   390→   390→            ? 'border-stone-800 dark:border-stone-200 shadow-lg shadow-stone-900/12 dark:shadow-black/15 bg-gradient-to-br from-stone-50 via-stone-100/60 to-stone-50 dark:from-stone-800/50 dark:via-stone-800/30 dark:to-stone-800/50'
+   391→   391→            : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-md hover:shadow-stone-200/40'
+   392→   392→        }`}
+   393→   393→      >
+   394→   394→        <div className="flex items-center justify-between p-4">
+   395→   395→          <div className="flex-1">
+   396→   396→            <div className="flex items-center gap-3">
+   397→   397→              <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 shrink-0 ${
+   398→   398→                isSelected
+   399→   399→                  ? 'bg-stone-900 dark:bg-stone-100 shadow-md shadow-stone-900/25 dark:shadow-black/25'
+   400→   400→                  : 'bg-stone-100 dark:bg-stone-800 border-2 border-stone-300 dark:border-stone-600'
+   401→   401→              }`}>
+   402→   402→                <AnimatePresence mode="wait">
+   403→   403→                  {isSelected && (
+   404→   404→                    <motion.div
+   405→   405→                      key="check"
+   406→   406→                      initial={{ scale: 0, rotate: -90 }}
+   407→   407→                      animate={{ scale: 1, rotate: 0 }}
+   408→   408→                      exit={{ scale: 0, rotate: 90 }}
+   409→   409→                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+   410→   410→                    >
+   411→   411→                      <Check className="w-3.5 h-3.5 text-white dark:text-stone-900" />
+   412→   412→                    </motion.div>
+   413→   413→                  )}
+   414→   414→                </AnimatePresence>
+   415→   415→              </div>
+   416→   416→              <span className={`font-semibold transition-colors ${isSelected ? 'text-stone-900 dark:text-stone-100' : 'text-stone-800 dark:text-stone-200'}`}>{service.name}</span>
+   417→   417→            </div>
+   418→   418→            {service.description && (
+   419→   419→              <p className="text-stone-500 dark:text-stone-400 text-sm mt-1.5 ml-9 leading-relaxed">{service.description}</p>
+   420→   420→            )}
+   421→   421→          </div>
+   422→   422→          <div className="text-right ml-4 shrink-0">
+   423→   423→            {hasDiscount && (
+   424→   424→              <div className="text-xs text-stone-400 dark:text-stone-500 line-through">€{service.price.toFixed(2)}</div>
+   425→   425→            )}
+   426→   426→            <div className={`font-bold text-lg ${hasDiscount ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-900 dark:text-stone-100'}`}>€{(hasDiscount ? service.discountedPrice! : service.price).toFixed(2)}</div>
+   427→   427→            <div className="text-stone-400 dark:text-stone-500 text-xs flex items-center gap-1 justify-end mt-0.5">
+   428→   428→              <Clock className="w-3 h-3" />
+   429→   429→              {service.durationMinutes} min
+   430→   430→            </div>
+   431→   431→          </div>
+   432→   432→        </div>
+   433→   433→      </motion.button>
+   434→   434→    )
+   435→   435→  }
+   436→   436→
+   437→   437→  // Search state for Step 1 service filtering
+   438→   438→  const [searchQuery, setSearchQuery] = useState('')
+   439→   439→
+   440→   440→  // Accordion state for service category dropdowns
+   441→   441→  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set())
+   442→   442→
+   443→   443→  const toggleCategory = (cat: string) => {
+   444→   444→    setOpenCategories(prev => {
+   445→   445→      const next = new Set(prev)
+   446→   446→      if (next.has(cat)) next.delete(cat)
+   447→   447→      else next.add(cat)
+   448→   448→      return next
+   449→   449→    })
+   450→   450→  }
+   451→   451→
+   452→   452→  const StepServices = () => {
+   453→   453→    const withCategory = services.filter(s => s.category)
+   454→   454→    const uncategorized = services.filter(s => !s.category)
+   455→   455→
+   456→   456→    // Group by category, preserving sort order
+   457→   457→    const categoryMap = new Map<string, Service[]>()
+   458→   458→    withCategory.forEach(s => {
+   459→   459→      const cat = s.category!
+   460→   460→      if (!categoryMap.has(cat)) categoryMap.set(cat, [])
+   461→   461→      categoryMap.get(cat)!.push(s)
+   462→   462→    })
+   463→   463→
+   464→   464→    const hasGroups = categoryMap.size > 0
+   465→   465→
+   466→   466→    // Helper: count selected services inside a group
+   467→   467→    const countSelected = (items: Service[]) => items.filter(s => booking.serviceIds.includes(s.id)).length
+   468→   468→
+   469→   469→    return (
+   470→   470→      <div>
+   471→   471→        <div className="mb-6">
+   472→   472→          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli i servizi')}</h2>
+   473→   473→          <p className="text-stone-500 dark:text-stone-400 text-sm">{t('Seleziona uno o piu servizi per il tuo appuntamento')}</p>
+   474→   474→        </div>
+   475→   475→
+   476→   476→        {/* Search bar — Apple/iOS style */}
+   477→   477→        <div className="relative mb-5">
+   478→   478→          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 pointer-events-none" />
+   479→   479→          <input
+   480→   480→            type="text"
+   481→   481→            value={searchQuery}
+   482→   482→            onChange={e => setSearchQuery(e.target.value)}
+   483→   483→            placeholder={t('Cerca un servizio...')}
+   484→   484→            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 text-sm outline-none focus:bg-stone-200/70 dark:focus:bg-stone-700/70 transition-colors"
+   485→   485→          />
+   486→   486→          {searchQuery && (
+   487→   487→            <button
+   488→   488→              onClick={() => setSearchQuery('')}
+   489→   489→              className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+   490→   490→            >
+   491→   491→              <X className="w-4 h-4" />
+   492→   492→            </button>
+   493→   493→          )}
+   494→   494→        </div>
+   495→   495→
+   496→   496→        {/* SEARCH MODE: flat filtered list */}
+   497→   497→        {searchQuery.trim() !== '' && (() => {
+   498→   498→          const q = searchQuery.toLowerCase().trim()
+   499→   499→          const filtered = services.filter(s =>
+   500→   500→            s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q))
+   501→   501→          )
+   502→   502→          return (
+   503→   503→            <div>
+   504→   504→              {filtered.length === 0 && (
+   505→   505→                <p className="text-stone-400 dark:text-stone-500 text-sm text-center py-6">t('Nessun servizio trovato per "{searchQuery}"').replace('{searchQuery}', searchQuery.trim())</p>
+   506→   506→              )}
+   507→   507→              <div className="space-y-3">
+   508→   508→                {filtered.map(s => <ServiceCard key={s.id} service={s} />)}
+   509→   509→              </div>
+   510→   510→            </div>
+   511→   511→          )
+   512→   512→        })()}
+   513→   513→
+   514→   514→        {/* DEFAULT MODE: accordion groups (when search is empty) */}
+   515→   515→        {searchQuery.trim() === '' && !hasGroups && (
+   516→   516→          <div className="space-y-3">
+   517→   517→            {services.map(s => <ServiceCard key={s.id} service={s} />)}
+   518→   518→          </div>
+   519→   519→        )}
+   520→   520→
+   521→   521→        {searchQuery.trim() === '' && hasGroups && (
+   522→   522→          <div className="space-y-3">
+   523→   523→            {Array.from(categoryMap.entries()).map(([category, items]) => {
+   524→   524→              const isOpen = openCategories.has(category)
+   525→   525→              const selectedCount = countSelected(items)
+   526→   526→              return (
+   527→   527→                <div key={category} className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden">
+   528→   528→                  <button
+   529→   529→                    onClick={() => toggleCategory(category)}
+   530→   530→                    className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+   531→   531→                  >
+   532→   532→                    <div className="flex items-center gap-2.5">
+   533→   533→                      <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">{category}</h3>
+   534→   534→                      <span className="text-xs text-stone-400 dark:text-stone-500">{items.length} {t('servizi')}</span>
+   535→   535→                    </div>
+   536→   536→                    <div className="flex items-center gap-2">
+   537→   537→                      {selectedCount > 0 && (
+   538→   538→                        <span className="w-5 h-5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-[10px] font-semibold flex items-center justify-center">
+   539→   539→                          {selectedCount}
+   540→   540→                        </span>
+   541→   541→                      )}
+   542→   542→                      <ChevronDown className={`w-4 h-4 text-stone-400 dark:text-stone-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+   543→   543→                    </div>
+   544→   544→                  </button>
+   545→   545→                  <AnimatePresence>
+   546→   546→                    {isOpen && (
+   547→   547→                      <motion.div
+   548→   548→                        initial={{ height: 0, opacity: 0 }}
+   549→   549→                        animate={{ height: 'auto', opacity: 1 }}
+   550→   550→                        exit={{ height: 0, opacity: 0 }}
+   551→   551→                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+   552→   552→                        className="overflow-hidden"
+   553→   553→                      >
+   554→   554→                        <div className="px-3 pb-3 space-y-2">
+   555→   555→                          {items.map(s => <ServiceCard key={s.id} service={s} />)}
+   556→   556→                        </div>
+   557→   557→                      </motion.div>
+   558→   558→                    )}
+   559→   559→                  </AnimatePresence>
+   560→   560→                </div>
+   561→   561→              )
+   562→   562→            })}
+   563→   563→
+   564→   564→            {/* Uncategorized services — always visible */}
+   565→   565→            {uncategorized.length > 0 && (
+   566→   566→              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 overflow-hidden">
+   567→   567→                <button
+   568→   568→                  onClick={() => toggleCategory('__uncategorized__')}
+   569→   569→                  className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+   570→   570→                >
+   571→   571→                  <div className="flex items-center gap-2.5">
+   572→   572→                    <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-200">{t('Altri servizi')}</h3>
+   573→   573→                    <span className="text-xs text-stone-400 dark:text-stone-500">{uncategorized.length} {t('servizi')}</span>
+   574→   574→                  </div>
+   575→   575→                  <div className="flex items-center gap-2">
+   576→   576→                    {countSelected(uncategorized) > 0 && (
+   577→   577→                      <span className="w-5 h-5 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-[10px] font-semibold flex items-center justify-center">
+   578→   578→                        {countSelected(uncategorized)}
+   579→   579→                      </span>
+   580→   580→                    )}
+   581→   581→                    <ChevronDown className={`w-4 h-4 text-stone-400 dark:text-stone-500 transition-transform duration-200 ${openCategories.has('__uncategorized__') ? 'rotate-180' : ''}`} />
+   582→   582→                  </div>
+   583→   583→                </button>
+   584→   584→                <AnimatePresence>
+   585→   585→                  {openCategories.has('__uncategorized__') && (
+   586→   586→                    <motion.div
+   587→   587→                      initial={{ height: 0, opacity: 0 }}
+   588→   588→                      animate={{ height: 'auto', opacity: 1 }}
+   589→   589→                      exit={{ height: 0, opacity: 0 }}
+   590→   590→                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+   591→   591→                      className="overflow-hidden"
+   592→   592→                    >
+   593→   593→                      <div className="px-3 pb-3 space-y-2">
+   594→   594→                        {uncategorized.map(s => <ServiceCard key={s.id} service={s} />)}
+   595→   595→                      </div>
+   596→   596→                    </motion.div>
+   597→   597→                  )}
+   598→   598→                </AnimatePresence>
+   599→   599→              </div>
+   600→   600→            )}
+   601→   601→          </div>
+   602→   602→        )}
+   603→   603→
+   604→   604→      {/* Selection summary — modern glass-morphism bar */}
+   605→   605→      {booking.serviceIds.length > 0 && (
+   606→   606→        <motion.div
+   607→   607→          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+   608→   608→          animate={{ opacity: 1, y: 0, scale: 1 }}
+   609→   609→          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+   610→   610→          className="mt-5 p-4 rounded-2xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 dark:from-stone-100 dark:via-stone-200 dark:to-stone-100 text-white dark:text-stone-900 flex items-center justify-between shadow-xl shadow-stone-900/25 dark:shadow-black/25"
+   611→   611→        >
+   612→   612→          <div>
+   613→   613→            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">{t('Servizi selezionati')}</span>
+   614→   614→            <div className="font-bold text-lg">
+   615→   615→              {booking.serviceIds.length} {t('servizio')}{booking.serviceIds.length > 1 ? (t('servizi') !== 'services' ? 'i' : 's') : ''} · {formatDuration(totalDuration)}
+   616→   616→            </div>
+   617→   617→            {totalCleanupInList > 0 && (
+   618→   618→              <div className="text-stone-400 dark:text-stone-500 text-xs mt-0.5">t('incl. {n} min di pulizia/organizzazione').replace('{n}', String(totalCleanupInList))</div>
+   619→   619→            )}
+   620→   620→          </div>
+   621→   621→          <div className="text-right">
+   622→   622→            <span className="text-stone-400 dark:text-stone-500 text-xs font-medium uppercase tracking-wider">{t('Totale')}</span>
+   623→   623→            <div className="font-bold text-xl">€{totalPrice.toFixed(2)}</div>
+   624→   624→          </div>
+   625→   625→        </motion.div>
+   626→   626→      )}
+   627→   627→    </div>
+   628→   628→    )
+   629→   629→  }
+   630→   630→
+   631→   631→  // ==================== STEP 2: OPERATOR SELECTION ====================
+   632→   632→
+   633→   633→  const selectOperator = (resourceId: string | null) => {
+   634→   634→    setBooking(prev => ({
+   635→   635→      ...prev,
+   636→   636→      resourceId,
+   637→   637→      date: '',
+   638→   638→      time: '',
+   639→   639→    }))
+   640→   640→  }
+   641→   641→
+   642→   642→  const StepOperator = () => {
+   643→   643→    if (loadingResources) {
+   644→   644→      return (
+   645→   645→        <div>
+   646→   646→          <div className="mb-6">
+   647→   647→            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli un operatore')}</h2>
+   648→   648→            <p className="text-stone-500 dark:text-stone-400 text-sm">{t('Caricamento operatori disponibili...')}</p>
+   649→   649→          </div>
+   650→   650→          <div className="space-y-3">
+   651→   651→            {Array.from({ length: 3 }).map((_, i) => (
+   652→   652→              <div key={i} className="p-4 rounded-xl bg-stone-200 dark:bg-stone-700 animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+   653→   653→            ))}
+   654→   654→          </div>
+   655→   655→        </div>
+   656→   656→      )
+   657→   657→    }
+   658→   658→
+   659→   659→    return (
+   660→   660→      <div>
+   661→   661→        <div className="mb-6">
+   662→   662→          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli un operatore')}</h2>
+   663→   663→          <p className="text-stone-500 dark:text-stone-400 text-sm">{t('Seleziona chi ti assistera, oppure scegli il primo disponibile')}</p>
+   664→   664→        </div>
+   665→   665→
+   666→   666→        <div className="space-y-3">
+   667→   667→          {/* "Any operator" default option */}
+   668→   668→          <motion.button
+   669→   669→            whileTap={{ scale: 0.98 }}
+   670→   670→            onClick={() => selectOperator(null)}
+   671→   671→            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+   672→   672→              !booking.resourceId
+   673→   673→                ? 'border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800/50'
+   674→   674→                : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600'
+   675→   675→            }`}
+   676→   676→          >
+   677→   677→            <div className="flex items-center gap-3">
+   678→   678→              <div
+   679→   679→                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+   680→   680→                  !booking.resourceId ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
+   681→   681→                }`}
+   682→   682→              >
+   683→   683→                <Users className="w-4 h-4" />
+   684→   684→              </div>
+   685→   685→              <div className="flex-1">
+   686→   686→                <div className="font-medium text-stone-900 dark:text-stone-100">{t('Qualsiasi operatore disponibile')}</div>
+   687→   687→                <div className="text-stone-500 dark:text-stone-400 text-xs mt-0.5">{t('Verra assegnato il primo operatore libero')}</div>
+   688→   688→              </div>
+   689→   689→              {!booking.resourceId && <Check className="w-5 h-5 text-stone-900 dark:text-stone-100 shrink-0" />}
+   690→   690→            </div>
+   691→   691→          </motion.button>
+   692→   692→
+   693→   693→          {/* Individual operators */}
+   694→   694→          {availableResources.map(resource => {
+   695→   695→            const isSelected = booking.resourceId === resource.id
+   696→   696→            return (
+   697→   697→              <motion.button
+   698→   698→                key={resource.id}
+   699→   699→                whileTap={{ scale: 0.98 }}
+   700→   700→                onClick={() => selectOperator(resource.id)}
+   701→   701→                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+   702→   702→                  isSelected
+   703→   703→                    ? 'border-stone-900 dark:border-stone-100 bg-stone-50 dark:bg-stone-800/50'
+   704→   704→                    : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-600'
+   705→   705→                }`}
+   706→   706→              >
+   707→   707→                <div className="flex items-center gap-3">
+   708→   708→                  <div
+   709→   709→                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+   710→   710→                      isSelected ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400'
+   711→   711→                    }`}
+   712→   712→                  >
+   713→   713→                    {resource.name.charAt(0).toUpperCase()}
+   714→   714→                  </div>
+   715→   715→                  <div className="flex-1">
+   716→   716→                    <div className="font-medium text-stone-900 dark:text-stone-100">{resource.name}</div>
+   717→   717→                  </div>
+   718→   718→                  {isSelected && <Check className="w-5 h-5 text-stone-900 dark:text-stone-100 shrink-0" />}
+   719→   719→                </div>
+   720→   720→              </motion.button>
+   721→   721→            )
+   722→   722→          })}
+   723→   723→        </div>
+   724→   724→
+   725→   725→        {/* Selected operator summary */}
+   726→   726→        <motion.div
+   727→   727→          initial={{ opacity: 0, y: 10 }}
+   728→   728→          animate={{ opacity: 1, y: 0 }}
+   729→   729→          className="mt-4 p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 text-sm text-stone-500 dark:text-stone-400 text-center"
+   730→   730→        >
+   731→   731→          {booking.resourceId
+   732→   732→            ? `Verrai affidato a ${selectedOperatorName}`
+   733→   733→            : `Assegnazione automatica al primo operatore disponibile`
+   734→   734→          }
+   735→   735→        </motion.div>
+   736→   736→      </div>
+   737→   737→    )
+   738→   738→  }
+   739→   739→
+   740→   740→  // ==================== STEP 3: CALENDAR ====================
+   741→   741→
+   742→   742→  const [calendarMonth, setCalendarMonth] = useState(() => {
+   743→   743→    const now = new Date()
+   744→   744→    return new Date(now.getFullYear(), now.getMonth(), 1)
+   745→   745→  })
+   746→   746→  const [calendarLoading, setCalendarLoading] = useState(false)
+   747→   747→
+   748→   748→  const fetchMonthAvailability = useCallback(async (year: number, month: number) => {
+   749→   749→    if (totalSlotDuration === 0) return
+   750→   750→    setCalendarLoading(true)
+   751→   751→    const firstDay = new Date(year, month, 1)
+   752→   752→    const lastDay = new Date(year, month + 1, 0)
+   753→   753→    const from = formatDate(firstDay)
+   754→   754→    const to = formatDate(lastDay)
+   755→   755→
+   756→   756→    try {
+   757→   757→      // OPTIMIZED: Single batch API call instead of 30 individual calls
+   758→   758→      // Pass resourceId if an operator was selected, to scope availability to that operator only
+   759→   759→      const resourceIdParam = booking.resourceId ? `&resourceId=${booking.resourceId}` : ''
+   760→   760→      const res = await fetch(`/api/slots/batch?startDate=${from}&endDate=${to}&duration=${totalSlotDuration}${resourceIdParam}`)
+   761→   761→      if (!res.ok) {
+   762→   762→        console.error('Batch availability API returned', res.status)
+   763→   763→        return
+   764→   764→      }
+   765→   765→      const data = await res.json()
+   766→   766→
+   767→   767→      if (typeof data === 'object' && data !== null && !('error' in data)) {
+   768→   768→        setDayAvailabilities(data as Record<string, AvailabilityLevel>)
+   769→   769→      }
+   770→   770→    } catch (e) {
+   771→   771→      console.error('Error fetching availability:', e)
+   772→   772→    } finally {
+   773→   773→      setCalendarLoading(false)
+   774→   774→    }
+   775→   775→  }, [totalSlotDuration, booking.resourceId])
+   776→   776→
+   777→   777→  useEffect(() => {
+   778→   778→    if (step === 3) {
+   779→   779→      fetchMonthAvailability(calendarMonth.getFullYear(), calendarMonth.getMonth())
+   780→   780→    }
+   781→   781→  }, [step, calendarMonth, fetchMonthAvailability])
+   782→   782→
+   783→   783→  const fetchSlotsForDate = async (dateStr: string) => {
+   784→   784→    setLoadingSlots(true)
+   785→   785→    setBooking(prev => ({ ...prev, date: dateStr, time: '' }))
+   786→   786→    try {
+   787→   787→      // Pass resourceId if an operator was selected
+   788→   788→      const resourceIdParam = booking.resourceId ? `&resourceId=${booking.resourceId}` : ''
+   789→   789→      const res = await fetch(`/api/slots?date=${dateStr}&duration=${totalSlotDuration}${resourceIdParam}`)
+   790→   790→      const data = await res.json()
+   791→   791→      setAvailableSlots(data.slots || [])
+   792→   792→    } catch {
+   793→   793→      setAvailableSlots([])
+   794→   794→    }
+   795→   795→    setLoadingSlots(false)
+   796→   796→  }
+   797→   797→
+   798→   798→  const calendarDays = useMemo(() => {
+   799→   799→    const year = calendarMonth.getFullYear()
+   800→   800→    const month = calendarMonth.getMonth()
+   801→   801→    const firstDay = new Date(year, month, 1).getDay()
+   802→   802→    const daysInMonth = new Date(year, month + 1, 0).getDate()
+   803→   803→    const startOffset = firstDay === 0 ? 6 : firstDay - 1 // Monday start
+   804→   804→
+   805→   805→    const days: { date: number; dateStr: string; isPast: boolean; isToday: boolean }[] = []
+   806→   806→    const today = new Date()
+   807→   807→    today.setHours(0, 0, 0, 0)
+   808→   808→
+   809→   809→    for (let i = 0; i < startOffset; i++) {
+   810→   810→      days.push({ date: 0, dateStr: '', isPast: true, isToday: false })
+   811→   811→    }
+   812→   812→    for (let d = 1; d <= daysInMonth; d++) {
+   813→   813→      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+   814→   814→      const dateObj = new Date(year, month, d)
+   815→   815→      days.push({
+   816→   816→        date: d,
+   817→   817→        dateStr,
+   818→   818→        isPast: dateObj < today,
+   819→   819→        isToday: dateObj.getTime() === today.getTime(),
+   820→   820→      })
+   821→   821→    }
+   822→   822→    return days
+   823→   823→  }, [calendarMonth])
+   824→   824→
+   825→   825→  const getDayColor = (dateStr: string, isPast: boolean) => {
+   826→   826→    if (isPast) return 'text-stone-300 dark:text-stone-600'
+   827→   827→    if (isDayClosed(dateStr)) return 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/50'
+   828→   828→    const avail = dayAvailabilities[dateStr]
+   829→   829→    if (!avail || avail === 'none') return 'text-stone-300 dark:text-stone-600'
+   830→   830→    if (avail === 'high' || avail === 'medium') return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50'
+   831→   831→    // 'low' = pochi posti ma ancora disponibili -> giallo (NON rosso)
+   832→   832→    return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50'
+   833→   833→  }
+   834→   834→
+   835→   835→  const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+   836→   836→  const dayNames = ['Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa', 'Do']
+   837→   837→
+   838→   838→  const StepCalendar = () => (
+   839→   839→    <div>
+   840→   840→      <div className="mb-6">
+   841→   841→        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('Scegli data e ora')}</h2>
+   842→   842→        <p className="text-stone-500 dark:text-stone-400 text-sm">
+   843→   843→          Durata totale: {formatDuration(totalDuration)} · {totalPrice.toFixed(2)}€
+   844→   844→          {booking.resourceId && (
+   845→   845→            <span className="ml-1">· {selectedOperatorName}</span>
+   846→   846→          )}
+   847→   847→        </p>
+   848→   848→      </div>
+   849→   849→
+   850→   850→      {/* Legend */}
+   851→   851→      <div className="flex flex-wrap gap-3 mb-4 text-xs text-stone-500 dark:text-stone-400">
+   852→   852→        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /> {t('Disponibile')}</div>
+   853→   853→        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500" /> {t('Pochi posti')}</div>
+   854→   854→        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-500" /> {t('Completo')}</div>
+   855→   855→        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-red-300 border border-red-400" /> {t('Chiuso')}</div>
+   856→   856→      </div>
+   857→   857→
+   858→   858→      {/* Calendar */}
+   859→   859→      {calendarLoading ? (
+   860→   860→        <CalendarSkeleton />
+   861→   861→      ) : (
+   862→   862→      <div className="bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-4">
+   863→   863→        {/* Month navigation */}
+   864→   864→        <div className="flex items-center justify-between mb-4">
+   865→   865→          <button
+   866→   866→            onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+   867→   867→            className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+   868→   868→          >
+   869→   869→            <ChevronLeft className="w-5 h-5 text-stone-600 dark:text-stone-400" />
+   870→   870→          </button>
+   871→   871→          <span className="font-semibold text-stone-900 dark:text-stone-100">
+   872→   872→            {monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+   873→   873→          </span>
+   874→   874→          <button
+   875→   875→            onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+   876→   876→            className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+   877→   877→          >
+   878→   878→            <ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-400" />
+   879→   879→          </button>
+   880→   880→        </div>
+   881→   881→
+   882→   882→        {/* Day headers */}
+   883→   883→        <div className="grid grid-cols-7 mb-2">
+   884→   884→          {dayNames.map(d => (
+   885→   885→            <div key={d} className="text-center text-xs font-medium text-stone-400 dark:text-stone-500 py-1">
+   886→   886→              {d}
+   887→   887→            </div>
+   888→   888→          ))}
+   889→   889→        </div>
+   890→   890→
+   891→   891→        {/* Days */}
+   892→   892→        <div className="grid grid-cols-7 gap-1">
+   893→   893→          {calendarDays.map((day, i) => (
+   894→   894→            <button
+   895→   895→              key={i}
+   896→   896→              disabled={day.isPast || isDayClosed(day.dateStr) || (dayAvailabilities[day.dateStr] === 'none' && !day.isPast && day.date > 0)}
+   897→   897→              onClick={() => day.date > 0 && !day.isPast && !isDayClosed(day.dateStr) && fetchSlotsForDate(day.dateStr)}
+   898→   898→              className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all ${
+   899→   899→                day.date === 0
+   900→   900→                  ? ''
+   901→   901→                  : booking.date === day.dateStr
+   902→   902→                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-semibold'
+   903→   903→                  : getDayColor(day.dateStr, day.isPast)
+   904→   904→              } ${day.date > 0 && !day.isPast && !isDayClosed(day.dateStr) ? 'hover:bg-stone-200 dark:hover:bg-stone-700 cursor-pointer' : ''}`}
+   905→   905→            >
+   906→   906→              {day.date > 0 ? (
+   907→   907→                <>
+   908→   908→                  {day.date}
+   909→   909→                  {isDayClosed(day.dateStr) && <CalendarX className="w-3 h-3 mt-0.5" />}
+   910→   910→                </>
+   911→   911→              ) : ''}
+   912→   912→            </button>
+   913→   913→          ))}
+   914→   914→        </div>
+   915→   915→      </div>
+   916→   916→      )}
+   917→   917→
+   918→   918→      {/* Time slots */}
+   919→   919→      {booking.date && (
+   920→   920→        <motion.div
+   921→   921→          initial={{ opacity: 0, y: 10 }}
+   922→   922→          animate={{ opacity: 1, y: 0 }}
+   923→   923→          className="mt-4"
+   924→   924→        >
+   925→   925→          <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-3">
+   926→   926→            {loadingSlots ? 'Caricamento orari...' : `Orari disponibili per ${formatDisplayDate(booking.date)}`}
+   927→   927→          </h3>
+   928→   928→
+   929→   929→          {loadingSlots ? (
+   930→   930→            <SlotsSkeleton />
+   931→   931→          ) : availableSlots.length === 0 ? (
+   932→   932→            <p className="text-stone-400 dark:text-stone-500 text-sm">{t('Nessun orario disponibile per questa data')}</p>
+   933→   933→          ) : (
+   934→   934→            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+   935→   935→              {availableSlots.map(slot => (
+   936→   936→                <motion.button
+   937→   937→                  key={slot}
+   938→   938→                  whileTap={{ scale: 0.95 }}
+   939→   939→                  onClick={() => setBooking(prev => ({ ...prev, time: slot }))}
+   940→   940→                  className={`py-3 rounded-xl text-sm font-medium border-2 transition-all ${
+   941→   941→                    booking.time === slot
+   942→   942→                      ? 'border-stone-900 dark:border-stone-100 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
+   943→   943→                      : 'border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-stone-300 dark:hover:border-stone-600'
+   944→   944→                  }`}
+   945→   945→                >
+   946→   946→                  {slot}
+   947→   947→                </motion.button>
+   948→   948→              ))}
+   949→   949→            </div>
+   950→   950→          )}
+   951→   951→        </motion.div>
+   952→   952→      )}
+   953→   953→    </div>
+   954→   954→  )
+   955→   955→
+   956→   956→  // ==================== ACCOUNT SECTION (below form) ====================
+   957→   957→
+   958→   958→  // SITUATION A: Guest — amber box below form redirecting to /login
+   959→   959→  // SITUATION B: Logged-in, complete profile — hidden (welcome shown instead)
+   960→   960→  // SITUATION C: Logged-in, incomplete profile — blue box above form
+   961→   961→  const AccountSection = () => {
+   962→   962→    // Situation C: Logged in but incomplete profile — blue info box
+   963→   963→    if (customerAuth && !hasCompleteProfile) {
+   964→   964→      return (
+   965→   965→        <motion.div
+   966→   966→          initial={{ opacity: 0, y: 10 }}
+   967→   967→          animate={{ opacity: 1, y: 0 }}
+   968→   968→          className="mb-5 p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50 flex items-center gap-3"
+   969→   969→        >
+   970→   970→          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+   971→   971→            <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+   972→   972→          </div>
+   973→   973→          <div className="flex-1 min-w-0">
+   974→   974→            <p className="text-sm font-medium text-blue-900 dark:text-blue-200 truncate">
+   975→   975→              Account connesso{customerAuth.email ? ` — ${customerAuth.email}` : ''}
+   976→   976→            </p>
+   977→   977→            <p className="text-xs text-blue-600 dark:text-blue-400">{t('Completa i dati qui sotto per confermare la prenotazione.')}</p>
+   978→   978→          </div>
+   979→   979→        </motion.div>
+   980→   980→      )
+   981→   981→    }
+   982→   982→
+   983→   983→    // Situation B: Complete profile — no box needed (welcome card shown instead)
+   984→   984→    if (hasCompleteProfile) return null
+   985→   985→
+   986→   986→    // Situation A: Guest — amber box redirecting to /login
+   987→   987→    return (
+   988→   988→      <motion.div
+   989→   989→        initial={{ opacity: 0, y: 10 }}
+   990→   990→        animate={{ opacity: 1, y: 0 }}
+   991→   991→      >
+   992→   992→        {/* Divider line with text */}
+   993→   993→        <div className="flex items-center gap-3 mb-4">
+   994→   994→          <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+   995→   995→          <span className="text-xs text-stone-400 dark:text-stone-500 whitespace-nowrap">{t('oppure')}</span>
+   996→   996→          <div className="flex-1 h-px bg-stone-200 dark:bg-stone-700" />
+   997→   997→        </div>
+   998→   998→
+   999→   999→        <Link
+  1000→  1000→          href="/login?callback=/prenota"
+  1001→  1001→          className="w-full p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/50 flex items-center gap-3 text-left hover:bg-amber-100/60 dark:hover:bg-amber-900/50 transition-colors"
+  1002→  1002→        >
+  1003→  1003→          <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+  1004→  1004→            <LogIn className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+  1005→  1005→          </div>
+  1006→  1006→          <div className="flex-1 min-w-0">
+  1007→  1007→            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('Hai gia un account?')}</p>
+  1008→  1008→            <p className="text-xs text-amber-600 dark:text-amber-400">{t('Accedi per gestire le tue prenotazioni.')}</p>
+  1009→  1009→          </div>
+  1010→  1010→          <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
+  1011→  1011→        </Link>
+  1012→  1012→      </motion.div>
+  1013→  1013→    )
+  1014→  1014→  }
+  1015→  1015→
+  1016→  1016→  // ==================== STEP 4: CUSTOMER INFO ====================
+  1017→  1017→
+  1018→  1018→  const validateForm = () => {
+  1019→  1019→    // If logged in with a COMPLETE profile (verified by hasCompleteProfile),
+  1020→  1020→    // the form is hidden — data comes directly from customerAuth in handleSubmit.
+  1021→  1021→    if (hasCompleteProfile) return true
+  1022→  1022→
+  1023→  1023→    const errors: Record<string, string> = {}
+  1024→  1024→    if (!booking.customer.customerName.trim()) errors.customerName = t('Nome obbligatorio')
+  1025→  1025→    // customerSurname is optional (not all cultures use surnames)
+  1026→  1026→    if (!booking.customer.customerPhone.trim()) errors.customerPhone = t('Telefono obbligatorio')
+  1027→  1027→    else if (!/^[+]?[\d\s()-]{8,}$/.test(booking.customer.customerPhone)) errors.customerPhone = t('Telefono non valido')
+  1028→  1028→    if (booking.customer.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(booking.customer.customerEmail)) {
+  1029→  1029→      errors.customerEmail = t('Email non valida')
+  1030→  1030→    }
+  1031→  1031→    // Registration password validation
+  1032→  1032→    if (wantRegister) {
+  1033→  1033→      if (!booking.customer.customerEmail.trim()) errors.customerEmail = t('Email obbligatoria per la registrazione')
+  1034→  1034→      if (!regPassword || regPassword.length < 6) errors.regPassword = t('La password deve avere almeno 6 caratteri')
+  1035→  1035→      if (regPassword !== regPasswordConfirm) errors.regPasswordConfirm = t('Le password non coincidono')
+  1036→  1036→    }
+  1037→  1037→    setFormErrors(errors)
+  1038→  1038→    return Object.keys(errors).length === 0
+  1039→  1039→  }
+  1040→  1040→
+  1041→  1041→  // Validate coupon
+  1042→  1042→  const validateCoupon = async () => {
+  1043→  1043→    if (!couponCode.trim()) return
+  1044→  1044→    setCouponLoading(true)
+  1045→  1045→    setCouponError('')
+  1046→  1046→    setCouponValid(false)
+  1047→  1047→    setCouponDiscount(null)
+  1048→  1048→    try {
+  1049→  1049→      const res = await fetch(`/api/coupon/validate?code=${encodeURIComponent(couponCode.trim())}`)
+  1050→  1050→      const data = await res.json()
+  1051→  1051→      if (data.valid) {
+  1052→  1052→        setCouponValid(true)
+  1053→  1053→        setCouponDiscount(data.discountAmount)
+  1054→  1054→      } else {
+  1055→  1055→        setCouponError(data.error || t('Codice non valido'))
+  1056→  1056→      }
+  1057→  1057→    } catch {
+  1058→  1058→      setCouponError(t('Errore nella verifica'))
+  1059→  1059→    } finally {
+  1060→  1060→      setCouponLoading(false)
+  1061→  1061→    }
+  1062→  1062→  }
+  1063→  1063→
+  1064→  1064→  const removeCoupon = () => {
+  1065→  1065→    setCouponCode('')
+  1066→  1066→    setCouponValid(false)
+  1067→  1067→    setCouponDiscount(null)
+  1068→  1068→    setCouponError('')
+  1069→  1069→  }
+  1070→  1070→
+  1071→  1071→  // Reusable booking summary block (shared by logged-in and guest views)
+  1072→  1072→  const BookingSummaryBlock = () => (
+  1073→  1073→    <div className="mb-6 p-4 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800">
+  1074→  1074→      <div className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">{t('Riepilogo')}</div>
+  1075→  1075→      <div className="space-y-1 text-sm">
+  1076→  1076→        {booking.resourceId && (
+  1077→  1077→          <div className="flex justify-between">
+  1078→  1078→            <span className="text-stone-500 dark:text-stone-400">Operatore</span>
+  1079→  1079→            <span className="font-medium text-stone-900 dark:text-stone-100">{selectedOperatorName}</span>
+  1080→  1080→          </div>
+  1081→  1081→        )}
+  1082→  1082→        <div className="flex justify-between">
+  1083→  1083→          <span className="text-stone-500 dark:text-stone-400">Data</span>
+  1084→  1084→          <span className="font-medium text-stone-900 dark:text-stone-100">{formatDisplayDate(booking.date)}</span>
+  1085→  1085→        </div>
+  1086→  1086→        <div className="flex justify-between">
+  1087→  1087→          <span className="text-stone-500 dark:text-stone-400">Ora</span>
+  1088→  1088→          <span className="font-medium text-stone-900 dark:text-stone-100">{booking.time}</span>
+  1089→  1089→        </div>
+  1090→  1090→        <div className="flex justify-between">
+  1091→  1091→          <span className="text-stone-500 dark:text-stone-400">{t('Durata')}</span>
+  1092→  1092→          <span className="font-medium text-stone-900 dark:text-stone-100">{formatDuration(totalServiceDuration)}{totalCleanupInList > 0 ? ` + ${totalCleanupInList} min pulizia` : ''}</span>
+  1093→  1093→        </div>
+  1094→  1094→        <div className="border-t border-stone-200 dark:border-stone-700 pt-1 mt-1">
+  1095→  1095→          {selectedServices.map(s => (
+  1096→  1096→            <div key={s.id} className="flex justify-between items-center">
+  1097→  1097→              <span className="text-stone-600 dark:text-stone-300">{s.name}</span>
+  1098→  1098→              <div className="text-right">
+  1099→  1099→                {s.discountedPrice && s.discountedPrice > 0 && (
+  1100→  1100→                  <span className="text-xs text-stone-400 dark:text-stone-500 line-through mr-1">€{s.price.toFixed(2)}</span>
+  1101→  1101→                )}
+  1102→  1102→                <span className="font-medium text-stone-900 dark:text-stone-100">{(s.discountedPrice && s.discountedPrice > 0 ? s.discountedPrice : s.price).toFixed(2)}</span>
+  1103→  1103→              </div>
+  1104→  1104→            </div>
+  1105→  1105→          ))}
+  1106→  1106→        </div>
+  1107→  1107→        {discountAmount > 0 && (
+  1108→  1108→          <div className="flex justify-between text-emerald-600 dark:text-emerald-400 pt-1">
+  1109→  1109→            <span className="font-medium">{t('Sconto')}</span>
+  1110→  1110→            <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
+  1111→  1111→          </div>
+  1112→  1112→        )}
+  1113→  1113→        <div className="border-t border-stone-200 dark:border-stone-700 pt-1 mt-1 flex justify-between">
+  1114→  1114→          <span className="font-semibold text-stone-900 dark:text-stone-100">{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
+  1115→  1115→          <span className="font-semibold text-stone-900 dark:text-stone-100">€{finalTotalPrice.toFixed(2)}</span>
+  1116→  1116→        </div>
+  1117→  1117→      </div>
+  1118→  1118→    </div>
+  1119→  1119→  )
+  1120→  1120→
+  1121→  1121→  // Reusable coupon input block (independent of auth state)
+  1122→  1122→  const CouponInputBlock = () => (
+  1123→  1123→    <div>
+  1124→  1124→      <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+  1125→  1125→        {t('Hai un codice sconto?')} <span className="text-stone-400 dark:text-stone-500 font-normal">{t('(opzionale)')}</span>
+  1126→  1126→      </label>
+  1127→  1127→      {couponValid ? (
+  1128→  1128→        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50">
+  1129→  1129→          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+  1130→  1130→          <span className="flex-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+  1131→  1131→            -€{couponDiscount!.toFixed(2)} applicato
+  1132→  1132→          </span>
+  1133→  1133→          <button
+  1134→  1134→            type="button"
+  1135→  1135→            onClick={removeCoupon}
+  1136→  1136→            className="p-1 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 transition-colors"
+  1137→  1137→          >
+  1138→  1138→            <X className="w-4 h-4" />
+  1139→  1139→          </button>
+  1140→  1140→        </div>
+  1141→  1141→      ) : (
+  1142→  1142→        <div className="flex gap-2">
+  1143→  1143→          <input
+  1144→  1144→            type="text"
+  1145→  1145→            value={couponCode}
+  1146→  1146→            onChange={e => {
+  1147→  1147→              setCouponCode(e.target.value.toUpperCase())
+  1148→  1148→              if (couponError) setCouponError('')
+  1149→  1149→            }}
+  1150→  1150→            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), validateCoupon())}
+  1151→  1151→            placeholder={t('SCONTO10')}
+  1152→  1152→            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors uppercase ${
+  1153→  1153→              couponError ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
+  1154→  1154→            }`}
+  1155→  1155→          />
+  1156→  1156→          <button
+  1157→  1157→            type="button"
+  1158→  1158→            onClick={validateCoupon}
+  1159→  1159→            disabled={couponLoading || !couponCode.trim()}
+  1160→  1160→            className="px-4 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+  1161→  1161→          >
+  1162→  1162→            {couponLoading ? '...' : 'Applica'}
+  1163→  1163→          </button>
+  1164→  1164→        </div>
+  1165→  1165→      )}
+  1166→  1166→      {couponError && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{couponError}</p>}
+  1167→  1167→    </div>
+  1168→  1168→  )
+  1169→  1169→
+  1170→  1170→  const StepCustomerInfo = () => (
+  1171→  1171→    <div>
+  1172→  1172→      <div className="mb-6">
+  1173→  1173→        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-100 mb-1">{t('I tuoi dati')}</h2>
+  1174→  1174→        <p className="text-stone-500 dark:text-stone-400 text-sm">
+  1175→  1175→          {hasCompleteProfile ? 'Conferma la tua prenotazione' : 'Inserisci i tuoi dati per confermare la prenotazione'}
+  1176→  1176→        </p>
+  1177→  1177→      </div>
+  1178→  1178→
+  1179→  1179→      {hasCompleteProfile ? (
+  1180→  1180→        /* ===== LOGGED-IN + COMPLETE PROFILE: elegant summary, no form ===== */
+  1181→  1181→        <>
+  1182→  1182→          {/* Welcome & profile data box */}
+  1183→  1183→          <motion.div
+  1184→  1184→            initial={{ opacity: 0, y: 10 }}
+  1185→  1185→            animate={{ opacity: 1, y: 0 }}
+  1186→  1186→            className="mb-6 bg-stone-50 dark:bg-stone-800/50 rounded-2xl p-6 border border-stone-100 dark:border-stone-800"
+  1187→  1187→          >
+  1188→  1188→            <div className="flex items-center gap-3 mb-4">
+  1189→  1189→              <div className="w-10 h-10 rounded-full bg-stone-900 dark:bg-stone-100 flex items-center justify-center shrink-0">
+  1190→  1190→                <span className="text-sm font-semibold text-white dark:text-stone-900">
+  1191→  1191→                  {customerAuth.nome?.charAt(0)?.toUpperCase() || '?'}
+  1192→  1192→                </span>
+  1193→  1193→              </div>
+  1194→  1194→              <div>
+  1195→  1195→                <p className="text-base font-semibold text-stone-900 dark:text-stone-100">
+  1196→  1196→                  Bentornato, {customerAuth.nome?.split(' ')[0] || 'Cliente'}!
+  1197→  1197→                </p>
+  1198→  1198→                <p className="text-sm text-stone-500 dark:text-stone-400">
+  1199→  1199→                  {t('Convalidiamo la tua prenotazione utilizzando i dati del tuo profilo.')}
+  1200→  1200→                </p>
+  1201→  1201→              </div>
+  1202→  1202→            </div>
+  1203→  1203→            <div className="space-y-2 text-sm">
+  1204→  1204→              <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
+  1205→  1205→                <User className="w-4 h-4 text-stone-400 dark:text-stone-500" />
+  1206→  1206→                <span>{customerAuth.nome}</span>
+  1207→  1207→              </div>
+  1208→  1208→              {customerAuth.telefono && !customerAuth.telefono.startsWith('temp_') && (
+  1209→  1209→                <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
+  1210→  1210→                  <svg className="w-4 h-4 text-stone-400 dark:text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+  1211→  1211→                  <span>{customerAuth.telefono}</span>
+  1212→  1212→                </div>
+  1213→  1213→              )}
+  1214→  1214→              {customerAuth.email && (
+  1215→  1215→                <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
+  1216→  1216→                  <Mail className="w-4 h-4 text-stone-400 dark:text-stone-500" />
+  1217→  1217→                  <span>{customerAuth.email}</span>
+  1218→  1218→                </div>
+  1219→  1219→              )}
+  1220→  1220→            </div>
+  1221→  1221→          </motion.div>
+  1222→  1222→
+  1223→  1223→          {/* Booking summary */}
+  1224→  1224→          <BookingSummaryBlock />
+  1225→  1225→
+  1226→  1226→          {/* Coupon code input — always visible for logged-in users */}
+  1227→  1227→          {CouponInputBlock()}
+  1228→  1228→        </>
+  1229→  1229→      ) : (
+  1230→  1230→        /* ===== GUEST or INCOMPLETE PROFILE: form first, then account box below ===== */
+  1231→  1231→        <>
+  1232→  1232→          {/* SITUATION C: Blue info box (only if logged-in but incomplete profile) */}
+  1233→  1233→          {customerAuth && !hasCompleteProfile && <AccountSection />}
+  1234→  1234→
+  1235→  1235→          {/* Booking summary */}
+  1236→  1236→          <BookingSummaryBlock />
+  1237→  1237→
+  1238→  1238→          {/* Guest form */}
+  1239→  1239→          <div className="space-y-4">
+  1240→  1240→        <div>
+  1241→  1241→          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Nome *')}</label>
+  1242→  1242→          <input
+  1243→  1243→            type="text"
+  1244→  1244→            value={booking.customer.customerName}
+  1245→  1245→            onChange={e => {
+  1246→  1246→              setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerName: e.target.value } }))
+  1247→  1247→              if (formErrors.customerName) setFormErrors(prev => ({ ...prev, customerName: '' }))
+  1248→  1248→            }}
+  1249→  1249→            placeholder={t('Mario')}
+  1250→  1250→            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+  1251→  1251→              formErrors.customerName ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
+  1252→  1252→            }`}
+  1253→  1253→          />
+  1254→  1254→          {formErrors.customerName && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerName}</p>}
+  1255→  1255→        </div>
+  1256→  1256→
+  1257→  1257→        <div>
+  1258→  1258→          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Cognome *')}</label>
+  1259→  1259→          <input
+  1260→  1260→            type="text"
+  1261→  1261→            value={booking.customer.customerSurname}
+  1262→  1262→            onChange={e => {
+  1263→  1263→              setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerSurname: e.target.value } }))
+  1264→  1264→              if (formErrors.customerSurname) setFormErrors(prev => ({ ...prev, customerSurname: '' }))
+  1265→  1265→            }}
+  1266→  1266→            placeholder={t('Rossi')}
+  1267→  1267→            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+  1268→  1268→              formErrors.customerSurname ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
+  1269→  1269→            }`}
+  1270→  1270→          />
+  1271→  1271→          {formErrors.customerSurname && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerSurname}</p>}
+  1272→  1272→        </div>
+  1273→  1273→
+  1274→  1274→        <div>
+  1275→  1275→          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Telefono *')}</label>
+  1276→  1276→          <input
+  1277→  1277→            type="tel"
+  1278→  1278→            value={booking.customer.customerPhone}
+  1279→  1279→            onChange={e => {
+  1280→  1280→              setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerPhone: e.target.value } }))
+  1281→  1281→              if (formErrors.customerPhone) setFormErrors(prev => ({ ...prev, customerPhone: '' }))
+  1282→  1282→            }}
+  1283→  1283→            placeholder="+1 555 1234567"
+  1284→  1284→            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+  1285→  1285→              formErrors.customerPhone ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
+  1286→  1286→            }`}
+  1287→  1287→          />
+  1288→  1288→          {formErrors.customerPhone && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerPhone}</p>}
+  1289→  1289→        </div>
+  1290→  1290→
+  1291→  1291→        <div>
+  1292→  1292→          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">
+  1293→  1293→            {t('Email')} <span className="text-stone-400 dark:text-stone-500 font-normal">{t('(opzionale)')}</span>
+  1294→  1294→          </label>
+  1295→  1295→          <input
+  1296→  1296→            type="email"
+  1297→  1297→            value={booking.customer.customerEmail}
+  1298→  1298→            onChange={e => {
+  1299→  1299→              setBooking(prev => ({ ...prev, customer: { ...prev.customer, customerEmail: e.target.value } }))
+  1300→  1300→              if (formErrors.customerEmail) setFormErrors(prev => ({ ...prev, customerEmail: '' }))
+  1301→  1301→            }}
+  1302→  1302→            placeholder="name@email.com"
+  1303→  1303→            className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+  1304→  1304→              formErrors.customerEmail ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
+  1305→  1305→            }`}
+  1306→  1306→          />
+  1307→  1307→          {formErrors.customerEmail && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.customerEmail}</p>}
+  1308→  1308→        </div>
+  1309→  1309→
+  1310→  1310→        {/* Coupon code input */}
+  1311→  1311→        {CouponInputBlock()}
+  1312→  1312→
+  1313→  1313→        {/* Ricordami checkbox — only for guests */}
+  1314→  1314→        {!customerAuth && (
+  1315→  1315→          <label className="flex items-center gap-2 cursor-pointer pt-2">
+  1316→  1316→            <input
+  1317→  1317→              type="checkbox"
+  1318→  1318→              checked={rememberMe}
+  1319→  1319→              onChange={e => setRememberMe(e.target.checked)}
+  1320→  1320→              className="w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-stone-900 dark:text-stone-100 focus:ring-stone-900 dark:focus:ring-stone-100"
+  1321→  1321→            />
+  1322→  1322→            <span className="text-sm text-stone-600 dark:text-stone-400">{t('Ricordami per la prossima prenotazione')}</span>
+  1323→  1323→          </label>
+  1324→  1324→        )}
+  1325→  1325→          </div>
+  1326→  1326→
+  1327→  1327→          {/* Optional registration — only for guests, with email required */}
+  1328→  1328→          {!customerAuth && (
+  1329→  1329→            <motion.div
+  1330→  1330→              initial={{ opacity: 0, y: 10 }}
+  1331→  1331→              animate={{ opacity: 1, y: 0 }}
+  1332→  1332→              className="mt-4"
+  1333→  1333→            >
+  1334→  1334→              <label className="flex items-start gap-2.5 cursor-pointer group">
+  1335→  1335→                <input
+  1336→  1336→                  type="checkbox"
+  1337→  1337→                  checked={wantRegister}
+  1338→  1338→                  onChange={e => {
+  1339→  1339→                    setWantRegister(e.target.checked)
+  1340→  1340→                    if (!e.target.checked) {
+  1341→  1341→                      setRegPassword('')
+  1342→  1342→                      setRegPasswordConfirm('')
+  1343→  1343→                      setFormErrors(prev => {
+  1344→  1344→                        const { regPassword, regPasswordConfirm, ...rest } = prev
+  1345→  1345→                        return rest
+  1346→  1346→                      })
+  1347→  1347→                    }
+  1348→  1348→                  }}
+  1349→  1349→                  className="w-4 h-4 mt-0.5 rounded border-stone-300 dark:border-stone-600 text-stone-900 dark:text-stone-100 focus:ring-stone-900 dark:focus:ring-stone-100"
+  1350→  1350→                />
+  1351→  1351→                <div>
+  1352→  1352→                  <span className="text-sm font-medium text-stone-700 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors">
+  1353→  1353→                    {t('Voglio registrarmi per salvare i miei dati')}
+  1354→  1354→                  </span>
+  1355→  1355→                  <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">
+  1356→  1356→                    Crea un account per gestire le tue prenotazioni in futuro. Ti invieremo i dati di accesso via email.
+  1357→  1357→                  </p>
+  1358→  1358→                </div>
+  1359→  1359→              </label>
+  1360→  1360→
+  1361→  1361→              {/* Dynamic password fields */}
+  1362→  1362→              <AnimatePresence>
+  1363→  1363→                {wantRegister && (
+  1364→  1364→                  <motion.div
+  1365→  1365→                    initial={{ opacity: 0, height: 0 }}
+  1366→  1366→                    animate={{ opacity: 1, height: 'auto' }}
+  1367→  1367→                    exit={{ opacity: 0, height: 0 }}
+  1368→  1368→                    transition={{ duration: 0.2 }}
+  1369→  1369→                    className="overflow-hidden"
+  1370→  1370→                  >
+  1371→  1371→                    <div className="mt-3 space-y-3 pl-6 border-l-2 border-amber-200 dark:border-amber-800">
+  1372→  1372→                      <div>
+  1373→  1373→                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Crea Password *')}</label>
+  1374→  1374→                        <input
+  1375→  1375→                          type="password"
+  1376→  1376→                          value={regPassword}
+  1377→  1377→                          onChange={e => {
+  1378→  1378→                            setRegPassword(e.target.value)
+  1379→  1379→                            if (formErrors.regPassword) setFormErrors(prev => ({ ...prev, regPassword: '' }))
+  1380→  1380→                          }}
+  1381→  1381→                          placeholder={t('Almeno 6 caratteri')}
+  1382→  1382→                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+  1383→  1383→                            formErrors.regPassword ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
+  1384→  1384→                          }`}
+  1385→  1385→                        />
+  1386→  1386→                        {formErrors.regPassword && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.regPassword}</p>}
+  1387→  1387→                      </div>
+  1388→  1388→                      <div>
+  1389→  1389→                        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1.5">{t('Conferma Password *')}</label>
+  1390→  1390→                        <input
+  1391→  1391→                          type="password"
+  1392→  1392→                          value={regPasswordConfirm}
+  1393→  1393→                          onChange={e => {
+  1394→  1394→                            setRegPasswordConfirm(e.target.value)
+  1395→  1395→                            if (formErrors.regPasswordConfirm) setFormErrors(prev => ({ ...prev, regPasswordConfirm: '' }))
+  1396→  1396→                          }}
+  1397→  1397→                          placeholder={t('Ripeti la password')}
+  1398→  1398→                          className={`w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none transition-colors ${
+  1399→  1399→                            formErrors.regPasswordConfirm ? 'border-red-400' : 'border-stone-200 dark:border-stone-700 focus:border-stone-900 dark:focus:border-stone-100'
+  1400→  1400→                          }`}
+  1401→  1401→                        />
+  1402→  1402→                        {formErrors.regPasswordConfirm && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{formErrors.regPasswordConfirm}</p>}
+  1403→  1403→                      </div>
+  1404→  1404→                    </div>
+  1405→  1405→                  </motion.div>
+  1406→  1406→                )}
+  1407→  1407→              </AnimatePresence>
+  1408→  1408→            </motion.div>
+  1409→  1409→          )}
+  1410→  1410→
+  1411→  1411→          {/* SITUATION A: Amber account box BELOW form fields (only for guests) */}
+  1412→  1412→          {!customerAuth && <AccountSection />}
+  1413→  1413→        </>
+  1414→  1414→      )}
+  1415→  1415→    </div>
+  1416→  1416→  )
+  1417→  1417→
+  1418→  1418→  // ==================== STEP 5: CONFIRMATION ====================
+  1419→  1419→
+  1420→  1420→  const StepConfirmation = () => (
+  1421→  1421→    <div className="text-center py-8">
+  1422→  1422→      <motion.div
+  1423→  1423→        initial={{ scale: 0 }}
+  1424→  1424→        animate={{ scale: 1 }}
+  1425→  1425→        transition={{ type: 'spring', duration: 0.6, bounce: 0.5 }}
+  1426→  1426→        className="mx-auto mb-6 w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center"
+  1427→  1427→      >
+  1428→  1428→        <PartyPopper className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+  1429→  1429→      </motion.div>
+  1430→  1430→
+  1431→  1431→      <motion.div
+  1432→  1432→        initial={{ opacity: 0, y: 20 }}
+  1433→  1433→        animate={{ opacity: 1, y: 0 }}
+  1434→  1434→        transition={{ delay: 0.3 }}
+  1435→  1435→      >
+  1436→  1436→        <h2 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 mb-2">{t('Prenotazione confermata!')}</h2>
+  1437→  1437→        <p className="text-stone-500 dark:text-stone-400 mb-8">{t('Grazie, ti aspettiamo!')}</p>
+  1438→  1438→
+  1439→  1439→        <div className="text-left max-w-sm mx-auto p-5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-100 dark:border-stone-800 space-y-2 text-sm">
+  1440→  1440→          <div className="flex justify-between">
+  1441→  1441→            <span className="text-stone-500 dark:text-stone-400">Data</span>
+  1442→  1442→            <span className="font-medium text-stone-900 dark:text-stone-100">{formatDisplayDate(booking.date)}</span>
+  1443→  1443→          </div>
+  1444→  1444→          <div className="flex justify-between">
+  1445→  1445→            <span className="text-stone-500 dark:text-stone-400">Ora</span>
+  1446→  1446→            <span className="font-medium text-stone-900 dark:text-stone-100">{booking.time}</span>
+  1447→  1447→          </div>
+  1448→  1448→          {booking.resourceId && (
+  1449→  1449→            <div className="flex justify-between">
+  1450→  1450→              <span className="text-stone-500 dark:text-stone-400">Operatore</span>
+  1451→  1451→              <span className="font-medium text-stone-900 dark:text-stone-100">{selectedOperatorName}</span>
+  1452→  1452→            </div>
+  1453→  1453→          )}
+  1454→  1454→          <div className="flex justify-between">
+  1455→  1455→            <span className="text-stone-500 dark:text-stone-400">{t('Cliente')}</span>
+  1456→  1456→            <span className="font-medium text-stone-900 dark:text-stone-100">{booking.customer.customerName} {booking.customer.customerSurname}</span>
+  1457→  1457→          </div>
+  1458→  1458→          <div className="border-t border-stone-200 dark:border-stone-700 pt-2 space-y-1">
+  1459→  1459→            {selectedServices.map(s => (
+  1460→  1460→              <div key={s.id} className="flex justify-between">
+  1461→  1461→                <span className="text-stone-600 dark:text-stone-300">{s.name}</span>
+  1462→  1462→                <span className={`font-medium ${discountAmount > 0 ? 'line-through text-stone-400 dark:text-stone-500' : 'text-stone-900 dark:text-stone-100'}`}>€{s.price.toFixed(2)}</span>
+  1463→  1463→              </div>
+  1464→  1464→            ))}
+  1465→  1465→            {discountAmount > 0 && (
+  1466→  1466→              <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+  1467→  1467→                <span className="font-medium">{t('Sconto applicato')}</span>
+  1468→  1468→                <span className="font-medium">-€{discountAmount.toFixed(2)}</span>
+  1469→  1469→              </div>
+  1470→  1470→            )}
+  1471→  1471→            <div className="flex justify-between font-semibold pt-1 border-t border-stone-200 dark:border-stone-700">
+  1472→  1472→              <span>{discountAmount > 0 ? 'Totale scontato' : 'Totale'}</span>
+  1473→  1473→              <span>€{finalTotalPrice.toFixed(2)}</span>
+  1474→  1474→            </div>
+  1475→  1475→          </div>
+  1476→  1476→        </div>
+  1477→  1477→
+  1478→  1478→        {/* Action Buttons: Google Calendar + Cancel Link */}
+  1479→  1479→        <div className="mt-6 mx-auto max-w-sm space-y-3 print:hidden">
+  1480→  1480→          {/* Google Calendar Link */}
+  1481→  1481→          <a
+  1482→  1482→            href={buildGoogleCalendarUrl()}
+  1483→  1483→            target="_blank"
+  1484→  1484→            rel="noopener noreferrer"
+  1485→  1485→            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+  1486→  1486→          >
+  1487→  1487→            <Calendar className="w-4 h-4" />
+  1488→  1488→            {t('Aggiungi al Calendario')}
+  1489→  1489→            <ExternalLink className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
+  1490→  1490→          </a>
+  1491→  1491→
+  1492→  1492→          {/* Cancellation Link */}
+  1493→  1493→          {confirmedBookingId && (
+  1494→  1494→            <button
+  1495→  1495→              onClick={async () => {
+  1496→  1496→                try {
+  1497→  1497→                  await fetch(`/api/bookings/cancel`, {
+  1498→  1498→                    method: 'POST',
+  1499→  1499→                    headers: { 'Content-Type': 'application/json' },
+  1500→  1500→                    body: JSON.stringify({ bookingId: confirmedBookingId }),
+  1501→  1501→                  })
+  1502→  1502→                  setConfirmedBookingId(null)
+  1503→  1503→                } catch { /* silent */ }
+  1504→  1504→              }}
+  1505→  1505→              className="block w-full text-center px-4 py-2.5 rounded-xl text-stone-400 dark:text-stone-500 text-xs hover:text-stone-600 dark:hover:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+  1506→  1506→            >
+  1507→  1507→              {t('Annulla questa prenotazione')}
+  1508→  1508→            </button>
+  1509→  1509→          )}
+  1510→  1510→        </div>
+  1511→  1511→
+  1512→  1512→        {/* Feedback Rating */}
+  1513→  1513→        {confirmedBookingId && (
+  1514→  1514→          <motion.div
+  1515→  1515→            initial={{ opacity: 0, y: 10 }}
+  1516→  1516→            animate={{ opacity: 1, y: 0 }}
+  1517→  1517→            transition={{ delay: 0.5 }}
+  1518→  1518→            className="mt-4 mx-auto max-w-sm"
+  1519→  1519→          >
+  1520→  1520→            <RatingInteraction
+  1521→  1521→              onChange={(rating) => {
+  1522→  1522→                fetch('/api/feedback', {
+  1523→  1523→                  method: 'POST',
+  1524→  1524→                  headers: { 'Content-Type': 'application/json' },
+  1525→  1525→                  body: JSON.stringify({ bookingId: confirmedBookingId, rating }),
+  1526→  1526→                }).catch(() => { /* silent */ })
+  1527→  1527→              }}
+  1528→  1528→            />
+  1529→  1529→          </motion.div>
+  1530→  1530→        )}
+  1531→  1531→
+  1532→  1532→        <button
+  1533→  1533→          onClick={() => router.push('/')}
+  1534→  1534→          className="mt-6 px-8 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors print:hidden"
+  1535→  1535→        >
+  1536→  1536→          {t('Torna alla Home')}
+  1537→  1537→        </button>
+  1538→  1538→
+  1539→  1539→        {/* PWA Install Prompt */}
+  1540→  1540→        {canInstallPWA && (
+  1541→  1541→          <motion.div
+  1542→  1542→            initial={{ opacity: 0, y: 10 }}
+  1543→  1543→            animate={{ opacity: 1, y: 0 }}
+  1544→  1544→            transition={{ delay: 0.8 }}
+  1545→  1545→            className="mt-5 mx-auto max-w-sm relative"
+  1546→  1546→          >
+  1547→  1547→            {isIOSSafari && !showIOSHint ? (
+  1548→  1548→              <button
+  1549→  1549→                onClick={() => setShowIOSHint(true)}
+  1550→  1550→                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/50 text-blue-700 dark:text-blue-400 text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+  1551→  1551→              >
+  1552→  1552→                <Download className="w-4 h-4" />
+  1553→  1553→                Scarica l&apos;app sul tuo telefono
+  1554→  1554→              </button>
+  1555→  1555→            ) : isIOSSafari && showIOSHint ? (
+  1556→  1556→              <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/50 text-sm text-blue-800 dark:text-blue-300 text-left space-y-2">
+  1557→  1557→                <div className="flex items-center justify-between">
+  1558→  1558→                  <span className="font-semibold">{t('Installa IntelliGenda')}</span>
+  1559→  1559→                  <button onClick={dismissPWAInstall} className="p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50">
+  1560→  1560→                    <X className="w-4 h-4" />
+  1561→  1561→                  </button>
+  1562→  1562→                </div>
+  1563→  1563→                <ol className="space-y-1 list-decimal list-inside text-blue-700 dark:text-blue-400">
+  1564→  1564→                  <li>Tocca il pulsante <strong>Condividi</strong> in basso</li>
+  1565→  1565→                  <li>Seleziona <strong>Aggiungi a Home</strong></li>
+  1566→  1566→                  <li>Conferma con <strong>Aggiungi</strong></li>
+  1567→  1567→                </ol>
+  1568→  1568→              </div>
+  1569→  1569→            ) : (
+  1570→  1570→              <button
+  1571→  1571→                onClick={promptPWAInstall}
+  1572→  1572→                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 text-sm font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
+  1573→  1573→              >
+  1574→  1574→                <Download className="w-4 h-4" />
+  1575→  1575→                Scarica l&apos;app per le prossime prenotazioni
+  1576→  1576→              </button>
+  1577→  1577→            )}
+  1578→  1578→          </motion.div>
+  1579→  1579→        )}
+  1580→  1580→      </motion.div>
+  1581→  1581→
+  1582→  1582→        {/* Powered by IntelliGenda */}
+  1583→  1583→            <p className="mt-12 text-center text-xs text-stone-400">
+  1584→  1584→              Prenotazioni gestite da{' '}
+  1585→  1585→              <a
+  1586→  1586→                href="https://intelligenda.it/?ref=powered-badge"
+  1587→  1587→                target="_blank"
+  1588→  1588→                rel="noopener noreferrer"
+  1589→  1589→                className="font-medium hover:text-stone-300 transition-colors"
+  1590→  1590→              >
+  1591→  1591→                IntelliGenda
+  1592→  1592→              </a>
+  1593→  1593→            </p>
+  1594→  1594→    </div>
+  1595→  1595→  )
+  1596→  1596→
+  1597→  1597→  // ==================== SUBMIT ====================
+  1598→  1598→
+  1599→  1599→  const handleSubmit = async () => {
+  1600→  1600→    if (!validateForm()) return
+  1601→  1601→
+  1602→  1602→    setSubmitting(true)
+  1603→  1603→    setError('')
+  1604→  1604→
+  1605→  1605→    try {
+  1606→  1606→      // Build booking payload — include resourceId if selected.
+  1607→  1607→      // When hasCompleteProfile: construct from customerAuth (server-verified source).
+  1608→  1608→      // Otherwise (guest or incomplete profile): use booking.customer (form state).
+  1609→  1609→      const customerPayload = hasCompleteProfile
+  1610→  1610→        ? {
+  1611→  1611→            customerName: splitNome(customerAuth!.nome).firstName,
+  1612→  1612→            customerSurname: splitNome(customerAuth!.nome).lastName,
+  1613→  1613→            customerPhone: customerAuth!.telefono?.startsWith('temp_') ? booking.customer.customerPhone : (customerAuth!.telefono || ''),
+  1614→  1614→            customerEmail: customerAuth!.email || '',
+  1615→  1615→          }
+  1616→  1616→        : booking.customer
+  1617→  1617→
+  1618→  1618→      const payload = {
+  1619→  1619→        serviceIds: booking.serviceIds,
+  1620→  1620→        date: booking.date,
+  1621→  1621→        time: booking.time,
+  1622→  1622→        ...(booking.resourceId ? { resourceId: booking.resourceId } : {}),
+  1623→  1623→        customer: customerPayload,
+  1624→  1624→        // Optional registration: send password only if guest chose to register
+  1625→  1625→        ...(wantRegister && regPassword && regPassword === regPasswordConfirm && !customerAuth ? { registerPassword: regPassword } : {}),
+  1626→  1626→        // Coupon code (if validated)
+  1627→  1627→        ...(couponValid && couponCode.trim() ? { couponCode: couponCode.trim() } : {}),
+  1628→  1628→      }
+  1629→  1629→
+  1630→  1630→      const res = await fetch('/api/bookings', {
+  1631→  1631→        method: 'POST',
+  1632→  1632→        headers: { 'Content-Type': 'application/json' },
+  1633→  1633→        body: JSON.stringify(payload),
+  1634→  1634→      })
+  1635→  1635→
+  1636→  1636→      if (!res.ok) {
+  1637→  1637→        const data = await res.json()
+  1638→  1638→        throw new Error(data.error || t('Errore nella prenotazione'))
+  1639→  1639→      }
+  1640→  1640→
+  1641→  1641→      const createdBooking = await res.json()
+  1642→  1642→      setConfirmedBookingId(createdBooking.id || null)
+  1643→  1643→      setShopName(createdBooking.shopName || '')
+  1644→  1644→      setShopAddress(createdBooking.shopAddress || '')
+  1645→  1645→      setShowShopAddress(createdBooking.showAddress !== undefined ? createdBooking.showAddress : true)
+  1646→  1646→
+  1647→  1647→      setStep(5) // Success step
+  1648→  1648→
+  1649→  1649→      // Save or clear localStorage based on rememberMe (only relevant for guests)
+  1650→  1650→      if (!customerAuth) {
+  1651→  1651→        if (rememberMe) {
+  1652→  1652→          try {
+  1653→  1653→            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+  1654→  1654→              customerName: booking.customer.customerName,
+  1655→  1655→              customerSurname: booking.customer.customerSurname,
+  1656→  1656→              customerPhone: booking.customer.customerPhone,
+  1657→  1657→            }))
+  1658→  1658→          } catch {}
+  1659→  1659→        } else {
+  1660→  1660→          try { localStorage.removeItem(STORAGE_KEY) } catch {}
+  1661→  1661→        }
+  1662→  1662→      }
+  1663→  1663→    } catch (err) {
+  1664→  1664→      setError(err instanceof Error ? err.message : t('Errore nella prenotazione'))
+  1665→  1665→    } finally {
+  1666→  1666→      setSubmitting(false)
+  1667→  1667→    }
+  1668→  1668→  }
+  1669→  1669→
+  1670→  1670→  const canGoNext = () => {
+  1671→  1671→    if (step === 1) return booking.serviceIds.length > 0
+  1672→  1672→    if (step === 2) return true // Operator step: "Qualsiasi" is always pre-selected
+  1673→  1673→    if (step === 3) return booking.date && booking.time
+  1674→  1674→    return true
+  1675→  1675→  }
+  1676→  1676→
+  1677→  1677→  const goNext = () => {
+  1678→  1678→    if (step === 4) {
+  1679→  1679→      handleSubmit()
+  1680→  1680→    } else {
+  1681→  1681→      setStep(prev => prev + 1)
+  1682→  1682→    }
+  1683→  1683→  }
+  1684→  1684→
+  1685→  1685→  // ==================== HELPERS ====================
+  1686→  1686→
+  1687→  1687→  function formatDate(date: Date): string {
+  1688→  1688→    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  1689→  1689→  }
+  1690→  1690→
+  1691→  1691→  function formatDisplayDate(dateStr: string): string {
+  1692→  1692→    if (!dateStr) return ''
+  1693→  1693→    const [y, m, d] = dateStr.split('-').map(Number)
+  1694→  1694→    const date = new Date(y, m - 1, d)
+  1695→  1695→    return date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  1696→  1696→  }
+  1697→  1697→
+  1698→  1698→  function formatDuration(minutes: number): string {
+  1699→  1699→    if (minutes < 60) return `${minutes} min`
+  1700→  1700→    const h = Math.floor(minutes / 60)
+  1701→  1701→    const m = minutes % 60
+  1702→  1702→    return m > 0 ? `${h}h ${m}min` : `${h}h`
+  1703→  1703→  }
+  1704→  1704→
+  1705→  1705→  function buildGoogleCalendarUrl(): string {
+  1706→  1706→    const serviceName = selectedServices.map(s => s.name).join(', ') || t('Appuntamento')
+  1707→  1707→    const title = encodeURIComponent(`${serviceName} — ${shopName || 'IntelliGenda'}`)
+  1708→  1708→
+  1709→  1709→    // Create dates explicitly in Europe/Rome timezone
+  1710→  1710→    const startRome = createInRome(booking.date, booking.time)
+  1711→  1711→    const endRome = new Date(startRome.getTime() + totalSlotDuration * 60 * 1000)
+  1712→  1712→
+  1713→  1713→    // Format as UTC for Google Calendar (with Z suffix)
+  1714→  1714→    const startCal = startRome.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  1715→  1715→    const endCal = endRome.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+  1716→  1716→
+  1717→  1717→    const operatorLine = booking.resourceId ? `\nOperatore: ${selectedOperatorName}` : ''
+  1718→  1718→    const details = encodeURIComponent(
+  1719→  1719→      `Prenotazione confermata per ${serviceName}${operatorLine}\nTotale: €${totalPrice.toFixed(2)}\nDurata: ${formatDuration(totalDuration)}`
+  1720→  1720→    )
+  1721→  1721→    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startCal}/${endCal}&details=${details}&ctz=Europe/Rome`
+  1722→  1722→  }
+  1723→  1723→
+  1724→  1724→  // ==================== RENDER ====================
+  1725→  1725→
+  1726→  1726→  const stepLabels = [
+  1727→  1727→    { num: 1, label: t('Servizi'), icon: <Calendar className="w-4 h-4" /> },
+  1728→  1728→    { num: 2, label: t('Operatore'), icon: <Users className="w-4 h-4" /> },
+  1729→  1729→    { num: 3, label: t('Data'), icon: <Clock className="w-4 h-4" /> },
+  1730→  1730→    { num: 4, label: t('Dati'), icon: <User className="w-4 h-4" /> },
+  1731→  1731→  ]
+  1732→  1732→
+  1733→  1733→  if (loading) {
+  1734→  1734→    return (
+  1735→  1735→      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
+  1736→  1736→        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-stone-100 rounded-full" />
+  1737→  1737→      </div>
+  1738→  1738→    )
+  1739→  1739→  }
+  1740→  1740→
+  1741→  1741→  return (
+  1742→  1742→    <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex flex-col">
+  1743→  1743→      {/* Header */}
+  1744→  1744→      <header className="sticky top-0 z-10 bg-white/80 dark:bg-stone-950/80 backdrop-blur-lg border-b border-stone-200 dark:border-stone-700">
+  1745→  1745→        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+  1746→  1746→          <button
+  1747→  1747→            onClick={() => step > 1 && step < 5 ? setStep(prev => prev - 1) : router.push('/')}
+  1748→  1748→            className="p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+  1749→  1749→          >
+  1750→  1750→            <ArrowLeft className="w-5 h-5 text-stone-600 dark:text-stone-400" />
+  1751→  1751→          </button>
+  1752→  1752→          <h1 className="font-semibold text-stone-900 dark:text-stone-100">{t('Prenota')}</h1>
+  1753→  1753→        </div>
+  1754→  1754→
+  1755→  1755→        {/* Steps indicator — 4 steps (confirmation is step 5, shown separately) */}
+  1756→  1756→        {step < 5 && (
+  1757→  1757→          <div className="max-w-lg mx-auto px-4 pb-3 flex gap-2">
+  1758→  1758→            {stepLabels.map(s => (
+  1759→  1759→              <div key={s.num} className="flex-1 flex items-center gap-2">
+  1760→  1760→                <div
+  1761→  1761→                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors shrink-0 ${
+  1762→  1762→                    step >= s.num
+  1763→  1763→                      ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900'
+  1764→  1764→                      : 'bg-stone-200 dark:bg-stone-700 text-stone-500 dark:text-stone-400'
+  1765→  1765→                  }`}
+  1766→  1766→                >
+  1767→  1767→                  {s.num}
+  1768→  1768→                </div>
+  1769→  1769→                <span
+  1770→  1770→                  className={`text-xs font-medium hidden sm:block ${
+  1771→  1771→                    step >= s.num ? 'text-stone-900 dark:text-stone-100' : 'text-stone-400 dark:text-stone-500'
+  1772→  1772→                  }`}
+  1773→  1773→                >
+  1774→  1774→                  {s.label}
+  1775→  1775→                </span>
+  1776→  1776→                {s.num < 4 && (
+  1777→  1777→                  <div className={`flex-1 h-0.5 ${step > s.num ? 'bg-stone-900 dark:bg-stone-100' : 'bg-stone-200 dark:bg-stone-700'}`} />
+  1778→  1778→                )}
+  1779→  1779→              </div>
+  1780→  1780→            ))}
+  1781→  1781→          </div>
+  1782→  1782→        )}
+  1783→  1783→      </header>
+  1784→  1784→
+  1785→  1785→      {/* Content */}
+  1786→  1786→      <main className="flex-1 max-w-lg mx-auto w-full px-4 py-6">
+  1787→  1787→        <AnimatePresence mode="wait">
+  1788→  1788→          <motion.div
+  1789→  1789→            key={step}
+  1790→  1790→            initial={{ opacity: 0, x: 20 }}
+  1791→  1791→            animate={{ opacity: 1, x: 0 }}
+  1792→  1792→            exit={{ opacity: 0, x: -20 }}
+  1793→  1793→            transition={{ duration: 0.2 }}
+  1794→  1794→          >
+  1795→  1795→            {step === 1 && StepServices()}
+  1796→  1796→            {step === 2 && StepOperator()}
+  1797→  1797→            {step === 3 && StepCalendar()}
+  1798→  1798→            {step === 4 && StepCustomerInfo()}
+  1799→  1799→            {step === 5 && StepConfirmation()}
+  1800→  1800→          </motion.div>
+  1801→  1801→        </AnimatePresence>
+  1802→  1802→      </main>
+  1803→  1803→
+  1804→  1804→      {/* Footer with Next button */}
+  1805→  1805→      {step > 0 && step < 5 && (
+  1806→  1806→        <footer className="sticky bottom-0 bg-white/80 dark:bg-stone-950/80 backdrop-blur-lg border-t border-stone-200 dark:border-stone-700 p-4">
+  1807→  1807→          <div className="max-w-lg mx-auto">
+  1808→  1808→            {error && (
+  1809→  1809→              <div className="mb-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 text-sm text-center">
+  1810→  1810→                {error}
+  1811→  1811→              </div>
+  1812→  1812→            )}
+  1813→  1813→
+  1814→  1814→            {/* Selected services badge (step 2+) */}
+  1815→  1815→            {step >= 2 && booking.serviceIds.length > 0 && (
+  1816→  1816→              <div className="mb-3 text-xs text-stone-500 dark:text-stone-400 text-center">
+  1817→  1817→                {booking.serviceIds.length} {t('servizio')}{booking.serviceIds.length > 1 ? (t('servizi') !== 'services' ? 'i' : 's') : ''} · {formatDuration(totalDuration)} · €{totalPrice.toFixed(2)}
+  1818→  1818→              </div>
+  1819→  1819→            )}
+  1820→  1820→
+  1821→  1821→            <button
+  1822→  1822→              onClick={goNext}
+  1823→  1823→              disabled={!canGoNext() || submitting}
+  1824→  1824→              className="w-full py-4 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium text-base flex items-center justify-center gap-2 hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+  1825→  1825→            >
+  1826→  1826→              {submitting ? (
+  1827→  1827→                <>
+  1828→  1828→                  <div className="animate-spin w-5 h-5 border-2 border-white/30 dark:border-stone-900/30 border-t-white dark:border-stone-900 rounded-full" />
+  1829→  1829→                  {t('Prenotazione in corso...')}
+  1830→  1830→                </>
+  1831→  1831→              ) : step === 4 ? (
+  1832→  1832→                hasCompleteProfile ? t('Conferma e Prenota') : t('Finalizza Prenotazione')
+  1833→  1833→              ) : (
+  1834→  1834→                <>
+  1835→  1835→                  {t('Continua')}
+  1836→  1836→                  <ArrowRight className="w-5 h-5" />
+  1837→  1837→                </>
+  1838→  1838→              )}
+  1839→  1839→            </button>
+  1840→  1840→          </div>
+  1841→  1841→        </footer>
+  1842→  1842→      )}
+  1843→  1843→    </div>
+  1844→  1844→  )
+  1845→  1845→}
+  1846→  1846→

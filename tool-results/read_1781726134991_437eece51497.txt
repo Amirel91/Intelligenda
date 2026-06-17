@@ -1,0 +1,656 @@
+     1→'use client'
+     2→
+     3→import { Suspense, useState, useEffect, useCallback } from 'react'
+     4→import { useRouter, useSearchParams } from 'next/navigation'
+     5→import {
+     6→  CreditCard,
+     7→  CalendarClock,
+     8→  CheckCircle2,
+     9→  AlertTriangle,
+    10→  XCircle,
+    11→  Loader2,
+    12→  X,
+    13→  ArrowLeft,
+    14→  ArrowRight,
+    15→  Shield,
+    16→  Sparkles,
+    17→  Info,
+    18→  CalendarDays,
+    19→  LogIn,
+    20→} from 'lucide-react'
+    21→
+    22→// ==================== TYPES ====================
+    23→
+    24→interface SubscriptionData {
+    25→  status: string
+    26→  planEndDate: string | null
+    27→  isExpired: boolean
+    28→  createdAt: string
+    29→  businessName: string
+    30→}
+    31→
+    32→// ==================== ANTI-CHURN OPTIONS ====================
+    33→
+    34→const CANCEL_REASONS = [
+    35→  { id: 'too_expensive', label: 'Costa troppo per la mia attivita', hasCustom: false },
+    36→  { id: 'not_enough', label: 'Non lo utilizzo abbastanza', hasCustom: false },
+    37→  { id: 'missing_feature', label: 'Manca una funzionalita specifica', hasCustom: true },
+    38→  { id: 'other', label: 'Altro', hasCustom: true },
+    39→] as const
+    40→
+    41→// ==================== STATUS HELPERS ====================
+    42→
+    43→const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
+    44→  trial: {
+    45→    label: 'Periodo di prova',
+    46→    color: 'text-blue-700 dark:text-blue-400',
+    47→    bg: 'bg-blue-50 dark:bg-blue-950/50',
+    48→    icon: <Sparkles className="w-4 h-4" />,
+    49→  },
+    50→  active: {
+    51→    label: 'Attivo',
+    52→    color: 'text-emerald-700 dark:text-emerald-400',
+    53→    bg: 'bg-emerald-50 dark:bg-emerald-950/50',
+    54→    icon: <CheckCircle2 className="w-4 h-4" />,
+    55→  },
+    56→  cancelling: {
+    57→    label: 'In fase di disdetta',
+    58→    color: 'text-orange-700 dark:text-orange-400',
+    59→    bg: 'bg-orange-50 dark:bg-orange-950/50',
+    60→    icon: <AlertTriangle className="w-4 h-4" />,
+    61→  },
+    62→  suspended: {
+    63→    label: 'Sospeso',
+    64→    color: 'text-red-700 dark:text-red-400',
+    65→    bg: 'bg-red-50 dark:bg-red-950/50',
+    66→    icon: <XCircle className="w-4 h-4" />,
+    67→  },
+    68→}
+    69→
+    70→// ==================== PAGE (with Suspense for useSearchParams) ====================
+    71→
+    72→export default function AccountPage() {
+    73→  return (
+    74→    <Suspense fallback={
+    75→      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
+    76→        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-stone-100 rounded-full" />
+    77→      </div>
+    78→    }>
+    79→      <AccountContent />
+    80→    </Suspense>
+    81→  )
+    82→}
+    83→
+    84→// ==================== CONTENT ====================
+    85→
+    86→function AccountContent() {
+    87→  const router = useRouter()
+    88→  const searchParams = useSearchParams()
+    89→  const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
+    90→  const [loading, setLoading] = useState(true)
+    91→  const [error, setError] = useState('')
+    92→  const [subscribing, setSubscribing] = useState(false)
+    93→  const [cancelling, setCancelling] = useState(false)
+    94→  const [message, setMessage] = useState('')
+    95→
+    96→  // Cancel modal state
+    97→  const [showCancelModal, setShowCancelModal] = useState(false)
+    98→  const [selectedReason, setSelectedReason] = useState<string | null>(null)
+    99→  const [customReason, setCustomReason] = useState('')
+   100→  const [cancelError, setCancelError] = useState('')
+   101→
+   102→  // Get slug from query params (set by /login redirect)
+   103→  const slug = searchParams.get('slug') || ''
+   104→  const isVercelDomain = typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')
+   105→  const getAgendaUrl = () => isVercelDomain
+   106→    ? `/t/${slug}/admin/login`
+   107→    : `https://${slug}.intelligenda.it/admin/login`
+   108→
+   109→  // ==================== AUTH GUARD ====================
+   110→
+   111→  useEffect(() => {
+   112→    if (!slug) {
+   113→      // No slug in URL — redirect to login
+   114→      router.replace('/login')
+   115→    }
+   116→  }, [slug, router])
+   117→
+   118→  // ==================== FETCH SUBSCRIPTION ====================
+   119→
+   120→  const fetchSubscription = useCallback(async () => {
+   121→    if (!slug) return
+   122→    try {
+   123→      setLoading(true)
+   124→      const res = await fetch(`/api/billing/status?slug=${encodeURIComponent(slug)}`)
+   125→      if (!res.ok) {
+   126→        const data = await res.json().catch(() => ({}))
+   127→        setError(data.error || 'Errore nel caricamento')
+   128→        return
+   129→      }
+   130→      const data = await res.json()
+   131→      setSubscription(data)
+   132→    } catch {
+   133→      setError('Errore di connessione')
+   134→    } finally {
+   135→      setLoading(false)
+   136→    }
+   137→  }, [slug])
+   138→
+   139→  useEffect(() => {
+   140→    if (slug) fetchSubscription()
+   141→  }, [slug, fetchSubscription])
+   142→
+   143→  // ==================== HANDLE BILLING CALLBACK ====================
+   144→
+   145→  useEffect(() => {
+   146→    const billingResult = searchParams.get('billing')
+   147→    if (billingResult === 'callback') {
+   148→      const result = searchParams.get('result')
+   149→      if (result === 'ok') {
+   150→        setMessage('Pagamento completato con successo! Il tuo abbonamento e stato attivato.')
+   151→        fetchSubscription()
+   152→      } else if (result === 'ko') {
+   153→        setMessage('Il pagamento non e andato a buon fine. Riprova.')
+   154→      }
+   155→      router.replace(`/account?slug=${slug}`, { scroll: false })
+   156→    }
+   157→  }, [searchParams, router, fetchSubscription, slug])
+   158→
+   159→  // ==================== SUBSCRIBE ====================
+   160→
+   161→  const handleSubscribe = async () => {
+   162→    setSubscribing(true)
+   163→    setError('')
+   164→    try {
+   165→      const res = await fetch(`/api/billing/subscribe?slug=${encodeURIComponent(slug)}`, { method: 'POST' })
+   166→      const data = await res.json()
+   167→
+   168→      if (!res.ok) {
+   169→        setError(data.error || 'Errore nella sottoscrizione')
+   170→        return
+   171→      }
+   172→
+   173→      if (data.demoMode) {
+   174→        setMessage(data.message)
+   175→        fetchSubscription()
+   176→      } else if (data.paymentUrl) {
+   177→        window.location.href = data.paymentUrl
+   178→      } else if (data.subscription) {
+   179→        setMessage('Abbonamento attivato con successo!')
+   180→        fetchSubscription()
+   181→      }
+   182→    } catch {
+   183→      setError('Errore di connessione')
+   184→    } finally {
+   185→      setSubscribing(false)
+   186→    }
+   187→  }
+   188→
+   189→  // ==================== CANCEL ====================
+   190→
+   191→  const handleCancel = async () => {
+   192→    if (!selectedReason) {
+   193→      setCancelError('Seleziona un motivo')
+   194→      return
+   195→    }
+   196→
+   197→    setCancelling(true)
+   198→    setCancelError('')
+   199→
+   200→    try {
+   201→      const res = await fetch(`/api/billing/cancel?slug=${encodeURIComponent(slug)}`, {
+   202→        method: 'POST',
+   203→        headers: { 'Content-Type': 'application/json' },
+   204→        body: JSON.stringify({
+   205→          reason: selectedReason,
+   206→          customReason: selectedReason === 'missing_feature' || selectedReason === 'other'
+   207→            ? customReason
+   208→            : undefined,
+   209→        }),
+   210→      })
+   211→
+   212→      const data = await res.json()
+   213→
+   214→      if (!res.ok) {
+   215→        setCancelError(data.error || 'Errore nella disdetta')
+   216→        return
+   217→      }
+   218→
+   219→      setMessage(data.message)
+   220→      setShowCancelModal(false)
+   221→      setSelectedReason(null)
+   222→      setCustomReason('')
+   223→      fetchSubscription()
+   224→    } catch {
+   225→      setCancelError('Errore di connessione')
+   226→    } finally {
+   227→      setCancelling(false)
+   228→    }
+   229→  }
+   230→
+   231→  // ==================== FORMATTERS ====================
+   232→
+   233→  const formatDate = (dateStr: string) => {
+   234→    return new Date(dateStr).toLocaleDateString('it-IT', {
+   235→      day: '2-digit',
+   236→      month: 'long',
+   237→      year: 'numeric',
+   238→    })
+   239→  }
+   240→
+   241→  const formatTrialDays = (createdAt: string) => {
+   242→    const created = new Date(createdAt)
+   243→    const trialEnd = new Date(created)
+   244→    trialEnd.setDate(trialEnd.getDate() + 14)
+   245→    const now = new Date()
+   246→    const remaining = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+   247→    return { trialEnd, remaining }
+   248→  }
+   249→
+   250→  // ==================== RENDER ====================
+   251→
+   252→  if (!slug) {
+   253→    return null
+   254→  }
+   255→
+   256→  if (loading) {
+   257→    return (
+   258→      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
+   259→        <div className="animate-spin w-8 h-8 border-2 border-stone-300 dark:border-stone-600 border-t-stone-900 dark:border-stone-100 rounded-full" />
+   260→      </div>
+   261→    )
+   262→  }
+   263→
+   264→  const statusConfig = STATUS_CONFIG[subscription?.status || 'trial']
+   265→
+   266→  return (
+   267→    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
+   268→      {/* ============ HEADER / NAVBAR ============ */}
+   269→      <header className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700 sticky top-0 z-30">
+   270→        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+   271→          <div className="flex items-center gap-3">
+   272→            <a href="/landing" className="p-2 rounded-lg text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
+   273→              <ArrowLeft className="w-5 h-5" />
+   274→            </a>
+   275→            <div>
+   276→              <h1 className="text-lg font-bold text-stone-900 dark:text-stone-100">Il mio Account</h1>
+   277→              {subscription?.businessName && (
+   278→                <p className="text-xs text-stone-400 dark:text-stone-500">{subscription.businessName}</p>
+   279→              )}
+   280→            </div>
+   281→          </div>
+   282→          <button
+   283→            onClick={() => router.push('/login')}
+   284→            className="p-2 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+   285→            title="Esci"
+   286→          >
+   287→            <LogIn className="w-5 h-5" />
+   288→          </button>
+   289→        </div>
+   290→      </header>
+   291→
+   292→      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+   293→        {/* ============ NOTIFICATION MESSAGE ============ */}
+   294→        {message && (
+   295→          <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-start gap-3">
+   296→            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+   297→            <p className="text-sm text-emerald-800 dark:text-emerald-300">{message}</p>
+   298→            <button onClick={() => setMessage('')} className="ml-auto text-emerald-400 dark:text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400">
+   299→              <X className="w-4 h-4" />
+   300→            </button>
+   301→          </div>
+   302→        )}
+   303→
+   304→        {error && !subscription && (
+   305→          <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">{error}</div>
+   306→        )}
+   307→
+   308→        {/* ============ GESTISCI LA TUA AGENDA (HIGH CONTRAST) ============ */}
+   309→        <a
+   310→          href={getAgendaUrl()}
+   311→          className="block group"
+   312→        >
+   313→          <div className="bg-stone-900 dark:bg-stone-100 rounded-2xl p-6 flex items-center justify-between hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors shadow-lg shadow-stone-900/20 dark:shadow-black/20">
+   314→            <div className="flex items-center gap-4">
+   315→              <div className="w-12 h-12 rounded-xl bg-white/10 dark:bg-stone-900/10 flex items-center justify-center">
+   316→                <CalendarDays className="w-6 h-6 text-white dark:text-stone-900" />
+   317→              </div>
+   318→              <div>
+   319→                <h2 className="text-base font-bold text-white dark:text-stone-900">Gestisci la tua Agenda</h2>
+   320→                <p className="text-sm text-stone-400 dark:text-stone-500 mt-0.5">
+   321→                  {isVercelDomain
+   322→                    ? `Vai al pannello operativo di ${slug}`
+   323→                    : `${slug}.intelligenda.it`}
+   324→                </p>
+   325→              </div>
+   326→            </div>
+   327→            <div className="w-10 h-10 rounded-xl bg-white/10 dark:bg-stone-900/10 flex items-center justify-center group-hover:bg-white/20 dark:group-hover:bg-stone-900/20 transition-colors">
+   328→              <ArrowRight className="w-5 h-5 text-white dark:text-stone-900" />
+   329→            </div>
+   330→          </div>
+   331→        </a>
+   332→
+   333→        {/* ============ SUBSCRIPTION CARD ============ */}
+   334→        {subscription && (
+   335→          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+   336→            {/* Card Header */}
+   337→            <div className="p-6 border-b border-stone-100 dark:border-stone-800">
+   338→              <div className="flex items-center justify-between mb-4">
+   339→                <div className="flex items-center gap-3">
+   340→                  <div className="w-10 h-10 rounded-xl bg-stone-900 dark:bg-stone-100 flex items-center justify-center">
+   341→                    <CreditCard className="w-5 h-5 text-white dark:text-stone-900" />
+   342→                  </div>
+   343→                  <div>
+   344→                    <h2 className="text-base font-bold text-stone-900 dark:text-stone-100">Abbonamento e Rinnovi</h2>
+   345→                    <p className="text-xs text-stone-400 dark:text-stone-500">Gestisci il tuo piano IntelliGenda</p>
+   346→                  </div>
+   347→                </div>
+   348→                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
+   349→                  {statusConfig.icon}
+   350→                  {statusConfig.label}
+   351→                </span>
+   352→              </div>
+   353→
+   354→              {/* Plan info */}
+   355→              <div className="grid grid-cols-2 gap-4">
+   356→                <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50">
+   357→                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">Piano</p>
+   358→                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Pro — 40 EUR/mese</p>
+   359→                </div>
+   360→                <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50">
+   361→                  <p className="text-xs text-stone-400 dark:text-stone-500 mb-1">
+   362→                    {subscription.status === 'cancelling' ? 'Scadenza servizio' : 'Prossimo rinnovo'}
+   363→                  </p>
+   364→                  <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+   365→                    {subscription.planEndDate
+   366→                      ? formatDate(subscription.planEndDate)
+   367→                      : 'Non ancora attivato'}
+   368→                  </p>
+   369→                </div>
+   370→              </div>
+   371→            </div>
+   372→
+   373→            {/* Card Body: status-specific content */}
+   374→            <div className="p-6 space-y-4">
+   375→              {/* ============ TRIAL STATUS ============ */}
+   376→              {subscription.status === 'trial' && (
+   377→                <>
+   378→                  <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50">
+   379→                    <div className="flex items-start gap-3">
+   380→                      <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+   381→                      <div>
+   382→                        <p className="text-sm font-medium text-blue-900 dark:text-blue-200">Stai provando IntelliGenda</p>
+   383→                        <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+   384→                          Hai {formatTrialDays(subscription.createdAt).remaining} giorni rimanenti nel tuo periodo di prova gratuito.
+   385→                          Attiva ora l&apos;abbonamento per continuare a usare tutte le funzionalita senza interruzioni.
+   386→                        </p>
+   387→                      </div>
+   388→                    </div>
+   389→                  </div>
+   390→                  <button
+   391→                    onClick={handleSubscribe}
+   392→                    disabled={subscribing}
+   393→                    className="w-full py-3.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium flex items-center justify-center gap-2 hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 transition-all"
+   394→                  >
+   395→                    {subscribing ? (
+   396→                      <Loader2 className="w-5 h-5 animate-spin" />
+   397→                    ) : (
+   398→                      <>
+   399→                        <Shield className="w-5 h-5" />
+   400→                        Attiva abbonamento — 40 EUR/mese
+   401→                      </>
+   402→                    )}
+   403→                  </button>
+   404→                </>
+   405→              )}
+   406→
+   407→              {/* ============ ACTIVE STATUS ============ */}
+   408→              {subscription.status === 'active' && (
+   409→                <>
+   410→                  <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50">
+   411→                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+   412→                    <p className="text-sm text-emerald-800 dark:text-emerald-300">
+   413→                      Il tuo abbonamento e attivo. Il prossimo addebito di 40 EUR sara effettuato il{' '}
+   414→                      {subscription.planEndDate ? formatDate(subscription.planEndDate) : '—'}.
+   415→                    </p>
+   416→                  </div>
+   417→                  <button
+   418→                    onClick={() => setShowCancelModal(true)}
+   419→                    className="w-full py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300 transition-all"
+   420→                  >
+   421→                    Cancella abbonamento
+   422→                  </button>
+   423→                </>
+   424→              )}
+   425→
+   426→              {/* ============ CANCELLING STATUS ============ */}
+   427→              {subscription.status === 'cancelling' && (
+   428→                <>
+   429→                  <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100 dark:border-orange-900/50">
+   430→                    <div className="flex items-start gap-3">
+   431→                      <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+   432→                      <div>
+   433→                        <p className="text-sm font-medium text-orange-900 dark:text-orange-200">Disdetta in corso</p>
+   434→                        <p className="text-xs text-orange-700 dark:text-orange-400 mt-1">
+   435→                          Hai richiesto la disdetta del tuo abbonamento. Il servizio rimarra completamente attivo
+   436→                          fino al {subscription.planEndDate ? formatDate(subscription.planEndDate) : '—'},
+   437→                          data in cui tutte le prenotazioni e i dati saranno sospesi.
+   438→                        </p>
+   439→                        <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+   440→                          Vuoi ripensarci? Puoi riattivare l&apos;abbonamento in qualsiasi momento.
+   441→                        </p>
+   442→                      </div>
+   443→                    </div>
+   444→                  </div>
+   445→                  <button
+   446→                    onClick={handleSubscribe}
+   447→                    disabled={subscribing}
+   448→                    className="w-full py-3.5 rounded-xl bg-emerald-600 text-white font-medium flex items-center justify-center gap-2 hover:bg-emerald-700 disabled:opacity-50 transition-all"
+   449→                  >
+   450→                    {subscribing ? (
+   451→                      <Loader2 className="w-5 h-5 animate-spin" />
+   452→                    ) : (
+   453→                      <>
+   454→                        <CheckCircle2 className="w-5 h-5" />
+   455→                        Riattiva abbonamento
+   456→                      </>
+   457→                    )}
+   458→                  </button>
+   459→                </>
+   460→              )}
+   461→
+   462→              {/* ============ SUSPENDED STATUS ============ */}
+   463→              {subscription.status === 'suspended' && (
+   464→                <>
+   465→                  <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50">
+   466→                    <div className="flex items-start gap-3">
+   467→                      <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+   468→                      <div>
+   469→                        <p className="text-sm font-medium text-red-900 dark:text-red-200">Account sospeso</p>
+   470→                        <p className="text-xs text-red-700 dark:text-red-400 mt-1">
+   471→                          Il periodo di abbonamento e terminato. Il tuo account e stato sospeso
+   472→                          e il tuo negozio non e piu accessibile ai clienti.
+   473→                        </p>
+   474→                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+   475→                          Riattiva ora per tornare online e recuperare tutti i tuoi dati.
+   476→                        </p>
+   477→                      </div>
+   478→                    </div>
+   479→                  </div>
+   480→                  <button
+   481→                    onClick={handleSubscribe}
+   482→                    disabled={subscribing}
+   483→                    className="w-full py-3.5 rounded-xl bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 font-medium flex items-center justify-center gap-2 hover:bg-stone-800 dark:hover:bg-stone-200 disabled:opacity-50 transition-all"
+   484→                  >
+   485→                    {subscribing ? (
+   486→                      <Loader2 className="w-5 h-5 animate-spin" />
+   487→                    ) : (
+   488→                      <>
+   489→                        <Shield className="w-5 h-5" />
+   490→                        Riattiva abbonamento — 40 EUR/mese
+   491→                      </>
+   492→                    )}
+   493→                  </button>
+   494→                </>
+   495→              )}
+   496→            </div>
+   497→          </div>
+   498→        )}
+   499→
+   500→        {/* ============ ACCOUNT INFO CARD ============ */}
+   501→        {subscription && (
+   502→          <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-700 p-6">
+   503→            <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100 mb-4">Informazioni account</h3>
+   504→            <div className="space-y-3">
+   505→              <div className="flex items-center justify-between text-sm">
+   506→                <span className="text-stone-400 dark:text-stone-500">Nome attivita</span>
+   507→                <span className="text-stone-900 dark:text-stone-100 font-medium">{subscription.businessName}</span>
+   508→              </div>
+   509→              <div className="flex items-center justify-between text-sm">
+   510→                <span className="text-stone-400 dark:text-stone-500">Indirizzo web</span>
+   511→                <a
+   512→                  href={isVercelDomain ? `/t/${slug}` : `https://${slug}.intelligenda.it`}
+   513→                  className="text-stone-900 dark:text-stone-100 font-medium hover:underline underline-offset-2"
+   514→                >
+   515→                  {slug}.intelligenda.it
+   516→                </a>
+   517→              </div>
+   518→              <div className="flex items-center justify-between text-sm">
+   519→                <span className="text-stone-400 dark:text-stone-500">Data creazione</span>
+   520→                <span className="text-stone-900 dark:text-stone-100">{formatDate(subscription.createdAt)}</span>
+   521→              </div>
+   522→              <div className="flex items-center justify-between text-sm">
+   523→                <span className="text-stone-400 dark:text-stone-500">Stato</span>
+   524→                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.color}`}>
+   525→                  {statusConfig.icon}
+   526→                  {statusConfig.label}
+   527→                </span>
+   528→              </div>
+   529→            </div>
+   530→          </div>
+   531→        )}
+   532→      </div>
+   533→
+   534→      {/* ============ CANCEL MODAL ============ */}
+   535→      {showCancelModal && (
+   536→        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+   537→          {/* Backdrop */}
+   538→          <div
+   539→            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+   540→            onClick={() => { setShowCancelModal(false); setSelectedReason(null); setCustomReason(''); setCancelError('') }}
+   541→          />
+   542→
+   543→          {/* Modal */}
+   544→          <div className="relative bg-white dark:bg-stone-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+   545→            {/* Modal Header */}
+   546→            <div className="p-6 border-b border-stone-100 dark:border-stone-800">
+   547→              <div className="flex items-center justify-between">
+   548→                <h3 className="text-base font-bold text-stone-900 dark:text-stone-100">Cancella abbonamento</h3>
+   549→                <button
+   550→                  onClick={() => { setShowCancelModal(false); setSelectedReason(null); setCustomReason(''); setCancelError('') }}
+   551→                  className="p-1.5 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+   552→                >
+   553→                  <X className="w-4 h-4" />
+   554→                </button>
+   555→              </div>
+   556→            </div>
+   557→
+   558→            {/* Modal Body */}
+   559→            <div className="p-6 space-y-5">
+   560→              {/* Warning */}
+   561→              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-100 dark:border-amber-900/50 flex items-start gap-2.5">
+   562→                <CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+   563→                <p className="text-xs text-amber-800 dark:text-amber-300">
+   564→                  Il tuo servizio rimarra attivo fino al{' '}
+   565→                  {subscription?.planEndDate ? formatDate(subscription.planEndDate) : 'fine del periodo pagato'}.
+   566→                  Dopo quella data, il tuo negozio sara sospeso.
+   567→                </p>
+   568→              </div>
+   569→
+   570→              {/* Anti-churn feedback */}
+   571→              <div>
+   572→                <p className="text-sm text-stone-700 dark:text-stone-300 mb-3">
+   573→                  Ci dispiace vederti andare via. Qual e il motivo principale?
+   574→                </p>
+   575→
+   576→                <div className="space-y-2">
+   577→                  {CANCEL_REASONS.map((reason) => (
+   578→                    <label
+   579→                      key={reason.id}
+   580→                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+   581→                        selectedReason === reason.id
+   582→                          ? 'border-stone-400 dark:border-stone-500 bg-stone-50 dark:bg-stone-800/50'
+   583→                          : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600'
+   584→                      }`}
+   585→                    >
+   586→                      <div className="mt-0.5">
+   587→                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+   588→                          selectedReason === reason.id
+   589→                            ? 'border-stone-900 dark:border-stone-100'
+   590→                            : 'border-stone-300 dark:border-stone-600'
+   591→                        }`}>
+   592→                          {selectedReason === reason.id && (
+   593→                            <div className="w-2 h-2 rounded-full bg-stone-900 dark:bg-stone-100" />
+   594→                          )}
+   595→                        </div>
+   596→                      </div>
+   597→                      <input
+   598→                        type="radio"
+   599→                        name="cancelReason"
+   600→                        value={reason.id}
+   601→                        checked={selectedReason === reason.id}
+   602→                        onChange={() => { setSelectedReason(reason.id); setCancelError('') }}
+   603→                        className="sr-only"
+   604→                      />
+   605→                      <span className="text-sm text-stone-700 dark:text-stone-300">{reason.label}</span>
+   606→                    </label>
+   607→                  ))}
+   608→                </div>
+   609→
+   610→                {/* Custom reason text field */}
+   611→                {selectedReason && CANCEL_REASONS.find(r => r.id === selectedReason)?.hasCustom && (
+   612→                  <textarea
+   613→                    value={customReason}
+   614→                    onChange={(e) => setCustomReason(e.target.value)}
+   615→                    placeholder={selectedReason === 'missing_feature'
+   616→                      ? 'Descrivi la funzionalita che ti servirebbe...'
+   617→                      : 'Scrivi il motivo...'}
+   618→                    rows={3}
+   619→                    className="mt-3 w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none focus:border-stone-400 dark:focus:border-stone-500 resize-none transition-colors"
+   620→                  />
+   621→                )}
+   622→              </div>
+   623→
+   624→              {/* Error message */}
+   625→              {cancelError && (
+   626→                <p className="text-xs text-red-600 dark:text-red-400">{cancelError}</p>
+   627→              )}
+   628→            </div>
+   629→
+   630→            {/* Modal Footer */}
+   631→            <div className="p-6 border-t border-stone-100 dark:border-stone-800 flex items-center gap-3">
+   632→              <button
+   633→                onClick={() => { setShowCancelModal(false); setSelectedReason(null); setCustomReason(''); setCancelError('') }}
+   634→                className="flex-1 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 text-sm font-medium hover:bg-stone-50 dark:hover:bg-stone-800 transition-all"
+   635→              >
+   636→                Torna indietro
+   637→              </button>
+   638→              <button
+   639→                onClick={handleCancel}
+   640→                disabled={cancelling || !selectedReason}
+   641→                className="flex-1 py-3 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+   642→              >
+   643→                {cancelling ? (
+   644→                  <Loader2 className="w-4 h-4 animate-spin" />
+   645→                ) : (
+   646→                  'Conferma disdetta'
+   647→                )}
+   648→              </button>
+   649→            </div>
+   650→          </div>
+   651→        </div>
+   652→      )}
+   653→    </div>
+   654→  )
+   655→}
+   656→
