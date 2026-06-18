@@ -21,6 +21,8 @@ function isExcludedPath(pathname: string): boolean {
  */
 async function protectAdminRoutes(request: NextRequest, url: URL): Promise<NextResponse | null> {
   if (!url.pathname.startsWith('/admin')) return null
+  // Skip protection for static assets (e.g. /admin-icon.png in public/)
+  if (/\.\w+$/.test(url.pathname.split('/').pop() || '')) return null
   if (ADMIN_PUBLIC_PATHS.some(p => url.pathname === p || url.pathname.startsWith(p + '/'))) return null
 
   const token = request.cookies.get('admin_token')?.value
